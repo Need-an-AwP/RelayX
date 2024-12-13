@@ -1,0 +1,90 @@
+{
+  "name": "voicechat-electron-react-tailscale-builder",
+  "private": true,
+  "version": "0.0.0",
+  "main": "app/index.js",
+  "scripts": {
+    "dev:build": "cd tailscale-embed && go build -buildmode=c-shared -o tailscale-embed.dll main.go && cd .. && npm run dev",
+    "dev:vite": "vite",
+    "dev": "concurrently -k \"vite\" \"cross-env DEV=true electron app/index.js\"",
+    "build:fe": "tsc -b && vite build",
+    "build:win": "npm run build:fe && electron-builder --win portable",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "add:shadcn": "npx shadcn@latest add button alert-dialog avatar button card context-menu dialog dropdown-menu input label popover progress resizable scroll-area select separator slider sonner switch tooltip"
+  },
+  "build": {
+    "appId": "com.voicechat.app",
+    "productName": "VoiceChat",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "app/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "@radix-ui/react-alert-dialog": "^1.1.3",
+    "@radix-ui/react-avatar": "^1.1.2",
+    "@radix-ui/react-context-menu": "^2.2.3",
+    "@radix-ui/react-dialog": "^1.1.3",
+    "@radix-ui/react-dropdown-menu": "^2.1.3",
+    "@radix-ui/react-label": "^2.1.1",
+    "@radix-ui/react-popover": "^1.1.3",
+    "@radix-ui/react-progress": "^1.1.1",
+    "@radix-ui/react-scroll-area": "^1.2.2",
+    "@radix-ui/react-select": "^2.1.3",
+    "@radix-ui/react-separator": "^1.1.1",
+    "@radix-ui/react-slider": "^1.2.2",
+    "@radix-ui/react-slot": "^1.1.1",
+    "@radix-ui/react-switch": "^1.1.2",
+    "@radix-ui/react-tooltip": "^1.1.5",
+    "@tailwindcss/container-queries": "^0.1.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^11.14.4",
+    "lucide-react": "^0.468.0",
+    "next-themes": "^0.4.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-resizable-panels": "^2.1.7",
+    "sonner": "^1.7.1",
+    "tailwind-merge": "^2.5.5",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "eslint": "^9.15.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.14",
+    "globals": "^15.12.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "~5.6.2",
+    "typescript-eslint": "^8.15.0",
+    "vite": "^6.0.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
