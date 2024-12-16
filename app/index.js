@@ -1,7 +1,16 @@
 const { app, shell, BrowserWindow, ipcMain, desktopCapturer, session } = require('electron')
 const path = require('path')
+const { throttle, debounce } = require('lodash');
+const { exec } = require('child_process')
+
+const { tailscale, getUUID, getIsTailscaleAuthKey, getLocalClientStatus } = require('./tailscale');
+const { electronPID } = require('./electronPID')
+const { setCaptureId, getAvailableSources, setDisplayMediaRequestHandler } = require('./desktopCapture');
+
 
 const isDev = process.env.DEV != undefined;
+
+let statusCallback = null;
 let mainWindow;
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -17,6 +26,22 @@ function createWindow() {
         }
     })
 
+    ipcMain.on('ask_uuid', () => {
+        mainWindow.webContents.send('self_uuid', getUUID())
+        mainWindow.webContents.send('is_tailscale_auth_key', getIsTailscaleAuthKey())
+    });
+
+    ipcMain.handle('getElectronPids', () => {
+        return electronPID
+    })
+
+    ipcMain.on('capture_id', (e, d) => {
+        setCaptureId(d);
+    })
+
+    ipcMain.handle('getScreenSources', async (e, d) => {
+        return await getAvailableSources();
+    })
 
     ipcMain.on('minimize-window', () => {
         mainWindow.minimize();
@@ -49,13 +74,13 @@ function createWindow() {
     })
 
     // check tailscale status every second
-    // statusCallback = setInterval(() => {
-    //     getLocalClientStatus.async((err, res) => {
-    //         const data = JSON.parse(res);
-    //         // console.log(data);
-    //         mainWindow.webContents.send('tailscale-status', data);
-    //     })
-    // }, 1000);
+    statusCallback = setInterval(() => {
+        getLocalClientStatus().async((err, res) => {
+            const data = JSON.parse(res);
+            // console.log(data);
+            mainWindow.webContents.send('tailscale-status', data);
+        })
+    }, 1000);
 
     if (isDev) {
         mainWindow.loadURL('http://localhost:5173')
@@ -66,6 +91,10 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+    // init tailscale client
+    tailscale.initialize();
+    // init display media request handler
+    setDisplayMediaRequestHandler();
 
     createWindow()
 
@@ -81,6 +110,6 @@ app.on('window-all-closed', () => {
         app.quit()
     }
     if (statusCallback) {
-        // clearInterval(statusCallback);
+        clearInterval(statusCallback);
     }
 })

@@ -34,7 +34,7 @@ contextBridge.exposeInMainWorld('ipcBridge', {
     closeWindow: () => ipcRenderer.send('close-window'),
 });
 
-/** 
+
 const test_addon = require('win-process-audio-capture');
 
 contextBridge.exposeInMainWorld('winAudioCapture', {
@@ -46,4 +46,3 @@ contextBridge.exposeInMainWorld('winAudioCapture', {
     whileCaptureProcessAudio: () => test_addon.whileCaptureProcessAudio(),
     capture_async: (intervalMs, callback) => test_addon.capture_async(intervalMs, callback),
 });
-*/

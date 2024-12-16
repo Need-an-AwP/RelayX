@@ -2094,7 +2094,7 @@ dotenv-expand@^11.0.6:
   dependencies:
     dotenv "^16.4.5"
 
-dotenv@^16.4.5:
+dotenv@^16.4.5, dotenv@^16.4.7:
   version "16.4.7"
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.4.7.tgz#0e20c5b82950140aa99be360a8a5f52335f53c26"
   integrity sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==
@@ -3015,6 +3015,11 @@ keyv@^4.0.0, keyv@^4.5.4:
   integrity sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==
   dependencies:
     json-buffer "3.0.1"
+
+koffi@^2.9.2:
+  version "2.9.2"
+  resolved "https://registry.yarnpkg.com/koffi/-/koffi-2.9.2.tgz#7cde7b46f2705bb584b30a5e68d33e6db413eada"
+  integrity sha512-qwKzo4PTN66A0mRcLcMCcay5XS0hAcOLaGijtmP72tJSzH5P4OzufPJ+0uHtL+dqVkvVZMnkeEVQoHYy7KBaVw==
 
 lazy-val@^1.0.5:
   version "1.0.5"
@@ -4381,6 +4386,10 @@ wide-align@^1.1.5:
   integrity sha512-eDMORYaPNZ4sQIuuYPDHdQvf4gyCF9rEEV/yPxGfwPkRodwEgiMUUXTx/dex+Me0wxx53S+NgUHaP7y3MGlDmg==
   dependencies:
     string-width "^1.0.2 || 2 || 3 || 4"
+
+win-process-audio-capture@./win-process-audio-capture-0.0.4.tgz:
+  version "0.0.4"
+  resolved "./win-process-audio-capture-0.0.4.tgz#27bd9952c507fc1355f1ef46dae033a96293c650"
 
 word-wrap@^1.2.5:
   version "1.2.5"

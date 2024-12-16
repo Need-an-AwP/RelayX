@@ -21,7 +21,9 @@
     },
     "files": [
       "dist/**/*",
-      "app/**/*"
+      "app/**/*",
+      ".env",
+      "tailscale-embed/tailscale-embed.dll"
     ],
     "win": {
       "target": [
@@ -53,7 +55,9 @@
     "@tailwindcss/container-queries": "^0.1.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^16.4.7",
     "framer-motion": "^11.14.4",
+    "koffi": "^2.9.2",
     "lucide-react": "^0.468.0",
     "next-themes": "^0.4.4",
     "react": "^18.3.1",
@@ -61,7 +65,8 @@
     "react-resizable-panels": "^2.1.7",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "win-process-audio-capture": "./win-process-audio-capture-0.0.4.tgz"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
