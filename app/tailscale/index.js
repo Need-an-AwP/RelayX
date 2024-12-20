@@ -19,7 +19,7 @@ class Tailscale {
         this.getLocalClientStatus;
     }
 
-    initialize() {
+    initialize(mainWindow) {
         dotenv.config({ path: this.envPath });
 
         const lib = koffi.load(this.dllPath);
@@ -30,6 +30,7 @@ class Tailscale {
         const HTTPCallback = koffi.proto('void HTTPCallback(const char* from, const char* message)');
         const registerHTTPCallback = lib.func('RegisterHTTPCallback', 'void', [koffi.pointer(HTTPCallback)]);
         const httpHandler = koffi.register((from, message) => {
+            console.log('http callback', from, message);
             mainWindow.webContents.send('http-server-message', {
                 from: from,
                 message: message,

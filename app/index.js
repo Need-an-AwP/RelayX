@@ -25,10 +25,15 @@ function createWindow() {
             contextIsolation: true,
         }
     })
+    
+    // init tailscale client
+    tailscale.initialize(mainWindow);
 
-    ipcMain.on('ask_uuid', () => {
-        mainWindow.webContents.send('self_uuid', getUUID())
-        mainWindow.webContents.send('is_tailscale_auth_key', getIsTailscaleAuthKey())
+    ipcMain.handle('ask_uuid', async () => {
+        return {
+            uuid: getUUID(),
+            isTailscaleAuthKey: getIsTailscaleAuthKey()
+        }
     });
 
     ipcMain.handle('getElectronPids', () => {
@@ -91,8 +96,6 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-    // init tailscale client
-    tailscale.initialize();
     // init display media request handler
     setDisplayMediaRequestHandler();
 

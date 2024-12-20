@@ -11,7 +11,8 @@
     "build:win": "npm run build:fe && electron-builder --win portable",
     "lint": "eslint .",
     "preview": "vite preview",
-    "add:shadcn": "npx shadcn@latest add button alert-dialog avatar button card context-menu dialog dropdown-menu input label popover progress resizable scroll-area select separator slider sonner switch tooltip"
+    "add:shadcn": "npx shadcn@latest add button alert-dialog avatar button card context-menu dialog dropdown-menu input label popover progress resizable scroll-area select separator slider sonner switch tooltip",
+    "dev:sync": "cross-env DEV=true node tests/files-sync/watcher.js"
   },
   "build": {
     "appId": "com.voicechat.app",
@@ -66,7 +67,8 @@
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
-    "win-process-audio-capture": "./win-process-audio-capture-0.0.4.tgz"
+    "win-process-audio-capture": "./win-process-audio-capture-0.0.4.tgz",
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
@@ -75,6 +77,8 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "chalk": "^5.4.0",
+    "chokidar": "^4.0.3",
     "concurrently": "^9.1.0",
     "cross-env": "^7.0.3",
     "electron": "^33.2.1",

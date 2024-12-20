@@ -23,5 +23,6 @@ declare global {
     interface Window {
         ipcBridge: IpcBridge;
         winAudioCapture: WinAudioCapture;
+        webkitAudioContext: typeof AudioContext;
     }
 } 

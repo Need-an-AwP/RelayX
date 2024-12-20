@@ -1,18 +1,27 @@
-import { useState } from 'react'
+import { useEffect } from 'react'
 import './App.css'
-import TitleBar from '@/components/TitleBar'
-import { BackgroundBeams } from '@/components/ui/background-beams'
-import { ThemeProvider } from "@/components/theme-provider"
+import MainLayout from './MainLayout'
+// import { initializeTailscaleListeners } from './stores/tailscaleStore'
+// import { initializeBlankStreams } from './stores/blankStreamsStore'
+import { initializeTailscaleListeners, initializeBlankStreams } from './stores'
+import RTCService from './services/RTCService'
 
 
 function App() {
+    useEffect(() => {
+        initializeTailscaleListeners()
+        initializeBlankStreams()
+
+        RTCService.getInstance()
+        
+        return () => {
+
+        }
+    }, [])
+
+    
     return (
-        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-            <div className="flex flex-col h-screen w-screen">
-                <TitleBar />
-                <BackgroundBeams className='pointer-events-none' />
-            </div>
-        </ThemeProvider>
+        <MainLayout />
     )
 }
 
