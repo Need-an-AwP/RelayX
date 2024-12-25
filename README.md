@@ -1,7 +1,11 @@
 create from vite react ts template
+
 electron backend use pure js and commonjs 
+
 electron-builder needs node 20+
+
 shadcn/ui installed in manually(could avoid electron dev launch slow problem, which always happens when using shadcn's vite install method)
+
 tailwindcss init with postcss(init -p)
 
 

@@ -11,8 +11,10 @@ import { BackgroundBeams } from '@/components/ui/background-beams'
 import { ThemeProvider } from "@/components/theme-provider"
 import type { ImperativePanelHandle } from "react-resizable-panels"
 
-import RightSideBar from '@/components/RightSideBar/RightSideBar'
-
+import {usePopover} from "@/stores/popoverStore"
+import RightSideBar from '@/components/RightSideBar'
+import NetworkPopover from '@/components/NetworkPopover'
+import ChannelList from '@/components/ChannelList'
 
 export default function MainLayout() {
     const rightSideBarRef = useRef<ImperativePanelHandle>(null);
@@ -36,12 +38,15 @@ export default function MainLayout() {
     }
 
 
-    const [isNetworkPopoverOpen, setIsNetworkPopoverOpen] = useState(false)
-    const [isSettingPopoverOpen, setIsSettingPopoverOpen] = useState(false)
-    const [isChannelPopoverOpen, setIsChannelPopoverOpen] = useState(false)
-    const [isAudioCapturePopoverOpen, setIsAudioCapturePopoverOpen] = useState(false)
-    const [isUserPopoverOpen, setIsUserPopoverOpen] = useState(false);
-
+    const {
+        isNetworkPopoverOpen,
+        isSettingPopoverOpen,
+        isChannelPopoverOpen,
+        isAudioCapturePopoverOpen,
+        isUserPopoverOpen,
+        closeAll
+    } = usePopover()
+    const isAnyPopoverOpen = isNetworkPopoverOpen || isSettingPopoverOpen || isChannelPopoverOpen || isAudioCapturePopoverOpen || isUserPopoverOpen
 
     return (
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
@@ -51,17 +56,11 @@ export default function MainLayout() {
 
 
                 <div className="flex-grow h-[calc(100vh-32px)]">
-                    {/* Overlay */}
-                    {(isNetworkPopoverOpen || isSettingPopoverOpen || isChannelPopoverOpen || isAudioCapturePopoverOpen || isUserPopoverOpen) && (
+                    {/* Blur Overlay */}
+                    {isAnyPopoverOpen && (
                         <div
                             className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-40"
-                            onClick={() => {
-                                setIsNetworkPopoverOpen(false)
-                                setIsSettingPopoverOpen(false)
-                                setIsChannelPopoverOpen(false)
-                                setIsAudioCapturePopoverOpen(false)
-                                setIsUserPopoverOpen(false)
-                            }}
+                            onClick={() => closeAll()}
                         />
                     )}
 
@@ -73,14 +72,11 @@ export default function MainLayout() {
                             ref={leftSideBarRef}
                         >
                             <div className="flex flex-col h-full justify-start">
-                                {/* <NetworkPopover
-                                    isNetworkPopoverOpen={isNetworkPopoverOpen}
-                                    setIsNetworkPopoverOpen={setIsNetworkPopoverOpen}
-                                /> */}
+                                <NetworkPopover />
 
                                 <Separator className="w-full" />
 
-                                {/* <ChannelList toggleCollapse={toggleCollapse} /> */}
+                                <ChannelList toggleCollapse={toggleCollapse} />
 
                                 <div className="pt-0 mt-auto bg-[#2d2d2d]">
                                     {/* <UserPanel

@@ -157,9 +157,11 @@ class RTCService {
 
 
     private async getUUID() {
+        const {setIsTailscaleAuthKey} = useTailscale.getState()
         const res = await window.ipcBridge.invoke('ask_uuid')
         this.selfUUID = res.uuid
         this.isTailscaleAuthKey = res.isTailscaleAuthKey
+        setIsTailscaleAuthKey(this.isTailscaleAuthKey)
     }
 
     public static getInstance(): RTCService {

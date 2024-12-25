@@ -1,16 +1,18 @@
 import { create } from 'zustand'
 import { isValidIPv4, isValidIPv6 } from '@/utils/ipValidation'
 import type { TailscaleStore, TailscaleStatus, PeerData } from '@/types/internals/tailscaleStoreTypes'
-
+import { initializeDB } from '@/stores'
 
 const useTailscale = create<TailscaleStore>()(
     (set) => ({
         status: null,
         selfIPs: {},
+        loginName: null,
         isTailscaleAuthKey: false,
 
         setStatus: (status) => set({ status }),
         setSelfIPs: (ips) => set({ selfIPs: ips }),
+        setLoginName: (name) => set({ loginName: name }),
         setIsTailscaleAuthKey: (isAuthKey) => set({ isTailscaleAuthKey: isAuthKey })
     })
 )
@@ -45,6 +47,11 @@ const initializeTailscaleListeners = () => {
             }
         })
         store.setSelfIPs({ ipv4, ipv6 });
+
+        store.setLoginName(status.User?.[status.Self.UserID]?.LoginName);
+
+        // init indexedDB after tailscale status has value
+        initializeDB();
     })
 }
 
