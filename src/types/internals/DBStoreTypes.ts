@@ -1,7 +1,7 @@
 import IndexedDBService from "@/services/IndexedDBService";
 
 export interface UserConfig {
-    id?: number;
+    id: number;
     user_name: string;
     user_avatar: string;
     user_state: string;

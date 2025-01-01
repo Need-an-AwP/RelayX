@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react'
-
 import {
     ResizableHandle,
     ResizablePanel,
@@ -11,10 +10,14 @@ import { BackgroundBeams } from '@/components/ui/background-beams'
 import { ThemeProvider } from "@/components/theme-provider"
 import type { ImperativePanelHandle } from "react-resizable-panels"
 
-import {usePopover} from "@/stores/popoverStore"
+import { usePopover } from "@/stores/popoverStore"
 import RightSideBar from '@/components/RightSideBar'
 import NetworkPopover from '@/components/NetworkPopover'
 import ChannelList from '@/components/ChannelList'
+import UserPanel from '@/components/UserPanel'
+import { useMirror } from "@/stores/mirrorStates"
+import { useChannel, useRemoteUserStore } from "@/stores"
+
 
 export default function MainLayout() {
     const rightSideBarRef = useRef<ImperativePanelHandle>(null);
@@ -36,6 +39,17 @@ export default function MainLayout() {
             }
         }
     }
+
+    // for debugging
+    const user = useMirror((state) => state.user)
+    const isPresetChannels = useMirror((state) => state.isPresetChannels)
+    const inVoiceChannel = useMirror((state) => state.inVoiceChannel)
+    const isScreenSharing = useMirror((state) => state.isScreenSharing)
+    const isMuted = useMirror((state) => state.isMuted)
+    const isDeafened = useMirror((state) => state.isDeafened)
+    const customStatus = useMirror((state) => state.customStatus)
+    const channelStore_channels = useChannel((state) => state.channels)
+    const remoteUsers = useRemoteUserStore((state) => state.remoteUsersInfo)
 
 
     const {
@@ -79,13 +93,7 @@ export default function MainLayout() {
                                 <ChannelList toggleCollapse={toggleCollapse} />
 
                                 <div className="pt-0 mt-auto bg-[#2d2d2d]">
-                                    {/* <UserPanel
-                                        isSettingPopoverOpen={isSettingPopoverOpen}
-                                        setIsSettingPopoverOpen={setIsSettingPopoverOpen}
-                                        isAudioCapturePopoverOpen={isAudioCapturePopoverOpen}
-                                        setIsAudioCapturePopoverOpen={setIsAudioCapturePopoverOpen}
-                                        toggleCollapse={toggleCollapse}
-                                    /> */}
+                                    <UserPanel />
                                 </div>
                             </div>
                         </ResizablePanel>
@@ -95,6 +103,11 @@ export default function MainLayout() {
                         {/* Main Content Area */}
                         <ResizablePanel className='z-10'>
                             {/* <MidPanel toggleCollapse={toggleCollapse}/> */}
+                            {/* <div className="bg-red-500 h-full w-1/2">
+                                <pre>
+                                    {JSON.stringify(remoteUsers, null, 2)}
+                                </pre>
+                            </div> */}
                         </ResizablePanel>
 
                         <ResizableHandle className="w-[2px]" withHandle={true} showGripIcon={false} />

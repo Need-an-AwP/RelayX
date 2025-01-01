@@ -6,8 +6,9 @@ import sendViaTailscale from "@/utils/tailscaleProxy"
 // import { useRTC } from "@/stores/rtcStore"
 // import type { RTCMessage, RTCStatus } from "@/types/rtcTypes"
 
-import { useRTC, useTailscale, useBlankStreams, useMediaStream } from "@/stores"
-import type { RTCMessage, setReceivedStream, IPs, RTCStatus } from "@/types"
+import { useRTC, useTailscale, useBlankStreams, useMediaStream, useDB, useRemoteUserStore } from "@/stores"
+import type { RTCMessage, setReceivedStream, IPs, RTCStatus, UserConfig } from "@/types"
+import { useMirror } from "@/stores/mirrorStates"
 
 class RTCConnectionManager {
     private targetPeerIP: string;
@@ -25,7 +26,9 @@ class RTCConnectionManager {
     private setReceivedVideoStream: setReceivedStream;
     private blankAudioStream: MediaStream | null;
     private blankVideoStream: MediaStream | null;
-
+    private isDBinitialized: boolean
+    private selfConfig: UserConfig | null
+    private setUser: (tailscaleIP: string, config: UserConfig) => void
 
     constructor(targetPeerIP: string, isOffer: boolean) {
         this.targetPeerIP = targetPeerIP
@@ -34,11 +37,12 @@ class RTCConnectionManager {
         this.init()
         // init status manger
         const rtcStore = useRTC.getState();
-        this.updateStatus = (updates: Partial<RTCStatus>) => rtcStore.updateStatus(this.targetPeerIP, updates); 
+        this.updateStatus = (updates: Partial<RTCStatus>) => rtcStore.updateStatus(this.targetPeerIP, updates);
         rtcStore.setStatus(this.targetPeerIP, {
             state: 'initializing',
             latency: 0,
             peer: null,
+            dataChannel: null,
             isOffer: this.isOffer,
             userConfig: null
         });
@@ -51,7 +55,11 @@ class RTCConnectionManager {
         // get blank streams
         this.blankAudioStream = useBlankStreams.getState().blankAudioStream
         this.blankVideoStream = useBlankStreams.getState().blankVideoStream
-        
+        // get db store
+        this.isDBinitialized = useDB.getState().isInitialized
+        this.selfConfig = useDB.getState().selfConfig
+        // get user config store
+        this.setUser = useRemoteUserStore.getState().setUser
     }
 
     private init() {
@@ -60,6 +68,10 @@ class RTCConnectionManager {
         } else {
             this.waitOffer()
         }
+    }
+
+    private shouldAskOffer() {
+
     }
 
     private waitOffer() {
@@ -107,8 +119,8 @@ class RTCConnectionManager {
             pc.addTrack(track, videoStream)
         })
 
-        this.dataChannel = pc.createDataChannel('data', { ordered: false });
-        this.setupDataChannel(this.dataChannel);
+        const dc = pc.createDataChannel('data', { ordered: false });
+        this.setupDataChannel(dc);
 
         pc.onicecandidate = (e) => {
             if (e.candidate) {
@@ -165,6 +177,9 @@ class RTCConnectionManager {
     }
 
     private setupDataChannel(dataChannel: RTCDataChannel) {
+        this.dataChannel = dataChannel;
+        this.updateStatus({ dataChannel });
+
         dataChannel.onopen = () => {
             console.log('data channel opened');
 
@@ -175,6 +190,21 @@ class RTCConnectionManager {
                     this.updateStatus({ latency: -1 });
                 }, 5000);
             }, 1000);
+
+            // if (this.isDBinitialized) {
+            //     dataChannel.send(JSON.stringify({
+            //         type: 'user_config',
+            //         config: this.selfConfig
+            //         // trackId: blanktrackIdRef.current
+            //     }));
+            // }
+            dataChannel.send(JSON.stringify({
+                type: 'sync_status',
+                status: useMirror.getState()
+            }));
+
+            // rtc connection alway repeat connection process
+
         }
 
         dataChannel.onmessage = (event) => {
@@ -194,14 +224,25 @@ class RTCConnectionManager {
                             this.pingTimeOut = null;
                         }
                         break
-
-
+                    case 'user_config':
+                        // receivedTrackIdRef.current[this.address] = data.trackId;
+                        this.setUser(this.targetPeerIP, data.config)
+                        console.log('user config received:', data.config);
+                        break;
+                    case 'sync_status':
+                        this.handleSyncStatus(data.status);
+                        break;
 
                 }
             } catch (err) {
                 console.error('data channel message error:', err);
             }
         }
+    }
+
+    private handleSyncStatus(status: any) {
+        console.log('sync status received:', status);
+        useRemoteUserStore.getState().updateRemoteUsersInfo(this.targetPeerIP, status)
     }
 
     public async handleOfferWithCandidates(data: RTCMessage) {
@@ -248,7 +289,6 @@ class RTCConnectionManager {
         };
 
         r_pc.ondatachannel = e => {
-            this.dataChannel = e.channel;
             this.setupDataChannel(e.channel);
         }
 
@@ -328,6 +368,11 @@ class RTCConnectionManager {
             if (this.pingTimeOut) {
                 clearTimeout(this.pingTimeOut)
                 this.pingTimeOut = null
+            }
+
+            if (this.offerWaitingTimer) {
+                clearInterval(this.offerWaitingTimer);
+                this.offerWaitingTimer = null;
             }
 
             this.rtcLocalPC.close()

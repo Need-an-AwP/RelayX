@@ -1,30 +1,30 @@
-# 参数定义
+# Parameter Definition
 param(
     [Parameter(Mandatory = $true)]
     [string]$baseDestination,
     [switch]$FullCopy = $false
 )
 
-# 设置环境变量以强制英文输出
+# Set environment variable to force English output
 $env:LANG = "en_US.UTF-8"
 
-# 验证基础目标路径
+# Validate base destination path
 if (-not $baseDestination) {
     Write-Host "Error: Base destination path is required." -ForegroundColor Red
     exit 1
 }
 
-# 获取脚本所在目录的父目录（项目根目录）
+# Get parent directory of the script location (project root)
 $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 
-# 获取项目文件夹名称
+# Get project folder name
 $projectName = Split-Path $projectRoot -Leaf
 
-# 设置目标路径（这里需要替换为实际的目标路径）
+# Set destination path (needs to be replaced with actual destination path)
 # $baseDestination = "\\DESKTOP-QR2KSJE\Users\hyperV\Desktop"
 $destinationPath = Join-Path $baseDestination $projectName
 
-# 确保目标目录存在
+# Ensure destination directory exists
 if (-not (Test-Path -Path $baseDestination)) {
     Write-Host "Error: Base destination path does not exist: $baseDestination" -ForegroundColor Red
     exit 1
@@ -41,24 +41,23 @@ catch {
     exit 1
 }
 
-
 Write-Host "Starting file synchronization..." -ForegroundColor Yellow
 Write-Host "From: $projectRoot" -ForegroundColor Cyan
 Write-Host "To: $destinationPath" -ForegroundColor Cyan
 Write-Host "Full Copy Mode: $FullCopy" -ForegroundColor Cyan
 
-# 设置robocopy参数
+# Set robocopy parameters
 $robocopyArgs = @(
     "`"$projectRoot`"",
     "`"$destinationPath`"",
-    "/MIR",#镜像
-    #"/NP",#不显示进度
-    "/NFL",#不记录文件
-    "/NDL",#不记录目录
-    "/MT:16"#多线程
+    "/MIR",  # Mirror directory tree
+    #"/NP",  # Don't show progress
+    "/NFL",  # Don't log file names
+    "/NDL",  # Don't log directory names
+    "/MT:16" # Use 16 threads
 )
 
-# 根据是否全量复制添加参数
+# Add parameters based on whether full copy is enabled
 if (-not $FullCopy) {
     $robocopyArgs += "/XD"
     $robocopyArgs += "`"$projectRoot\release`""
@@ -68,12 +67,12 @@ if (-not $FullCopy) {
 }
 
 try {
-    # 执行robocopy命令
+    # Execute robocopy command
     $robocopyCommand = "robocopy " + ($robocopyArgs -join " ")
     Write-Host "Executing command: $robocopyCommand" -ForegroundColor Gray
     Invoke-Expression $robocopyCommand
 
-    # 检查robocopy的返回值
+    # Check robocopy return value
     $exitCode = $LASTEXITCODE
     switch ($exitCode) {
         0 { Write-Host "Success: No files were copied." -ForegroundColor Green }

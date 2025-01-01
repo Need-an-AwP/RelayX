@@ -1,86 +1,85 @@
 import { create } from 'zustand';
-import type { DBStore, Network, UserConfig } from '@/types';
+import type { DBStore, Network } from '@/types';
 import IndexedDBService from '@/services/IndexedDBService';
 import { useTailscale } from '@/stores';
+import { subscribeWithSelector } from 'zustand/middleware'
 
-export const useDB = create<DBStore>((set, get) => ({
-    // State
-    isInitialized: false,
-    configVersion: 0,
-    selfConfig: null,
-    currentDBName: '',
-    dbService: null,
+export const useDB = create<DBStore>()(
+    subscribeWithSelector((set, get) => ({
+        // State
+        isInitialized: false,
+        configVersion: 0,
+        selfConfig: null,
+        currentDBName: '',
+        dbService: null,
 
-    // State setters
-    setIsInitialized: (value) => set({ isInitialized: value }),
-    setConfigVersion: (version) => set({ configVersion: version }),
-    setSelfConfig: (config) => set({ selfConfig: config }),
-    setCurrentDBName: (name) => set({ currentDBName: name }),
-    setDBService: (service) => set({ dbService: service }),
+        // State setters
+        setIsInitialized: (value) => set({ isInitialized: value }),
+        setConfigVersion: (version) => set({ configVersion: version }),
+        setSelfConfig: (config) => set({ selfConfig: config }),
+        setCurrentDBName: (name) => set({ currentDBName: name }),
+        setDBService: (service) => set({ dbService: service }),
 
-    // Database operations
-    deleteDatabase: async () => {
-        const { dbService, currentDBName } = get();
-        if (!dbService) return;
+        // Database operations
+        deleteDatabase: async () => {
+            const { dbService, currentDBName } = get();
+            if (!dbService) return;
 
-        dbService.db?.close();
-        await IndexedDBService.deleteDatabase(currentDBName);
-        set({ dbService: null, isInitialized: false });
-    },
+            dbService.db?.close();
+            await IndexedDBService.deleteDatabase(currentDBName);
+            set({ dbService: null, isInitialized: false });
+        },
 
-    // User config operations
-    getUserConfig: async () => {
-        const { dbService } = get();
-        if (!dbService) throw new Error('Database not initialized');
-        return await dbService.getUserConfig();
-    },
+        // User config operations
+        getUserConfig: async () => {
+            const { dbService } = get();
+            if (!dbService) throw new Error('Database not initialized');
+            return await dbService.getUserConfig();
+        },
 
-    updateUserConfig: async (config) => {
-        const { dbService } = get();
-        if (!dbService) throw new Error('Database not initialized');
-        const updatedConfig = await dbService.updateUserConfig(config);
-        set({ selfConfig: updatedConfig });
-        return updatedConfig;
-    },
+        updateUserConfig: async (config) => {
+            const { dbService } = get();
+            if (!dbService) throw new Error('Database not initialized');
+            const updatedConfig = await dbService.updateUserConfig(config);
+            set({ selfConfig: updatedConfig });
+            return updatedConfig;
+        },
 
-    resetUserConfig: async () => {
-        const { dbService } = get();
-        if (!dbService) throw new Error('Database not initialized');
-        const defaultConfig = await dbService.resetUserConfig();
-        set({ selfConfig: defaultConfig });
-        return defaultConfig;
-    },
+        resetUserConfig: async () => {
+            const { dbService } = get();
+            if (!dbService) throw new Error('Database not initialized');
+            const defaultConfig = await dbService.resetUserConfig();
+            set({ selfConfig: defaultConfig });
+            return defaultConfig;
+        },
 
-    // Network operations
-    getAllNetworks: async () => {
-        const { dbService } = get();
-        if (!dbService) throw new Error('Database not initialized');
-        return await dbService.getAllNetworks();
-    },
+        // Network operations
+        getAllNetworks: async () => {
+            const { dbService } = get();
+            if (!dbService) throw new Error('Database not initialized');
+            return await dbService.getAllNetworks();
+        },
 
-    updateNetwork: async (network) => {
-        const { dbService } = get();
-        if (!dbService) throw new Error('Database not initialized');
-        return await dbService.updateNetwork(network);
-    },
+        updateNetwork: async (network) => {
+            const { dbService } = get();
+            if (!dbService) throw new Error('Database not initialized');
+            return await dbService.updateNetwork(network);
+        },
 
-    deleteNetwork: async (networkId) => {
-        const { dbService } = get();
-        if (!dbService) throw new Error('Database not initialized');
-        return await dbService.deleteNetwork(networkId);
-    },
-}));
+        deleteNetwork: async (networkId) => {
+            const { dbService } = get();
+            if (!dbService) throw new Error('Database not initialized');
+            return await dbService.deleteNetwork(networkId);
+        },
+    }))
+);
 
 export const initializeDB = async () => {
     const { status, loginName } = useTailscale.getState();
     if (!status) return null;
 
-    useDB.subscribe((state) => {
-        if (state.isInitialized) {
-            // console.log('Database initialized');
-            return null;
-        }
-    });
+    const { isInitialized } = useDB.getState();
+    if (isInitialized) return null;
 
     const store = useDB.getState();
     const dbName = String(status.Self.UserID);

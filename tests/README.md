@@ -1,7 +1,8 @@
 
-## prevent powershell display error
+## prevent powershell display error(optional)
 enable global UTF-8 support to avoid chinese display as error code in power shell
 https://stackoverflow.com/a/57134096/20001298
+if the language of annotation in ps script is not English, then unicode setting must be enabled
 
 ## hyper-V Windows 10 configuration
 

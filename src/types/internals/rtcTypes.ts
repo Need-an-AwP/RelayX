@@ -3,7 +3,8 @@
 export interface RTCStatus {
     state: string
     latency: number
-    peer: any
+    peer: RTCPeerConnection | null
+    dataChannel: RTCDataChannel | null
     isOffer: boolean
     userConfig: any
 }

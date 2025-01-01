@@ -8,12 +8,16 @@ import {
     initializeBlankStreams,
 } from '@/stores'
 import RTCService from './services/RTCService'
+import SyncService from './services/SyncService'
+import '@/stores/storeSync'
+
 
 function App() {
     useEffect(() => {
         initializeTailscaleListeners()
         initializeBlankStreams()
         RTCService.getInstance()
+        SyncService.getInstance()
 
         return () => { }
     }, [])

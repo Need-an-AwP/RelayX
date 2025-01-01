@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { isValidIPv4, isValidIPv6 } from '@/utils/ipValidation'
 import type { TailscaleStore, TailscaleStatus, PeerData } from '@/types/internals/tailscaleStoreTypes'
 import { initializeDB } from '@/stores'
+import { initializeChannels } from '@/stores'
 
 const useTailscale = create<TailscaleStore>()(
     (set) => ({
@@ -52,6 +53,8 @@ const initializeTailscaleListeners = () => {
 
         // init indexedDB after tailscale status has value
         initializeDB();
+        // init channel store after tailscale status has value
+        initializeChannels();
     })
 }
 

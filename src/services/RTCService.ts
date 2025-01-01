@@ -116,7 +116,7 @@ class RTCService {
 
     private initHTTPMessageReceiver() {
         window.ipcBridge.receive('http-server-message', (msg: { from: string, message: string }) => {
-            console.log('http-server-message', msg);
+            // console.log('http-server-message', msg);
             try {
                 const clientIP = msg.from
                 const data = JSON.parse(msg.message)

@@ -9,7 +9,11 @@ shadcn/ui installed in manually(could avoid electron dev launch slow problem, wh
 tailwindcss init with postcss(init -p)
 
 
+channelstore用于管理所有频道及其中的用户信息
 
+currentuserstore用于管理当前用户自己的状态
+
+dbstore用于管理从indexeddb中取出的用户自己的配置信息
 
 # React + TypeScript + Vite
 
