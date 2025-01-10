@@ -14,14 +14,32 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useDB } from "@/stores"
+import AvatarSelector from "./AvatarSelector"
 
 const UserProfile = () => {
     const selfConfig = useDB((state) => state.selfConfig)
     const setSelfConfig = useDB((state) => state.setSelfConfig)
+    const updateUserConfig = useDB((state) => state.updateUserConfig)
+
+    const [currentAvatar, setCurrentAvatar] = useState<string>("")
+    const [currentName, setCurrentName] = useState<string>("")
+    useEffect(() => {
+        if (selfConfig) {
+            setCurrentAvatar(selfConfig.user_avatar)
+            setCurrentName(selfConfig.user_name)
+        }
+    }, [selfConfig])
+
     if (!selfConfig) return null;
 
     const handleSave = () => {
-
+        const newConfig = {
+            ...selfConfig,
+            user_name: currentName,
+            user_avatar: currentAvatar
+        };
+        setSelfConfig(newConfig)    // change global state
+        updateUserConfig(newConfig)    // update db
     }
 
 
@@ -56,10 +74,10 @@ const UserProfile = () => {
                             setCurrentState={setCurrentState}
                         /> */}
 
-                        {/* <AvatarSelector
+                        <AvatarSelector
                             currentAvatar={currentAvatar}
-                            setCurrentAvatar={setCurrentAvatar}
-                        /> */}
+                            onAvatarChange={setCurrentAvatar}
+                        />
 
                         <Label htmlFor="username" className="text-right">
                             Username
@@ -68,8 +86,7 @@ const UserProfile = () => {
                             id="username"
                             defaultValue={selfConfig.user_name}
                             onChange={(e) => {
-                                const newConfig  = { ...selfConfig, user_name: e.target.value };
-                                setSelfConfig(newConfig)
+                                setCurrentName(e.target.value)
                             }}
                         />
                     </div>
@@ -84,6 +101,7 @@ const UserProfile = () => {
                         <Button
                             type="submit"
                             onClick={handleSave}
+                            disabled={currentName === selfConfig.user_name && currentAvatar === selfConfig.user_avatar}
                         >
                             Save changes
                         </Button>

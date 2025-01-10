@@ -11,6 +11,7 @@ import CreateDialog from "./CreateDialog"
 
 const NetworkPopover = () => {
     const status = useTailscale(state => state.status);
+    const networkID = useTailscale(state => state.networkID);
     const isTailscaleAuthKey = useTailscale(state => state.isTailscaleAuthKey);
     const isNetworkPopoverOpen = usePopover(state => state.isNetworkPopoverOpen);
     const toggle = usePopover(state => state.toggle);
@@ -32,7 +33,7 @@ const NetworkPopover = () => {
                     <div className="flex flex-col text-start w-full mx-4">
                         <strong>Current Network: </strong>
                         {status && (
-                            <p>{status.User[status.Self.UserID].LoginName}</p>
+                            <p>{status.User[networkID!].LoginName}</p>
                         )}
                     </div>
                 </Button>

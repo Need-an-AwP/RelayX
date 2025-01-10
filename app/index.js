@@ -62,6 +62,10 @@ function createWindow() {
         mainWindow.close();
     });
 
+    ipcMain.handle('open-external-link', async (event, url) => {
+        await shell.openExternal(url);
+    });
+
     mainWindow.on('ready-to-show', () => {
         mainWindow.show()
     })

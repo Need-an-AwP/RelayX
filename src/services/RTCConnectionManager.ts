@@ -6,9 +6,9 @@ import sendViaTailscale from "@/utils/tailscaleProxy"
 // import { useRTC } from "@/stores/rtcStore"
 // import type { RTCMessage, RTCStatus } from "@/types/rtcTypes"
 
-import { useRTC, useTailscale, useBlankStreams, useMediaStream, useDB, useRemoteUserStore } from "@/stores"
-import type { RTCMessage, setReceivedStream, IPs, RTCStatus, UserConfig } from "@/types"
-import { useMirror } from "@/stores/mirrorStates"
+import { useRTC, useTailscale, useBlankStreams, useMediaStream, useDB, useRemoteUserStore, useChannel } from "@/stores"
+import type { RTCMessage, setReceivedStream, IPs, RTCStatus, UserConfig, VoiceChannel } from "@/types"
+import { useMirror, MirrorState } from "@/stores/mirrorStates"
 
 class RTCConnectionManager {
     private targetPeerIP: string;
@@ -20,15 +20,24 @@ class RTCConnectionManager {
     private pingTimeOut: NodeJS.Timeout | null = null;
     private offerWaitingTimer: NodeJS.Timeout | null = null;
     private pingTime: number = 0;
-    private selfIPs: IPs;
     private updateStatus: (updates: Partial<RTCStatus>) => void
     private setReceivedAudioStream: setReceivedStream;
     private setReceivedVideoStream: setReceivedStream;
-    private blankAudioStream: MediaStream | null;
-    private blankVideoStream: MediaStream | null;
-    private isDBinitialized: boolean
-    private selfConfig: UserConfig | null
-    private setUser: (tailscaleIP: string, config: UserConfig) => void
+    // get tailscale state
+    private get selfIPs() {
+        return useTailscale.getState().selfIPs
+    }
+    // get blank streams
+    private get blankVideoStream() {
+        return useBlankStreams.getState().blankVideoStream;
+    }
+    private get blankAudioStream() {
+        return useBlankStreams.getState().blankAudioStream;
+    }
+    // get channel store
+    private get channelStore() {
+        return useChannel.getState();
+    }
 
     constructor(targetPeerIP: string, isOffer: boolean) {
         this.targetPeerIP = targetPeerIP
@@ -47,19 +56,11 @@ class RTCConnectionManager {
             userConfig: null
         });
 
-        // get tailscale state
-        this.selfIPs = useTailscale.getState().selfIPs
+
         // get media stream store
         this.setReceivedAudioStream = useMediaStream.getState().setReceivedAudioStream
         this.setReceivedVideoStream = useMediaStream.getState().setReceivedVideoStream
-        // get blank streams
-        this.blankAudioStream = useBlankStreams.getState().blankAudioStream
-        this.blankVideoStream = useBlankStreams.getState().blankVideoStream
-        // get db store
-        this.isDBinitialized = useDB.getState().isInitialized
-        this.selfConfig = useDB.getState().selfConfig
-        // get user config store
-        this.setUser = useRemoteUserStore.getState().setUser
+
     }
 
     private init() {
@@ -203,7 +204,6 @@ class RTCConnectionManager {
                 status: useMirror.getState()
             }));
 
-            // rtc connection alway repeat connection process
 
         }
 
@@ -224,11 +224,11 @@ class RTCConnectionManager {
                             this.pingTimeOut = null;
                         }
                         break
-                    case 'user_config':
-                        // receivedTrackIdRef.current[this.address] = data.trackId;
-                        this.setUser(this.targetPeerIP, data.config)
-                        console.log('user config received:', data.config);
-                        break;
+                    // case 'user_config':
+                    //     // receivedTrackIdRef.current[this.address] = data.trackId;
+                    //     this.setUser(this.targetPeerIP, data.config)
+                    //     console.log('user config received:', data.config);
+                    //     break;
                     case 'sync_status':
                         this.handleSyncStatus(data.status);
                         break;
@@ -240,9 +240,40 @@ class RTCConnectionManager {
         }
     }
 
-    private handleSyncStatus(status: any) {
+    private handleSyncStatus(status: MirrorState) {
         console.log('sync status received:', status);
         useRemoteUserStore.getState().updateRemoteUsersInfo(this.targetPeerIP, status)
+        if (status.inVoiceChannel) {
+            // prevent adding user which is already in this channel
+            if (this.channelStore.users[status.inVoiceChannel.id]?.find(user => {
+                if (user.id === status.user?.id) { return true }
+            })) return;
+            // both using preset channels
+            if (status.isPresetChannels && this.channelStore.isPresetChannels) {
+                this.channelStore.addUser(status.inVoiceChannel.id, status.user!)
+            }
+            // remote is using preset channels but local is not
+            // or
+            // local is using preset channels but remote is not
+            else if (
+                (status.isPresetChannels && !this.channelStore.isPresetChannels) ||
+                (!status.isPresetChannels && this.channelStore.isPresetChannels)
+            ) {
+                // create new temporary channel and add user to it
+                const tempChannelId = -(Math.abs(status.inVoiceChannel.id))
+                this.channelStore.addChannel({
+                    ...status.inVoiceChannel,
+                    id: tempChannelId,
+                    temporary: true
+                } as VoiceChannel)
+                this.channelStore.addUser(tempChannelId, status.user!)
+            }
+            // both not using preset channels
+            else {
+                this.channelStore.addUser(status.inVoiceChannel.id, status.user!)
+            }
+
+        }
     }
 
     public async handleOfferWithCandidates(data: RTCMessage) {

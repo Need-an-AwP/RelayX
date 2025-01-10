@@ -8,11 +8,15 @@ const useTailscale = create<TailscaleStore>()(
     (set) => ({
         status: null,
         selfIPs: {},
+        selfID: null,
+        networkID: null,
         loginName: null,
         isTailscaleAuthKey: false,
 
         setStatus: (status) => set({ status }),
         setSelfIPs: (ips) => set({ selfIPs: ips }),
+        setSelfID: (id) => set({ selfID: id }),
+        setNetworkID: (id) => set({ networkID: id }),
         setLoginName: (name) => set({ loginName: name }),
         setIsTailscaleAuthKey: (isAuthKey) => set({ isTailscaleAuthKey: isAuthKey })
     })
@@ -50,6 +54,8 @@ const initializeTailscaleListeners = () => {
         store.setSelfIPs({ ipv4, ipv6 });
 
         store.setLoginName(status.User?.[status.Self.UserID]?.LoginName);
+        store.setSelfID(Number(status.Self.ID));
+        store.setNetworkID(status.Self.UserID);
 
         // init indexedDB after tailscale status has value
         initializeDB();

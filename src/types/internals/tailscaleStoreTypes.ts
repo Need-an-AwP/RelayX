@@ -7,12 +7,16 @@ export interface TailscaleStore {
     // stats
     status: TailscaleStatus | null
     selfIPs: IPs
+    selfID: number | null
+    networkID: number | null
     loginName: string | null
     isTailscaleAuthKey: boolean
 
     // actions
     setStatus: (status: TailscaleStatus | null) => void
     setSelfIPs: (ips: IPs) => void
+    setSelfID: (id: number | null) => void
+    setNetworkID: (id: number | null) => void
     setLoginName: (name: string | null) => void
     setIsTailscaleAuthKey: (isAuthKey: boolean) => void
 }

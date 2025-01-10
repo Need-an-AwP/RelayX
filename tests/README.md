@@ -1,3 +1,5 @@
+# project files sync to hyperV dev environment
+**run this script if you understand what it does**
 
 ## prevent powershell display error(optional)
 enable global UTF-8 support to avoid chinese display as error code in power shell

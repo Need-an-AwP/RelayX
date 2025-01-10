@@ -75,14 +75,14 @@ export const useDB = create<DBStore>()(
 );
 
 export const initializeDB = async () => {
-    const { status, loginName } = useTailscale.getState();
+    const { status, loginName, selfID } = useTailscale.getState();
     if (!status) return null;
 
     const { isInitialized } = useDB.getState();
     if (isInitialized) return null;
 
     const store = useDB.getState();
-    const dbName = String(status.Self.UserID);
+    const dbName = String(selfID);
 
     // 如果数据库名称改变，需要重新初始化
     if (dbName !== store.currentDBName) {
@@ -94,7 +94,7 @@ export const initializeDB = async () => {
         // 创建新的数据库服务
         const currentNetwork: Network = {
             network_name: loginName,
-            network_id: status.Self.UserID
+            network_id: selfID!
         };
 
         store.setCurrentDBName(dbName);

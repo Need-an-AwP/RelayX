@@ -3,7 +3,6 @@ import { useDB, useTailscale, useCurrentUser, useChannel } from "./index";
 import type { UserConfig, User } from '@/types'
 import type { MirrorState } from "./mirrorStates";
 
-
 const createUserFromConfig = (config: UserConfig): User => ({
     id: config.id,
     name: config.user_name,
@@ -27,7 +26,7 @@ import { useMirror } from "./mirrorStates";
 import { debounce } from 'lodash';
 const updateMirrorwithDebounce = debounce((updates: Partial<MirrorState>) => {
     useMirror.setState(updates);
-}, 500);
+}, 5);
 // sync all necessary states to mirrorStates
 useCurrentUser.subscribe(
     (state) => ({
@@ -39,8 +38,9 @@ useCurrentUser.subscribe(
         customStatus: state.customStatus,
     }),
     (status) => {
-        // useMirror.setState(status);
-        updateMirrorwithDebounce(status);
+        useMirror.setState(status);
+        // console.log('sync state with useCurrentUser', status);
+        // updateMirrorwithDebounce(status);
     }
 )
 // to prevent unecessary sync operations

@@ -70,7 +70,7 @@ export default function OnlineUsers(): JSX.Element {
                                             <span className="text-sm text-left w-full truncate">{remoteUsersInfo.get(address)?.user?.name}</span>
                                             <div className="flex flex-row gap-2">
                                                 <span className={`text-xs ${state.state === 'connected' ? 'text-green-500' : 'text-red-500'}`}>
-                                                    {state.state}
+                                                    rtc:{state.state} - data channel:{state.dataChannel?.readyState}
                                                 </span>
                                                 <span className="text-xs">{state.latency}ms</span>
                                             </div>

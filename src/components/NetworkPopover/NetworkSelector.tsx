@@ -20,6 +20,7 @@ const NetworkSelector = () => {
     if (!status) return null;
 
     const isInitialized = useDB(state => state.isInitialized);
+    const networkID = useTailscale(state => state.networkID);
     const getAllNetworks = useDB(state => state.getAllNetworks);
     const [networks, setNetworks] = useState<any[]>([]);
 
@@ -57,7 +58,7 @@ const NetworkSelector = () => {
                     <DialogTrigger asChild>
                         <Button variant="outline" className="w-full">
                             {network.network_name}
-                            {network.network_id === status.Self.UserID &&
+                            {network.network_id === networkID &&
                                 <span className="text-xs text-gray-500">(current)</span>
                             }
                         </Button>
@@ -69,7 +70,7 @@ const NetworkSelector = () => {
                                 Change to this network will disconnect all webRTC connections and reload the whole app.
                             </DialogDescription>
                         </DialogHeader>
-                        {network.network_id === status.Self.UserID ?
+                        {network.network_id === networkID ?
                             <>
                                 <span className="text-sm font-bold">You are already in {network.network_name} network.</span>
                                 <DialogFooter className="mt-10 sm:justify-between">

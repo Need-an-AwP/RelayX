@@ -17,6 +17,8 @@ export const useChannel = create<ChannelStore>()(
         setFetchLoding: (value) => set({ fetchLoding: value }),
         setIsPresetChannels: (value) => set({ isPresetChannels: value }),
         setChannels: (channels) => set({ channels: channels }),
+        addChannel: (channel) => set((state) => ({ channels: [...state.channels, channel] })),
+        removeChannel: (channelId) => set((state) => ({ channels: state.channels.filter(c => c.id !== channelId) })),
         setUsers: (users) => set({ users }),
         removeUser: (channelId, userId) => set((state) => {
             const newUsers = { ...state.users }

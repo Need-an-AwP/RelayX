@@ -11,6 +11,7 @@ export type TextChannel = BaseChannel & {
 
 export type VoiceChannel = BaseChannel & {
     type: 'voice';
+    temporary?: boolean;
 }
 
 export type Channel = TextChannel | VoiceChannel
@@ -40,6 +41,8 @@ export interface ChannelState {
 
 export interface ChannelActions {
     setChannels: (channels: Channel[]) => void;
+    addChannel: (channel: Channel) => void;
+    removeChannel: (channelId: number) => void;
     setIsInitialized: (value: boolean) => void;
     setFetchLoding: (value: boolean) => void;
     setIsPresetChannels: (value: boolean) => void;

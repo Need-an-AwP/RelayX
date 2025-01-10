@@ -15,53 +15,35 @@ currentuserstore用于管理当前用户自己的状态
 
 dbstore用于管理从indexeddb中取出的用户自己的配置信息
 
-# React + TypeScript + Vite
+mirror store仅用于从底层store中自动同步所需信息
+sync service通过订阅mirror的变化来处理通过datachannel同步
+使用datachannel中的sync_status同步所有客户端信息，每次均进行全量同步
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+allowed js in `tsconfig.app.json`, js check is disabeled
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+audio nodes connection state:
+```mermaid
+graph TB
+    a[user's mic input] --> A
+    A[sourceNode<br/>MediaStreamSource] --> B[gainNode<br/>GainNode]
+    B --> C{isNoiseReductionEnabled}
+    C -->|true| D[processorNode<br/>NoiseProcessor]
+    D --> E[mergerNode<br/>ChannelMerger]
+    C -->|false| E
+    E --> F[destinationNode<br/>MediaStreamDestination]
+    E --> G[analyser<br/>AnalyserNode]
+    
+    subgraph Addon Audio
+    H[addonGainNode<br/>GainNode] --> I[addonDestinationNode<br/>MediaStreamDestination]
+    I --> K[localAddonStream<br/>MediaStream]
+    end
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
-
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+    H --> E
+    
+    %% Outputs
+    F --> J[localFinalStream<br/>MediaStream]
+    
+    J --> L[local playback test]
+    J --> M[replace rtc's blank stream]
 ```

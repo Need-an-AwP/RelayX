@@ -13,3 +13,5 @@ export * from './internals/channelsStore'
 export * from './internals/remoteUserStore'
 
 export * from './internals/currentUserStore'
+
+export * from './internals/audio'
