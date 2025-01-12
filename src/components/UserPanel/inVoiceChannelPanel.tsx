@@ -1,7 +1,7 @@
 import { Airplay, Mic } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
-import HanupMotionIcon from "./HanupMotionIcon";
+import HangupButton from "./HangupButton";
 import { useCurrentUser, useChannel } from '@/stores'
 
 const InVoiceChannelPanel = () => {
@@ -44,13 +44,8 @@ const InVoiceChannelPanel = () => {
                     <TooltipProvider delayDuration={50}>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => handleHangup()}
-                                >
-                                    <HanupMotionIcon size={16} />
-                                </Button>
+                                <HangupButton onClick={() => handleHangup()} />
+
                             </TooltipTrigger>
                             <TooltipContent>
                                 <p>Hangup</p>

@@ -1,7 +1,10 @@
-import NoiseModule from './noise'
+// import NoiseModule from './noise'
 
 
-const initNoiseReduceProcessorNode = (ctx) => {
+const initNoiseReduceProcessorNode = async (ctx) => {
+    // lazy load
+    const NoiseModule = await import('./noise').then(m => m.default);
+    
     let Module;
     let frameBuffer = [];
     var inputBuffer = [];

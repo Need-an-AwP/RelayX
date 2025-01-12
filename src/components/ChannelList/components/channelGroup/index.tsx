@@ -25,6 +25,7 @@ const ChannelGroup = ({ type }: { type: 'text' | 'voice' }) => {
     } = useDnD({
         onUserMove: (fromChannelId, toChannelId, user) => {
             // TODO
+            // there is no drag and drop action yet
 
 
             

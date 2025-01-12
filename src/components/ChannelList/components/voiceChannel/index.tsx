@@ -40,8 +40,8 @@ const VoiceChannel = ({ channel, disabled = false }: { channel: VoiceChannel, di
                 disabled && "opacity-50 cursor-not-allowed pointer-events-none"
             )}
             onDoubleClick={() => {
-                if (disabled) return;
-                if (inVoiceChannel?.id === channel.id) return;
+                console.log('double click');
+                if (disabled || inVoiceChannel) return;
                 joinVoiceChannel(channel)
             }}
         >

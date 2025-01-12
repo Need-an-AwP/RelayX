@@ -16,7 +16,7 @@ export default function ChannelList({ toggleCollapse }: { toggleCollapse: (locat
                 <UsingPresetChannels />
             )}
 
-            <ScrollArea className="px-2 overflow-x-hidden select-none relative h-full">
+            <ScrollArea className="px-2 overflow-x-hidden overscroll-x-none select-none relative h-full">
                 {/* loading blur cover*/}
                 {fetchLoading && (
                     <div className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-40 flex flex-col justify-center items-center">

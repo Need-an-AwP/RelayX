@@ -107,6 +107,6 @@ export const useDnD = ({ onUserMove }: UseDnDProps = {}) => {
         activeUser,
         activeId,
         overId,
-        modifiers: [restrictToWindowEdges],
+        modifiers: [restrictToWindowEdges, restrictToVerticalAxis],
     };
 };

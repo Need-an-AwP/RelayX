@@ -47,3 +47,7 @@ graph TB
     J --> L[local playback test]
     J --> M[replace rtc's blank stream]
 ```
+
+rnn降噪模型会在dev启动时加载，占用约30s的vite准备时间
+在打包完成后的启动中不会出现这个问题
+未来会使用wasm版本的降噪模型替换现有的纯js版本

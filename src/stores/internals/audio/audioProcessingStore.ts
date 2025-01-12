@@ -68,7 +68,7 @@ const initializeAudioProcessing = async () => {
     const ctx_main = store.ctx_main;
     const sourceNode = ctx_main.createMediaStreamSource(localStream);
     const gainNode = ctx_main.createGain();
-    const processorNode = initNoiseReduceProcessorNode(ctx_main);
+    const processorNode = await initNoiseReduceProcessorNode(ctx_main);
     const addonGainNode = ctx_main.createGain();
     const addonDestinationNode = ctx_main.createMediaStreamDestination();
     const mergerNode = ctx_main.createChannelMerger();
