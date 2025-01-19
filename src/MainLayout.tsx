@@ -15,6 +15,7 @@ import RightSideBar from '@/components/RightSideBar'
 import NetworkPopover from '@/components/NetworkPopover'
 import ChannelList from '@/components/ChannelList'
 import UserPanel from '@/components/UserPanel'
+import MidPanel from '@/components/MidPanel'
 import { useMirror } from "@/stores/mirrorStates"
 import { useChannel, useRemoteUserStore, useCurrentUser } from "@/stores"
 
@@ -103,14 +104,14 @@ export default function MainLayout() {
 
                         {/* Main Content Area */}
                         <ResizablePanel className='z-10'>
-                            {/* <MidPanel toggleCollapse={toggleCollapse}/> */}
-                            <div className="bg-red-500 h-full w-1/2">
+                            <MidPanel toggleCollapse={toggleCollapse}/>
+                            {/* <div className="bg-red-500 h-full w-1/2">
                                 <pre>
                                     {JSON.stringify(inVoiceChannel, null, 2)}
                                     {JSON.stringify(currentUser_inVoiceChannel, null, 2)}
                                     {JSON.stringify(channelStore_users, null, 2)}
                                 </pre>
-                            </div>
+                            </div> */}
                         </ResizablePanel>
 
                         <ResizableHandle className="w-[2px]" withHandle={true} showGripIcon={false} />

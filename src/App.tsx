@@ -11,6 +11,7 @@ import {
 } from '@/stores'
 import RTCService from './services/RTCService'
 import SyncService from './services/SyncService'
+import AudioStreamController from './services/AudioStreamController'
 import '@/stores/storeSync'
 
 
@@ -24,6 +25,8 @@ function App() {
         RTCService.getInstance()
         // init mirror store
         SyncService.getInstance()
+        // init remote audio streams player
+        AudioStreamController.getInstance()
         // audio process
         initialAudioDevices()
         initializeAudioProcessing()

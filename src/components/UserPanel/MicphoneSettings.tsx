@@ -6,8 +6,9 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider"
+import DynamicVolumeSlider from "./DynamicVolumeSlider";
 import { Mic, MicOff } from 'lucide-react'
+import { cn } from "@/lib/utils";
 
 
 const MicphoneSettings = () => {
@@ -32,19 +33,20 @@ const MicphoneSettings = () => {
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent className="w-full h-[150px] ml-2">
-                    <div className='flex flex-row gap-6 w-full h-full items-center'>
-                        <Slider
-                            min={0}
-                            max={500}
-                            orientation='vertical'
-                            className="w-[25px] h-full bg-secondary rounded-full"
-                            value={[inputVolume * 100]}
-                            onValueChange={(value) => { setInputVolume(value[0] / 100) }}
+                    <div className='flex flex-row gap-1 w-full h-full items-center mr-0'>
+                        <DynamicVolumeSlider
+                            className='ml-2 mr-4'
+                            value={inputVolume * 100}
+                            onValueChange={(value) => { setInputVolume(value / 100) }}
+                            dynamicTopMin={100}
+                            dynamicTopMax={300}
+                            topGap={50}
                         />
-                        <div className='flex flex-col gap-2 items-center w-full'>
-                            <p className='text-sm text-muted-foreground font-bold'>Current Input:</p>
-                            <p className='text-lg font-bold'>{Math.round(inputVolume * 100)}%</p>
-                            <p className='text-sm text-muted-foreground'>max input volume <br /> could be 500%</p>
+                        <div className='flex flex-col gap-4 w-full text-left'>
+                            <p className='text-sm text-muted-foreground font-bold'>Current Input<br /> Volume:</p>
+                            <p className={cn('text-xl font-bold tracking-tighter', inputVolume > 1 ? "text-red-400" : "text-white")}>
+                                {Math.round(inputVolume * 100)}%
+                            </p>
                         </div>
                     </div>
                 </TooltipContent>

@@ -4,7 +4,7 @@ import { subscribeWithSelector } from 'zustand/middleware'
 
 
 export const useCurrentUser = create<CurrentUserStore>()(
-    subscribeWithSelector((set, get) => ({
+    subscribeWithSelector((set) => ({
         inVoiceChannel: null,
         isScreenSharing: false,
         isMuted: false,

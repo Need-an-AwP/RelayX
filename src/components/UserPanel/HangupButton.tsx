@@ -1,31 +1,37 @@
-import { useState } from "react"
+import { useState, forwardRef } from "react"
 import { Phone } from "lucide-react"
 import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
+import { Button, ButtonProps } from "@/components/ui/button"
 
-interface AnimatedHangupButtonProps {
-  size?: number
-  onClick?: () => void
+interface HangupButtonProps extends ButtonProps {
+  iconSize?: number
 }
 
-export default function AnimatedHangupButton({ size = 16, onClick }: AnimatedHangupButtonProps) {
-  const [isHovered, setIsHovered] = useState(false)
+const HangupButton = forwardRef<HTMLButtonElement, HangupButtonProps>(
+  ({ iconSize = 16, ...props }, ref) => {
+    const [isHovered, setIsHovered] = useState(false)
 
-  return (
-    <Button
-      size="icon"
-      variant="ghost"
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="relative"
-    >
-      <motion.div
-        animate={isHovered ? { rotate: 135 } : { rotate: 0 }}
-        transition={{ duration: 0.3 }}
+    return (
+      <Button
+        ref={ref}
+        size="icon"
+        variant="ghost"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="relative"
+        {...props}
       >
-        <Phone className="text-red-500" size={size} />
-      </motion.div>
-    </Button>
-  )
-}
+        <motion.div
+          animate={isHovered ? { rotate: 135 } : { rotate: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Phone className="text-red-500" size={iconSize} />
+        </motion.div>
+      </Button>
+    )
+  }
+)
+
+HangupButton.displayName = "HangupButton"
+
+export default HangupButton

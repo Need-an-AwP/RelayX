@@ -4,7 +4,7 @@ import type { UserConfig, User } from '@/types'
 import type { MirrorState } from "./mirrorStates";
 
 const createUserFromConfig = (config: UserConfig): User => ({
-    id: config.id,
+    id: useTailscale.getState().selfID!,
     name: config.user_name,
     avatar: config.user_avatar,
     IPs: useTailscale.getState().selfIPs

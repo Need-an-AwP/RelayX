@@ -39,19 +39,16 @@ const InVoiceChannelPanel = () => {
                                 <p>Share Screen</p>
                             </TooltipContent>
                         </Tooltip>
-                    </TooltipProvider>
-
-                    <TooltipProvider delayDuration={50}>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <HangupButton onClick={() => handleHangup()} />
-
+                                <HangupButton onClick={handleHangup} />
                             </TooltipTrigger>
                             <TooltipContent>
                                 <p>Hangup</p>
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
+
                 </div>
             </div>
         );

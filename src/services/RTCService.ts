@@ -13,7 +13,7 @@ class RTCService {
     public selfUUID: string;
     public isTailscaleAuthKey: boolean;
     private askIntervals: Map<string, NodeJS.Timeout>;
-    private RTCs: Map<string, RTCConnectionManager>;
+    public RTCs: Map<string, RTCConnectionManager>;
     private pendingMessages: Map<string, RTCMessage>;
     private isOffer: Map<string, boolean>;
 

@@ -70,7 +70,7 @@ export default function OnlineUsers(): JSX.Element {
                                             <span className="text-sm text-left w-full truncate">{remoteUsersInfo.get(address)?.user?.name}</span>
                                             <div className="flex flex-row gap-2">
                                                 <span className={`text-xs ${state.state === 'connected' ? 'text-green-500' : 'text-red-500'}`}>
-                                                    rtc:{state.state} - data channel:{state.dataChannel?.readyState}
+                                                    {state.state}
                                                 </span>
                                                 <span className="text-xs">{state.latency}ms</span>
                                             </div>
@@ -81,9 +81,11 @@ export default function OnlineUsers(): JSX.Element {
                                             group-hover:opacity-100 transition-all duration-300
                                             delay-150
                                             `}>
+                                                <p><strong>Data channel: </strong><span className={state.dataChannel?.readyState === 'open' ? 'text-green-500' : 'text-red-500'}>{state.dataChannel?.readyState}</span></p>
                                                 <p className="line-clamp-3"><strong>HostName: </strong>{peer?.HostName}</p>
                                                 <p><strong>OS: </strong>{peer?.OS}</p>
                                                 <p><strong>UserID: </strong>{peer?.UserID}</p>
+                                                <p><strong>NetworkID: </strong>{peer?.ID}</p>
                                                 <p className="line-clamp-3"><strong>tailscaleIPs: </strong>{peer?.TailscaleIPs.join(', ')}</p>
                                                 <p><strong>Relay: </strong>{peer?.Relay}</p>
                                                 <p><strong>RxBytes: </strong>{peer?.RxBytes}</p>

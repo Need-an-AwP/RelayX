@@ -23,6 +23,8 @@ class RTCConnectionManager {
     private updateStatus: (updates: Partial<RTCStatus>) => void
     private setReceivedAudioStream: setReceivedStream;
     private setReceivedVideoStream: setReceivedStream;
+    private trackHasAudio: boolean = false;
+    private trackHasVideo: boolean = false;
     // get tailscale state
     private get selfIPs() {
         return useTailscale.getState().selfIPs
@@ -175,6 +177,19 @@ class RTCConnectionManager {
             console.error('Error creating offer:', err)
             throw err
         }
+    }
+
+    public async replaceAudioTrack(finalStream: MediaStream) {
+        if (!this.rtcLocalPC || this.trackHasAudio) return;
+
+        const senders = this.rtcLocalPC.getSenders()
+        senders.forEach(sender => {
+            if (sender.track && sender.track.id === useBlankStreams.getState().blankTrackIds!['voice-audio']) {
+                finalStream.getTracks().forEach(track => sender.replaceTrack(track))
+            }
+        });
+        this.trackHasAudio = true;
+        console.log('replaced audio track for ', this.targetPeerIP);
     }
 
     private setupDataChannel(dataChannel: RTCDataChannel) {
