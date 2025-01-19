@@ -6,7 +6,7 @@ import Loader from '@/components/ui/loader';
 import { ScrollArea } from "@/components/ui/scroll-area"
 import ChannelGroup from "./components/channelGroup";
 
-export default function ChannelList({ toggleCollapse }: { toggleCollapse: (location: string, action: string) => void }) {
+export default function ChannelList() {
     const isPresetChannels = useChannel((state) => state.isPresetChannels);
     const fetchLoading = useChannel((state) => state.fetchLoding);
 

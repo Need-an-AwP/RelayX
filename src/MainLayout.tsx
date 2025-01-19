@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
     ResizableHandle,
     ResizablePanel,
@@ -18,28 +18,18 @@ import UserPanel from '@/components/UserPanel'
 import MidPanel from '@/components/MidPanel'
 import { useMirror } from "@/stores/mirrorStates"
 import { useChannel, useRemoteUserStore, useCurrentUser } from "@/stores"
+import { usePanelStore } from "@/components/MidPanel/panelControls"
 
 
 export default function MainLayout() {
     const rightSideBarRef = useRef<ImperativePanelHandle>(null);
     const leftSideBarRef = useRef<ImperativePanelHandle>(null);
-    const toggleCollapse = (location: string, action: string) => {
-        if (location === 'right' && rightSideBarRef.current) {
-            const isCollapsed = rightSideBarRef.current.isCollapsed();
-            if (action === 'expand' && isCollapsed) {
-                rightSideBarRef.current.expand();
-            } else if (action === 'collapse' && !isCollapsed) {
-                rightSideBarRef.current.collapse();
-            }
-        } else if (location === 'left' && leftSideBarRef.current) {
-            const isCollapsed = leftSideBarRef.current.isCollapsed();
-            if (action === 'expand' && isCollapsed) {
-                leftSideBarRef.current.expand();
-            } else if (action === 'collapse' && !isCollapsed) {
-                leftSideBarRef.current.collapse();
-            }
-        }
-    }
+    // init panels control
+    const defaultLSize = 20
+    const defaultRSize = 25
+    useEffect(() => {
+        usePanelStore.getState().setRefs(leftSideBarRef, rightSideBarRef, defaultLSize, defaultRSize)
+    }, [])
 
     // for debugging
     const user = useMirror((state) => state.user)
@@ -83,7 +73,7 @@ export default function MainLayout() {
                     <ResizablePanelGroup direction="horizontal">
                         {/* Left Sidebar - Channels and Controls */}
                         <ResizablePanel
-                            defaultSize={20}
+                            defaultSize={defaultLSize}
                             collapsible={true}
                             ref={leftSideBarRef}
                         >
@@ -92,7 +82,7 @@ export default function MainLayout() {
 
                                 <Separator className="w-full" />
 
-                                <ChannelList toggleCollapse={toggleCollapse} />
+                                <ChannelList />
 
                                 <div className="pt-0 mt-auto bg-[#2d2d2d]">
                                     <UserPanel />
@@ -104,7 +94,7 @@ export default function MainLayout() {
 
                         {/* Main Content Area */}
                         <ResizablePanel className='z-10'>
-                            <MidPanel toggleCollapse={toggleCollapse}/>
+                            <MidPanel />
                             {/* <div className="bg-red-500 h-full w-1/2">
                                 <pre>
                                     {JSON.stringify(inVoiceChannel, null, 2)}
@@ -118,7 +108,7 @@ export default function MainLayout() {
 
                         {/* Right Sidebar - System Info */}
                         <ResizablePanel
-                            defaultSize={25}
+                            defaultSize={defaultRSize}
                             collapsible={true}
                             ref={rightSideBarRef}
                         >
