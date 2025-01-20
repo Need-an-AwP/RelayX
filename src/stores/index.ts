@@ -15,3 +15,5 @@ export * from './internals/remoteUserStore'
 export * from './internals/currentUserStore'
 
 export * from './internals/audio'
+
+export * from './internals/screenShareStore'

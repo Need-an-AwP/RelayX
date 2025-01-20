@@ -1,5 +1,15 @@
-import { Airplay, Mic } from 'lucide-react';
+import { useState } from 'react';
+import { Airplay } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import HangupButton from "./HangupButton";
 import { useCurrentUser, useChannel } from '@/stores'
@@ -9,11 +19,22 @@ const InVoiceChannelPanel = () => {
     const inVoiceChannel = useCurrentUser((state) => state.inVoiceChannel)
     const isScreenSharing = useCurrentUser((state) => state.isScreenSharing)
     const setInVoiceChannel = useCurrentUser((state) => state.setInVoiceChannel)
+    const setIsScreenSharing = useCurrentUser((state) => state.setIsScreenSharing)
     const removeUser = useChannel((state) => state.removeUser)
+    const [displayQuitDialog, setDisplayQuitDialog] = useState(false)
+
+    const joinScreenShare = () => {
+        if (isScreenSharing) {
+            setDisplayQuitDialog(true)
+            return
+        }
+        setIsScreenSharing(true)
+    }
 
     const handleHangup = () => {
         removeUser(inVoiceChannel!.id, user!.id)
         setInVoiceChannel(null)
+        setIsScreenSharing(false)
     }
 
     if (inVoiceChannel) {
@@ -24,13 +45,36 @@ const InVoiceChannelPanel = () => {
                 </div>
 
                 <div>
+                    <Dialog
+                        open={displayQuitDialog}
+                        onOpenChange={(open) => setDisplayQuitDialog(open)}
+                    >
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>End Screen Sharing</DialogTitle>
+                                <DialogDescription>
+                                    Are you sure you want to end screen sharing?
+                                </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setDisplayQuitDialog(false)}>Cancel</Button>
+                                <Button
+                                    onClick={() => {
+                                        setIsScreenSharing(false)
+                                        setDisplayQuitDialog(false)
+                                    }}>End</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
+
                     <TooltipProvider delayDuration={50}>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
                                     size="icon"
                                     variant="ghost"
-                                // onClick={() => joinScreenShare()}
+                                    onClick={() => joinScreenShare()}
                                 >
                                     <Airplay className={`h-4 w-4 ${isScreenSharing ? 'text-green-400' : ''}`} />
                                 </Button>
