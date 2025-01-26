@@ -11,7 +11,7 @@ import {
 } from '@/stores'
 import RTCService from './services/RTCService'
 import SyncService from './services/SyncService'
-import AudioStreamController from './services/AudioStreamController'
+import AudioStreamController from './services/controllers/AudioStreamController'
 import '@/stores/storeSync'
 
 

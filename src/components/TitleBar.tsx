@@ -7,11 +7,11 @@ const TitleBar: React.FC = () => {
 
     return (
         <div
-            className={`flex justify-between items-center px-2 bg-white bg-opacity-5 z-50`}
-            style={{ backdropFilter: 'blur(2px)' }}
+            className={`flex justify-between items-center px-2 z-50
+                bg-white/5 backdrop-blur-[2px]`}
         >
-            <div 
-                className="flex w-full h-full" 
+            <div
+                className="flex w-full h-full"
                 style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
             ></div>
             <div className="flex gap-2 my-0.5">

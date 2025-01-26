@@ -1,7 +1,7 @@
 
-import { useChannel, useCurrentUser, useTailscale, useMediaStream, useAudioProcessing } from "@/stores";
+import { useChannel, useCurrentUser, useMediaStream, useAudioProcessing, useCurrentChannel } from "@/stores";
 import type { User } from "@/types";
-import RTCService from "./RTCService";
+import RTCService from "../RTCService";
 
 
 class AudioStreamController {
@@ -15,18 +15,20 @@ class AudioStreamController {
         );
     }
 
-    private handleChannelUsersChange = (users: Record<number, User[]>) => {
+    private handleChannelUsersChange = () => {
+
         const currentChannel = useCurrentUser.getState().inVoiceChannel;
         if (!currentChannel) {
             this.cleanupAllAudio();
             return;
         }
         // filter users in this channel
-        const channelID = currentChannel.id;
-        const channelUsers = users[channelID] || [];
-        const selfIPv4 = useTailscale.getState().selfIPs.ipv4;
-        const remoteUsers = channelUsers.filter(user => user.IPs.ipv4 !== selfIPv4);
-
+        // const channelID = currentChannel.id;
+        // const channelUsers = users[channelID] || [];
+        // const selfIPv4 = useTailscale.getState().selfIPs.ipv4;
+        // const remoteUsers = channelUsers.filter(user => user.IPs.ipv4 !== selfIPv4);
+        const remoteUsers = useCurrentChannel.getState().remoteUsers;
+        
         const receivedStreams = useMediaStream.getState().receivedAudioStream;
         remoteUsers.forEach(user => {
             const userStream = receivedStreams[user.IPs.ipv4!];

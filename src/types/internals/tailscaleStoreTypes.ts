@@ -5,6 +5,7 @@ export type IPs = {
 
 export interface TailscaleStore {
     // stats
+    isInitialized: boolean
     status: TailscaleStatus | null
     selfIPs: IPs
     selfID: number | null
@@ -13,6 +14,7 @@ export interface TailscaleStore {
     isTailscaleAuthKey: boolean
 
     // actions
+    setIsInitialized: (isInitialized: boolean) => void
     setStatus: (status: TailscaleStatus | null) => void
     setSelfIPs: (ips: IPs) => void
     setSelfID: (id: number | null) => void

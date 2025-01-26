@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import type { RemoteUserState, remoteUserInfo } from '@/types'
+import type { RemoteUserState } from '@/types'
+import type { MirrorState } from '@/stores/mirrorStates'
 
 
 export const useRemoteUserStore = create<RemoteUserState>()(
@@ -7,7 +8,7 @@ export const useRemoteUserStore = create<RemoteUserState>()(
         userConfigs: new Map(),
         remoteUsersInfo: new Map(),
 
-        updateRemoteUsersInfo: (tailscaleIP: string, userInfo: remoteUserInfo) => {
+        updateRemoteUsersInfo: (tailscaleIP: string, userInfo: MirrorState) => {
             // console.log('Updating remote user info:', { tailscaleIP, userInfo });
             set((state) => {
                 const newRemoteUsersInfo = new Map(state.remoteUsersInfo);

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/context-menu"
 import { Slider } from "@/components/ui/slider"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import AudioStreamController from '@/services/AudioStreamController'
+import AudioStreamController from '@/services/controllers/AudioStreamController'
 import { Mic, MicOff } from "lucide-react"
 import { useDB } from '@/stores'
 import type { User } from '@/types'

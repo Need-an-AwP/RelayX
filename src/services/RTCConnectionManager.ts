@@ -1,11 +1,4 @@
-// import { useBlankStreams } from "@/stores/blankStreamsStore"
-// import { useMediaStream } from "@/stores/mediaStreamStore"
-// import { useTailscale } from "@/stores/tailscaleStore"
-// import type { IPs } from "@/types/tailscaleStoreTypes"
 import sendViaTailscale from "@/utils/tailscaleProxy"
-// import { useRTC } from "@/stores/rtcStore"
-// import type { RTCMessage, RTCStatus } from "@/types/rtcTypes"
-
 import { useRTC, useTailscale, useBlankStreams, useMediaStream, useDB, useRemoteUserStore, useChannel } from "@/stores"
 import type { RTCMessage, setReceivedStream, IPs, RTCStatus, UserConfig, VoiceChannel } from "@/types"
 import { useMirror, MirrorState } from "@/stores/mirrorStates"
@@ -190,6 +183,25 @@ class RTCConnectionManager {
         });
         this.trackHasAudio = true;
         console.log('replaced audio track for ', this.targetPeerIP);
+    }
+
+    public async replaceVideoTrack({ stream, includeAudio = false }: { stream: MediaStream, includeAudio: boolean }) {
+        if (!this.rtcLocalPC || this.trackHasVideo) return;
+
+        const senders = this.rtcLocalPC.getSenders()
+        senders.forEach(sender => {
+            if (sender.track && sender.track.id === useBlankStreams.getState().blankTrackIds!['screen-video']) {
+                stream.getVideoTracks().forEach(track => {
+                    sender.replaceTrack(track)
+                })
+            } else if (includeAudio && sender.track && sender.track.id === useBlankStreams.getState().blankTrackIds!['screen-audio']) {
+                stream.getAudioTracks().forEach(track => {
+                    sender.replaceTrack(track)
+                })
+            }
+        });
+        this.trackHasVideo = true;
+        console.log('replaced video track for ', this.targetPeerIP);
     }
 
     private setupDataChannel(dataChannel: RTCDataChannel) {

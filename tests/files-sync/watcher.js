@@ -5,6 +5,8 @@ import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs/promises';
+import { access, constants } from 'fs/promises';
 
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -15,18 +17,49 @@ const envPath = isDev
     : path.join(process.resourcesPath, '.env');
 dotenv.config({ path: envPath });
 
-// 获取环境变量
+// Get environment variables
 const baseDestination = process.env.BASE_DESTINATION?.trim().replace(/^["'](.+)["']$/, '$1');
 const isFullCopy = process.env.FULLCOPY?.toLowerCase() === 'true';
 
-// 验证必要的环境变量
+// Validate required environment variables
 if (!baseDestination) {
     console.error(chalk.red('Error: BASE_DESTINATION is not set in .env file'));
     process.exit(1);
 }
 
+try {
+    // Check path existence
+    await access(baseDestination, constants.F_OK);
+    // Check write permission
+    await access(baseDestination, constants.W_OK);
+    // Check if it's a directory
+    const stats = await fs.stat(baseDestination);
+    if (!stats.isDirectory()) {
+        throw new Error('Error: BASE_DESTINATION path is not a directory');
+    }
+} catch (error) {
+    // Refine error type handling
+    switch (error.code) {
+        case 'ENOENT':
+            console.log(chalk.yellow(`Path does not exist: ${baseDestination}`));
+            break;
+        case 'EACCES':
+            if (error.syscall === 'access') {
+                console.log(chalk.yellow(`Write permission denied: ${baseDestination}`));
+            } else {
+                console.log(chalk.yellow(`Access denied: ${baseDestination}`));
+            }
+            break;
+        case 'ENOTDIR':
+            console.log(chalk.yellow(`Path is not a directory: ${baseDestination}`));
+            break;
+        default:
+            console.log(chalk.yellow(`System error: ${error.message}`));
+    }
+    process.exit(1);
+}
 
-// 忽略的文件和目录
+// Ignored patterns
 const ignore = [
     'node_modules',
     'dist',
@@ -40,11 +73,11 @@ const ignoredPaths = Array.from(
 )
 console.log(chalk.yellow('Ignoring the following paths:'), ignoredPaths);
 
-// 执行同步脚本
+// Execute sync script
 function runSync() {
     console.log(chalk.yellow('Starting file synchronization...'));
 
-    // 构建命令，使用引号包裹路径以处理空格
+    // Build command with quoted paths to handle spaces
     const command = `powershell -File sync-project.ps1 -baseDestination "${baseDestination}" ${isFullCopy ? '-FullCopy' : ''}`;
 
     console.log(chalk.gray(`Executing command: ${command}`));
@@ -62,7 +95,7 @@ function runSync() {
     });
 }
 
-// 防抖函数
+// Debounce function
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -75,10 +108,10 @@ function debounce(func, wait) {
     };
 }
 
-// 创建防抖版本的同步函数
+// Create debounced version of sync function
 const debouncedSync = debounce(runSync, 1000);
 
-// 初始化文件监控
+// Initialize file watcher
 console.log(chalk.blue('Initializing file watcher...'));
 console.log(chalk.blue(`Watching directory: ${projectRoot}`));
 console.log(chalk.blue(`Destination: ${baseDestination}`));
@@ -95,7 +128,7 @@ const watcher = chokidar.watch(projectRoot, {
     }
 });
 
-// 监听文件变化事件
+// Watch file changes
 watcher
     .on('add', path => {
         console.log(chalk.green(`File ${path} has been added`));
@@ -117,7 +150,7 @@ watcher
         console.error(chalk.red(`Watcher error: ${error}`));
     });
 
-// 优雅退出
+// Graceful shutdown
 process.on('SIGINT', () => {
     console.log(chalk.yellow('\nClosing file watcher...'));
     watcher.close().then(() => {

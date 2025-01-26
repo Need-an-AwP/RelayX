@@ -17,3 +17,5 @@ export * from './internals/currentUserStore'
 export * from './internals/audio'
 
 export * from './internals/screenShareStore'
+
+export * from './internals/currentChannelStore'

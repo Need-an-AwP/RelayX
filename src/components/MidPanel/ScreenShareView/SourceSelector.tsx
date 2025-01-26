@@ -1,14 +1,12 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger, } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, } from "@/components/ui/tooltip"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { X, Monitor, AppWindow, RotateCcw, Settings, OctagonX } from 'lucide-react';
 import { useScreenShare, useCurrentUser } from '@/stores'
 
 const SourceSelector = () => {
-    const { availableSources: sources, requestSources, stream, setStream } = useScreenShare((state) => state)
-    const { isScreenSharing } = useCurrentUser((state) => state)
+    const { availableSources: sources, requestSources, stream, setStream, setIsSelectingSource } = useScreenShare((state) => state)
+    const { setIsScreenSharing } = useCurrentUser((state) => state)
 
 
     const startCapture = async (sourceId: string) => {
@@ -27,10 +25,18 @@ const SourceSelector = () => {
             })
 
             setStream(captureStream);
+            setIsSelectingSource(false);
+            setIsScreenSharing(true);
+            // set sync status
         } catch (error) {
             console.error('capture error:', error);
         }
     }
+
+    const tabsContentClass = `w-full h-full mb-14 overflow-y-auto overflow-x-hidden 
+    [&::-webkit-scrollbar]:w-2 pl-2 [&::-webkit-scrollbar-track]:bg-transparent
+    [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#101720]
+    hover:[&::-webkit-scrollbar-thumb]:bg-[#212A37]`
 
     return (
         <div className="h-full flex flex-col">
@@ -50,7 +56,7 @@ const SourceSelector = () => {
                 </TooltipProvider>
             </div>
             {/* sources selector */}
-            <Tabs defaultValue="screen" className="flex-1 flex flex-col min-h-0">
+            <Tabs defaultValue="screen" className="flex-1 flex flex-col h-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                     <TabsTrigger value="screen" className="flex items-center gap-2">
                         <Monitor className="h-4 w-4" />
@@ -62,72 +68,68 @@ const SourceSelector = () => {
                     </TabsTrigger>
                 </TabsList>
                 {/* screen source */}
-                <TabsContent value="screen" className="h-full">
-                    <ScrollArea className="flex-1 h-5/6">
-                        <div className="flex flex-row flex-wrap gap-4 items-center justify-center">
-                            {sources
-                                .filter(source => source.id.startsWith('screen'))
-                                .map((source) => (
-                                    <div
-                                        key={source.id}
-                                        onClick={() => startCapture(source.id)}
-                                        className="group cursor-pointer border rounded-lg p-2 hover:bg-accent transition-colors
+                <TabsContent value="screen" className={tabsContentClass}>
+                    <div className="flex flex-row flex-wrap gap-4 items-center justify-center">
+                        {sources
+                            .filter(source => source.id.startsWith('screen'))
+                            .map((source) => (
+                                <div
+                                    key={source.id}
+                                    onClick={() => startCapture(source.id)}
+                                    className="group cursor-pointer border rounded-lg p-2 hover:bg-accent transition-colors
                                         w-60 xl:w-80"
-                                    >
-                                        <div className="mb-2 overflow-hidden rounded-md">
-                                            <img
-                                                src={source.thumbnail}
-                                                alt={source.name}
-                                                className="object-cover"
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-[auto_1fr] items-center gap-2 px-1 max-w-full min-w-0">
-                                            <Monitor className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-sm text-left truncate">{source.name}</span>
-                                        </div>
+                                >
+                                    <div className="mb-2 overflow-hidden rounded-md">
+                                        <img
+                                            src={source.thumbnail}
+                                            alt={source.name}
+                                            className="object-cover"
+                                        />
                                     </div>
-                                ))}
-                        </div>
-                    </ScrollArea>
+                                    <div className="grid grid-cols-[auto_1fr] items-center gap-2 px-1 max-w-full min-w-0">
+                                        <Monitor className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm text-left truncate">{source.name}</span>
+                                    </div>
+                                </div>
+                            ))}
+                    </div>
                 </TabsContent>
                 {/* window source */}
-                <TabsContent value="window" className="w-full h-full">
-                    <ScrollArea className="flex-1 h-5/6">
-                        <div className="flex flex-row flex-wrap gap-4 items-center justify-center">
-                            {sources
-                                .filter(source => source.id.startsWith('window'))
-                                .map((source) => (
-                                    <div
-                                        key={source.id}
-                                        onClick={() => startCapture(source.id)}
-                                        className="
+                <TabsContent value="window" className={tabsContentClass}>
+                    <div className={`flex flex-row flex-wrap gap-4 items-center justify-center`}>
+                        {sources
+                            .filter(source => source.id.startsWith('window'))
+                            .map((source) => (
+                                <div
+                                    key={source.id}
+                                    onClick={() => startCapture(source.id)}
+                                    className="
                                         group cursor-pointer border rounded-lg p-2 hover:bg-accent transition-colors
                                         object-contain w-60 xl:w-80
                                         "
-                                    >
-                                        <div className="mb-2 overflow-hidden rounded-md flex items-center justify-center">
-                                            <img
-                                                src={source.thumbnail}
-                                                alt={source.name}
-                                                className="object-cover"
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-[auto_1fr] items-center gap-2 px-1 max-w-full min-w-0">
-                                            {source.appIcon ? (
-                                                <img
-                                                    src={source.appIcon}
-                                                    alt="app icon"
-                                                    className="h-4 w-4"
-                                                />
-                                            ) : (
-                                                <AppWindow className="h-4 w-4 text-muted-foreground" />
-                                            )}
-                                            <span className="text-sm text-left truncate">{source.name}</span>
-                                        </div>
+                                >
+                                    <div className="mb-2 overflow-hidden rounded-md flex items-center justify-center">
+                                        <img
+                                            src={source.thumbnail}
+                                            alt={source.name}
+                                            className="object-cover"
+                                        />
                                     </div>
-                                ))}
-                        </div>
-                    </ScrollArea>
+                                    <div className="grid grid-cols-[auto_1fr] items-center gap-2 px-1 max-w-full min-w-0">
+                                        {source.appIcon ? (
+                                            <img
+                                                src={source.appIcon}
+                                                alt="app icon"
+                                                className="h-4 w-4"
+                                            />
+                                        ) : (
+                                            <AppWindow className="h-4 w-4 text-muted-foreground" />
+                                        )}
+                                        <span className="text-sm text-left truncate">{source.name}</span>
+                                    </div>
+                                </div>
+                            ))}
+                    </div>
                 </TabsContent>
             </Tabs>
         </div>

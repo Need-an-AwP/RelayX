@@ -3,9 +3,11 @@ import { isValidIPv4, isValidIPv6 } from '@/utils/ipValidation'
 import type { TailscaleStore, TailscaleStatus, PeerData } from '@/types/internals/tailscaleStoreTypes'
 import { initializeDB } from '@/stores'
 import { initializeChannels } from '@/stores'
+import { subscribeWithSelector } from 'zustand/middleware'
 
 const useTailscale = create<TailscaleStore>()(
-    (set) => ({
+    subscribeWithSelector((set) => ({
+        isInitialized: false,
         status: null,
         selfIPs: {},
         selfID: null,
@@ -13,13 +15,14 @@ const useTailscale = create<TailscaleStore>()(
         loginName: null,
         isTailscaleAuthKey: false,
 
+        setIsInitialized: (isInitialized) => set({ isInitialized }),
         setStatus: (status) => set({ status }),
         setSelfIPs: (ips) => set({ selfIPs: ips }),
         setSelfID: (id) => set({ selfID: id }),
         setNetworkID: (id) => set({ networkID: id }),
         setLoginName: (name) => set({ loginName: name }),
         setIsTailscaleAuthKey: (isAuthKey) => set({ isTailscaleAuthKey: isAuthKey })
-    })
+    }))
 )
 
 const initializeTailscaleListeners = () => {
@@ -61,6 +64,8 @@ const initializeTailscaleListeners = () => {
         initializeDB();
         // init channel store after tailscale status has value
         initializeChannels();
+        // set is initialized to true
+        store.setIsInitialized(true);
     })
 }
 

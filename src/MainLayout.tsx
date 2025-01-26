@@ -22,6 +22,7 @@ import { usePanelStore } from "@/components/MidPanel/panelControls"
 
 
 export default function MainLayout() {
+    const { isLeftPanelCollapsed, isRightPanelCollapsed } = usePanelStore()
     const rightSideBarRef = useRef<ImperativePanelHandle>(null);
     const leftSideBarRef = useRef<ImperativePanelHandle>(null);
     // init panels control
@@ -90,7 +91,11 @@ export default function MainLayout() {
                             </div>
                         </ResizablePanel>
 
-                        <ResizableHandle className="w-[2px]" withHandle={true} showGripIcon={false} />
+                        <ResizableHandle
+                            className={`w-[2px] ${isLeftPanelCollapsed() ? 'hidden' : ''}`}
+                            withHandle={true}
+                            showGripIcon={false}
+                        />
 
                         {/* Main Content Area */}
                         <ResizablePanel className='z-10'>
@@ -104,7 +109,11 @@ export default function MainLayout() {
                             </div> */}
                         </ResizablePanel>
 
-                        <ResizableHandle className="w-[2px]" withHandle={true} showGripIcon={false} />
+                        <ResizableHandle
+                            className={`w-[2px] ${isRightPanelCollapsed() ? 'hidden' : ''}`}
+                            withHandle={true}
+                            showGripIcon={false}
+                        />
 
                         {/* Right Sidebar - System Info */}
                         <ResizablePanel

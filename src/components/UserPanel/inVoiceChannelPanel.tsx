@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import HangupButton from "./HangupButton";
-import { useCurrentUser, useChannel } from '@/stores'
+import { useCurrentUser, useChannel, useScreenShare } from '@/stores'
 
 const InVoiceChannelPanel = () => {
     const user = useCurrentUser((state) => state.user)
@@ -20,15 +20,17 @@ const InVoiceChannelPanel = () => {
     const isScreenSharing = useCurrentUser((state) => state.isScreenSharing)
     const setInVoiceChannel = useCurrentUser((state) => state.setInVoiceChannel)
     const setIsScreenSharing = useCurrentUser((state) => state.setIsScreenSharing)
+    const isSelectingSource = useScreenShare((state) => state.isSelectingSource)
+    const setIsSelectingSource = useScreenShare((state) => state.setIsSelectingSource)
     const removeUser = useChannel((state) => state.removeUser)
     const [displayQuitDialog, setDisplayQuitDialog] = useState(false)
 
-    const joinScreenShare = () => {
-        if (isScreenSharing) {
+    const handleStartScreenShare = () => {
+        if (isSelectingSource || isScreenSharing) {
             setDisplayQuitDialog(true)
             return
         }
-        setIsScreenSharing(true)
+        setIsSelectingSource(true)
     }
 
     const handleHangup = () => {
@@ -74,7 +76,7 @@ const InVoiceChannelPanel = () => {
                                 <Button
                                     size="icon"
                                     variant="ghost"
-                                    onClick={() => joinScreenShare()}
+                                    onClick={handleStartScreenShare}
                                 >
                                     <Airplay className={`h-4 w-4 ${isScreenSharing ? 'text-green-400' : ''}`} />
                                 </Button>

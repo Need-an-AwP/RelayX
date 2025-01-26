@@ -56,6 +56,7 @@ In chokidar 4.x, glob is removed
 
 ## run
 **please check if powershell can cd to the hyper-V path before run this file sync service**
+even though the watcher.js has error handling for invalid path, it is still recommended to check the path before run this file sync service
 
 ```bash
 yarn dev:sync
