@@ -65,6 +65,10 @@ if (-not $FullCopy) {
     $robocopyArgs += "`"$projectRoot\dist`""
     $robocopyArgs += "`"$projectRoot\.git`""
 }
+else {
+    $robocopyArgs += "/XD"
+    $robocopyArgs += "`"$projectRoot\.git`""
+}
 
 try {
     # Execute robocopy command

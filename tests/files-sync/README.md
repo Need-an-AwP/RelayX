@@ -6,11 +6,32 @@ enable global UTF-8 support to avoid chinese display as error code in power shel
 https://stackoverflow.com/a/57134096/20001298
 if the language of annotation in ps script is not English, then unicode setting must be enabled
 
-## hyper-V Windows 10 configuration
+## hyper-V Windows configuration
+### installation list
+- nodejs>=20
+- vscode(optional)
+- git
 
-### turn on the share property of the target folder
+### enable yarn
+```bash
+corepack enable
+```
 
-### to run command in remote ps
+### **turn on the share property of the target folder**
+turn on the share property of the target folder, the target folder could be a disk root or a folder
+like `\\HYPERV\c` or `\\HYPERV\Desktop`
+> in windows, a remote location's host name must be all in uppercase
+> using `whoami` will get a all lowercase name, and using `systeminfo` can get an all uppercase name
+> the best way to get the shared target path is copy the "Netwok Path" from "Properties" of the target folder when you enable its share property
+
+if everything is ok, you can see the shared target in your host machine's network location
+if not check these options:
+- **Network discovery** is enabled
+- File and printer sharing is enabled
+- Network profile type is set to **private**
+- Windows Firewall is disabled
+
+### ~~to run command in remote ps~~
 install nodejs>=20 and yarn
 
 ```powershell
