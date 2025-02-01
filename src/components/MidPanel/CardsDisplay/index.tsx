@@ -34,17 +34,26 @@ const CardsDisplay = () => {
         const userInfo = remoteUsersInfo.get(member.IPs.ipv4!);
         const memberIsScreenSharing = userInfo?.isScreenSharing || false;
         const isSelf = member.IPs.ipv4 === selfIPv4
-        const hasVideo = isSelfScreenSharing || memberIsScreenSharing
-
+        const hasVideo = (isSelf && isSelfScreenSharing) || memberIsScreenSharing
+        // console.log(member, isSelf, hasVideo)
         return {
             isSelf,
             hasVideo
         }
     }
 
+    const cards = members.reduce<Array<{ member: User, type: 'voice' | 'video', isSelf: boolean }>>((acc, member) => {
+        const { isSelf, hasVideo } = handleMember(member)
+        acc.push({ member, type: 'voice', isSelf })
+        if (hasVideo) {
+            acc.push({ member, type: 'video', isSelf })
+        }
+        return acc
+    }, [])
+
     return (
         <div
-            className="relative z-30 flex-1 h-full w-full p-4"
+            className="relative z-30 h-full w-full p-4"
             onMouseEnter={() => setIsHover(true)}
             onMouseLeave={() => setIsHover(false)}
         >
@@ -61,57 +70,57 @@ const CardsDisplay = () => {
                 <div className={`${isFocusView ? 'flex' : 'grid @md:grid-cols-2 grid-cols-1 gap-4'} w-full
                 transition-all duration-300 ease-in-out`}>
                     {isFocusView && focusedMember ? (
-                        <React.Fragment key={focusedMember.member.id}>
+                        <>
                             {focusedMember.isVideo ? (
                                 <VideoMemberCard
                                     isSelf={focusedMember.member.IPs.ipv4 === selfIPv4}
                                     member={focusedMember.member}
-                                    index={members.findIndex(member => member.id === focusedMember.member.id)}
-                                    membersLength={members.length}
                                     onClick={() => setFocusedMember(null)}
                                 />
                             ) : (
                                 <VoiceMemberCard
                                     isSelf={focusedMember.member.IPs.ipv4 === selfIPv4}
                                     member={focusedMember.member}
-                                    index={members.findIndex(member => member.id === focusedMember.member.id)}
-                                    membersLength={members.length}
                                     onClick={() => setFocusedMember(null)}
                                 />
                             )}
-                        </React.Fragment>
-                    ) : (<>
-                        {members.map((member, index) => {
-                            const { isSelf, hasVideo } = handleMember(member)
-                            return (
-                                <React.Fragment key={member.id}>
-                                    <VoiceMemberCard
-                                        isSelf={isSelf}
-                                        member={member}
-                                        index={index}
-                                        membersLength={members.length}
-                                        onClick={() => setFocusedMember({ member, isVideo: false })}
-                                    />
-                                    {hasVideo && (
-                                        <VideoMemberCard
-                                            isSelf={isSelf}
-                                            member={member}
-                                            index={index}
-                                            membersLength={members.length}
-                                            onClick={() => setFocusedMember({ member, isVideo: true })}
+                        </>
+                    ) : (
+                        <>
+                            {cards.map((card, idx) => {
+                                if (card.type === 'voice') {
+                                    return (
+                                        <VoiceMemberCard
+                                            key={`${card.member.id}-voice`}
+                                            isSelf={card.isSelf}
+                                            member={card.member}
+                                            cardIndex={idx}
+                                            totalCardsCount={cards.length}
+                                            onClick={() => setFocusedMember({ member: card.member, isVideo: false })}
                                         />
-                                    )}
-                                </React.Fragment>
-                            )
-                        })}
-                        {members.length === 1 && (
-                            <InviteCard
-                                totalCardsCount={1 + (handleMember(members[0]).hasVideo ? 1 : 0)}
-                            />
-                        )}
-                        <pre>{JSON.stringify(currentUser, null, 2)}</pre>
-                        <pre>{JSON.stringify(remoteUsers, null, 2)}</pre>
-                    </>)}
+                                    )
+                                } else {
+                                    return (
+                                        <VideoMemberCard
+                                            key={`${card.member.id}-video`}
+                                            isSelf={card.isSelf}
+                                            member={card.member}
+                                            cardIndex={idx}
+                                            totalCardsCount={cards.length}
+                                            onClick={() => setFocusedMember({ member: card.member, isVideo: true })}
+                                        />
+                                    )
+                                }
+                            })}
+                            {members.length === 1 && (
+                                <InviteCard
+                                    totalCardsCount={cards.length}
+                                />
+                            )}
+                            {/* <pre>{JSON.stringify(members, null, 2)}</pre> */}
+                            {/* <pre>{JSON.stringify(currentUser, null, 2)}</pre> */}
+                        </>
+                    )}
                 </div>
             </div>
             {/* horizontal scroll bar */}

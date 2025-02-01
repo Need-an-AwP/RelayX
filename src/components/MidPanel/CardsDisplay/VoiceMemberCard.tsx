@@ -9,13 +9,13 @@ import AudioSpectrum from '@/components/AudioSpectrum'
 interface VoiceMemberCardProps {
     isSelf: boolean;
     member: User;
-    index: number;
-    membersLength: number;
+    cardIndex?: number;
+    totalCardsCount?: number;
     onClick?: () => void;
     className?: string;
 }
 
-const VoiceMemberCard = ({ isSelf, member, index, membersLength, onClick, className }: VoiceMemberCardProps) => {
+const VoiceMemberCard = ({ isSelf, member, cardIndex = -1, totalCardsCount = 0, onClick, className }: VoiceMemberCardProps) => {
     const [isHover, setIsHover] = useState(false);
     const [showSpectrum, setShowSpectrum] = useState(true);
     const localFinalStream = useAudioProcessing(state => state.localFinalStream);
@@ -27,8 +27,8 @@ const VoiceMemberCard = ({ isSelf, member, index, membersLength, onClick, classN
         <Card
             key={member.id}
             className={`aspect-video relative z-30 w-full
-                    ${index === membersLength - 1 && membersLength % 2 === 1 && membersLength !== 1
-                && '@md:col-span-2 @md:w-[50%] mx-auto'}
+                ${cardIndex === totalCardsCount - 1 && totalCardsCount % 2 === 1 && totalCardsCount > 1 &&
+                '@md:col-span-2 @md:w-[50%] mx-auto'}
                 ${className}
                 `}
             onMouseEnter={() => setIsHover(true)}

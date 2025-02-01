@@ -1,4 +1,4 @@
-import { useScreenShare, useCurrentChannel } from "@/stores";
+import { useScreenShare, useCurrentChannel, useCurrentUser, useBlankStreams } from "@/stores";
 import type { User } from "@/types";
 import RTCService from "../RTCService";
 
@@ -7,17 +7,13 @@ class ScreenShareController {
 
     constructor() {
         // 监听屏幕共享状态变化
-        useScreenShare.subscribe(
-            state => state.stream,
+        useCurrentUser.subscribe(
+            state => state.isScreenSharing,
             this.handleScreenShareStreamChange
         );
     }
 
-    private handleScreenShareStreamChange = async (stream: MediaStream | null) => {
-        if (!stream) {
-            // 停止所有视频轨道的共享
-            return;
-        }
+    private handleScreenShareStreamChange = async (isScreenSharing: boolean) => {
         // filter users in this channel
         // const currentChannel = useCurrentUser.getState().inVoiceChannel;
         // if (!currentChannel) return;
@@ -25,9 +21,19 @@ class ScreenShareController {
         // const selfIPv4 = useTailscale.getState().selfIPs.ipv4;
         // const remoteUsers = channelUsers.filter(user => user.IPs.ipv4 !== selfIPv4);
         const remoteUsers = useCurrentChannel.getState().remoteUsers;
-
-        // 在所有RTC连接中替换视频轨道
-        await this.replaceVideoTracks(stream, remoteUsers);
+        const stream = useScreenShare.getState().stream;
+        if (isScreenSharing && stream) {
+            await this.replaceVideoTracks(stream, remoteUsers);
+        } else if (!isScreenSharing) {
+            const blankVideoStream = useBlankStreams.getState().blankVideoStream;
+            if (blankVideoStream) {
+                await this.replaceVideoTracks(blankVideoStream, remoteUsers);
+            }
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            window.ipcBridge.send('capture_id', null);
+        }
     }
 
     private async replaceVideoTracks(stream: MediaStream, remoteUsers: User[]) {

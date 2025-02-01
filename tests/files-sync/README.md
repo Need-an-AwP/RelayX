@@ -7,6 +7,10 @@ https://stackoverflow.com/a/57134096/20001298
 if the language of annotation in ps script is not English, then unicode setting must be enabled
 
 ## hyper-V Windows configuration
+### Windows version requirement
+till 2025 Jan, windows 11 still has serious SMB problem, even if the host and hyperV are both windows 11, the file share function stll needs the SMB 1.0 enabled
+my testing environment is windows 10 for both host and hyperV, no need extra configuration
+
 ### installation list
 - nodejs>=20
 - vscode(optional)
@@ -82,3 +86,6 @@ even though the watcher.js has error handling for invalid path, it is still reco
 ```bash
 yarn dev:sync
 ```
+
+## final backup solution
+use another independent node.js project in hyperV to watch the target folder in host machine, and copy it

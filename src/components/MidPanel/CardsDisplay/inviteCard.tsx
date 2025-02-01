@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 
-const InviteCard = ({totalCardsCount}:{totalCardsCount:number}) => {
+const InviteCard = ({ totalCardsCount }: { totalCardsCount: number }) => {
     return (
         <Card className={`aspect-video bg-muted 
             ${totalCardsCount === 2 && '@md:col-span-2 @md:w-[50%] mx-auto'}`}>

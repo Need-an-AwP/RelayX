@@ -299,7 +299,12 @@ class RTCConnectionManager {
             else {
                 this.channelStore.addUser(status.inVoiceChannel.id, status.user!)
             }
-
+        } else {
+            Object.keys(this.channelStore.users).forEach(channelId => {
+                if (this.channelStore.users[+channelId]?.some(user => user.id === status.user!.id)) {
+                    this.channelStore.removeUser(+channelId, status.user!.id);
+                }
+            });
         }
     }
 

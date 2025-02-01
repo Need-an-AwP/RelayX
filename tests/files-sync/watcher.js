@@ -73,6 +73,14 @@ const ignoredPaths = Array.from(
 )
 console.log(chalk.yellow('Ignoring the following paths:'), ignoredPaths);
 
+// normalize drive root path
+function normalizePath(path) {
+    if (/^[A-Za-z]:\\?$/.test(path)) {
+        return path.replace(/\\$/, '');
+    }
+    return path;
+}
+
 // Execute sync script
 function runSync() {
     console.log(chalk.yellow('Starting file synchronization...'));

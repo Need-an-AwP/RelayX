@@ -15,13 +15,13 @@ interface StreamStats {
 interface VideoMemberCardProps {
     isSelf: boolean;
     member: User;
-    index: number;
-    membersLength: number;
+    cardIndex?: number;
+    totalCardsCount?: number;
     onClick?: () => void;
     className?: string;
 }
 
-const VideoMemberCard = ({ isSelf, member, index, membersLength, onClick, className }: VideoMemberCardProps) => {
+const VideoMemberCard = ({ isSelf, member, cardIndex = -1, totalCardsCount = 0, onClick, className }: VideoMemberCardProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [streamStats, setStreamStats] = useState<StreamStats | null>(null);
     const [showInfo, setShowInfo] = useState(false);
@@ -62,7 +62,7 @@ const VideoMemberCard = ({ isSelf, member, index, membersLength, onClick, classN
         <Card
             key={member.id}
             className={`aspect-video relative z-30 w-full 
-                    ${index === membersLength - 1 && membersLength % 2 === 1 && membersLength !== 1
+                ${cardIndex === totalCardsCount - 1 && totalCardsCount % 2 === 1
                 && '@md:col-span-2 @md:w-[50%] mx-auto'}
                 ${className}
                 `}

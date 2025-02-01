@@ -12,6 +12,7 @@ import {
 import RTCService from './services/RTCService'
 import SyncService from './services/SyncService'
 import AudioStreamController from './services/controllers/AudioStreamController'
+import ScreenShareController from './services/controllers/ScreenShareController'
 import '@/stores/storeSync'
 
 
@@ -27,6 +28,8 @@ function App() {
         SyncService.getInstance()
         // init remote audio streams player
         AudioStreamController.getInstance()
+        // init screen share controller
+        ScreenShareController.getInstance()
         // audio process
         initialAudioDevices()
         initializeAudioProcessing()
