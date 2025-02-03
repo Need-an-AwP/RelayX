@@ -1,5 +1,5 @@
 {
-  "name": "voicechat-electron-react-tailscale-builder",
+  "name": "relayx",
   "private": true,
   "version": "0.0.0",
   "main": "app/index.js",
@@ -14,9 +14,10 @@
     "add:shadcn": "npx shadcn@latest add button alert-dialog avatar button card context-menu dialog dropdown-menu input label popover progress resizable scroll-area select separator slider sonner switch tooltip toast tabs collapsible",
     "dev:sync": "cross-env DEV=true node tests/files-sync/watcher.js"
   },
+  "repository": "https://github.com/Need-an-AwP/RelayX.git",
   "build": {
-    "appId": "com.voicechat.app",
-    "productName": "VoiceChat",
+    "appId": "com.relayx.app",
+    "productName": "RelayX",
     "directories": {
       "output": "release"
     },

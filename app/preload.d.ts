@@ -14,9 +14,9 @@ export interface WinAudioCapture {
     getAudioProcessInfo: () => any;
     initializeCapture: () => void;
     initializeCLoopbackCapture: (processId: number) => void;
-    getActivateStatus: () => boolean;
+    getActivateStatus: () => { interfaceActivateResult: number };
     whileCaptureProcessAudio: () => void;
-    capture_async: (intervalMs: number, callback: (data: any) => void) => void;
+    capture_async: (intervalMs: number, callback: (err: any, result: any) => void) => void;
 }
 
 declare global {

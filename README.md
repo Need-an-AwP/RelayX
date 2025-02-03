@@ -27,27 +27,32 @@ allowed js in `tsconfig.app.json`, js check is disabeled
 audio nodes connection state:
 ```mermaid
 graph TB
-    a[user's mic input] --> A
-    A[sourceNode<br/>MediaStreamSource] --> B[gainNode<br/>GainNode]
+    A["sourceNode<br/><i>MediaStreamSource</i>"] --> B["gainNode<br/><i>GainNode</i>"]
     B --> C{isNoiseReductionEnabled}
-    C -->|true| D[processorNode<br/>NoiseProcessor]
-    D --> E[mergerNode<br/>ChannelMerger]
+    C -->|true| D["processorNode<br/><i>NoiseProcessor</i>"]
+    D --> E["mergerNode<br/><i>ChannelMerger</i>"]
     C -->|false| E
-    E --> F[destinationNode<br/>MediaStreamDestination]
-    E --> G[analyser<br/>AnalyserNode]
     
-    subgraph Addon Audio
-    H[addonGainNode<br/>GainNode] --> I[addonDestinationNode<br/>MediaStreamDestination]
-    I --> K[localAddonStream<br/>MediaStream]
+    subgraph Addon Audio Processing
+        F["handleAddonDataNode<br/><i>AudioWorkletNode</i>"] --> G["addonGainNode<br/><i>GainNode</i>"]
+        G --> H["addonDestinationNode<br/><i>MediaStreamDestination</i>"]
+        H --> I["localAddonStream<br/><i>MediaStream</i>"]
     end
-
-    H --> E
     
-    %% Outputs
-    F --> J[localFinalStream<br/>MediaStream]
+    G --> E
+    E --> J["destinationNode<br/><i>MediaStreamDestination</i>"]
+    E --> K["analyser<br/><i>AnalyserNode</i>"]
     
-    J --> L[local playback test]
-    J --> M[replace rtc's blank stream]
+    %% Final Outputs
+    J --> L["localFinalStream<br/><i>MediaStream</i>"]
+    
+    %% Input Source
+    M["localOriginalStream<br/><i>MediaStream</i>"] --> A
+    
+    %% Style
+    classDef default fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef stream fill:#bbf,stroke:#333,stroke-width:2px;
+    class I,L,M stream;
 ```
 
 rnn降噪模型会在dev启动时加载，占用约30s的vite准备时间
