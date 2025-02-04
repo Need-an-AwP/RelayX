@@ -8,6 +8,12 @@ RelayX 是一个创新的去中心化语音通讯应用程序，它利用 [Tails
 
 本项目使用 Vite React TypeScript 模板创建，前端使用 React 和 TypeScript 构建，后端使用 Electron 和纯 JavaScript。
 
+## 测试视频
+
+[![image](https://github.com/user-attachments/assets/bd007e48-3a0b-47e5-bd08-e87a3989265f)](https://youtu.be/i-BA5WPv-Wg)
+
+> 此视频使用obs录制，分辨率为3840*1080，即两个1080p屏幕横向拼接，左侧为Hyper-V虚拟机及其中运行的客户端，右侧为主机中的客户端
+
 ## 特性
 
 - 去中心化网络: 基于Tailscale隧道技术，实现真正的点对点连接，无需中心服务器，保障用户隐私和数据安全
@@ -19,10 +25,6 @@ RelayX 是一个创新的去中心化语音通讯应用程序，它利用 [Tails
 - 现代 UI: 使用 [Shadcn/ui](https://ui.shadcn.com/) 组件库和 [Tailwind CSS](https://tailwindcss.com/) 构建美观、响应式的用户界面。
 - 屏幕捕获分享：在进行语音通话时，可以捕获屏幕内容并分享给频道中的其他用户
 - 音频捕获分享：捕获系统中正在播放音频的进程并附加到语音输出中，由我编写的音频捕获重建插件提供支持[win-process-audio-capture-0.0.4](https://github.com/Need-an-AwP/Capture-Audio-from-Process---javascript-addon)
-
-## 测试视频
-
-> 此视频使用obs录制，分辨率为3840*1080，即两个1080p屏幕横向拼接，左侧为Hyper-V虚拟机及其中运行的客户端，右侧为主机中的客户端
 
 ## 技术栈
 
