@@ -11,6 +11,12 @@ RelayX is an innovative decentralized voice communication application that lever
 
 This project is created using the Vite React TypeScript template, with the frontend built using React and TypeScript, and the backend using Electron and pure JavaScript.
 
+## Test Video
+[![image](https://github.com/user-attachments/assets/bd007e48-3a0b-47e5-bd08-e87a3989265f)](https://youtu.be/i-BA5WPv-Wg)
+
+> This video is recorded using OBS at a resolution of 3840*1080, which is two 1080p screens horizontally stitched together. The left side shows a Hyper-V virtual machine and its running client, while the right side shows the client in the host machine.
+
+
 ## Features
 
 - **Decentralized Network:** Based on Tailscale tunneling technology, it achieves true peer-to-peer connections, eliminating the need for central servers and ensuring user privacy and data security.
@@ -22,10 +28,6 @@ This project is created using the Vite React TypeScript template, with the front
 - **Modern UI:** Built with [Shadcn/ui](https://ui.shadcn.com/) component library and [Tailwind CSS](https://tailwindcss.com/) to create a beautiful and responsive user interface.
 - **Screen Capture Sharing:** During voice calls, users can capture screen content and share it with other users in the channel.
 - **Audio Capture Sharing:** Captures audio-playing processes in the system and attaches them to the voice output, supported by an audio capture reconstruction plugin I wrote: [win-process-audio-capture-0.0.4](https://github.com/Need-an-AwP/Capture-Audio-from-Process---javascript-addon)
-
-## Test Video
-
-> This video is recorded using OBS at a resolution of 3840*1080, which is two 1080p screens horizontally stitched together. The left side shows a Hyper-V virtual machine and its running client, while the right side shows the client in the host machine.
 
 ## Technology Stack
 
