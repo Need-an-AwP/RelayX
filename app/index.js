@@ -14,6 +14,7 @@ let statusCallback = null;
 let mainWindow;
 function createWindow() {
     mainWindow = new BrowserWindow({
+        title: 'RelayX',
         width: 1286,
         height: 844 + 32,
         autoHideMenuBar: true,

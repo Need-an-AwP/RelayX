@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "main": "app/index.js",
+  "license": "Apache-2.0",
   "scripts": {
     "dev:build": "cd tailscale-embed && go build -buildmode=c-shared -o tailscale-embed.dll main.go && cd .. && npm run dev",
     "dev:vite": "vite",
