@@ -65,7 +65,8 @@ RelayX 是一个典型的electron应用，其架构主要分为前端 (React) �
 - **音频处理**:  使用 Web Audio API 进行音频流处理，包括噪音消除、增益控制、音频分析等。音频节点连接状态如下图所示
   <details open>
   <summary>音频节点连接示意图</summary>
-  <div class="mermaid">
+      
+  ```mermaid
   graph TB
   
       A["sourceNode<br/><i>MediaStreamSource</i>"] --> B["gainNode<br/><i>GainNode</i>"]
@@ -94,14 +95,14 @@ RelayX 是一个典型的electron应用，其架构主要分为前端 (React) �
       classDef default fill:#f9f,stroke:#333,stroke-width:2px;
       classDef stream fill:#bbf,stroke:#333,stroke-width:2px;
       class I,L,M stream;
-  </div>
-  <script>mermaid.initialize({startOnLoad:true});</script>
+  ```
   </details>
 
 - **状态管理 （Zustand）**：RelayX 的核心语音及连接管理功能都使用Zustand构建
-  <details open>
+  <details>
   <summary>Zustand状态管理示意图</summary>
-  <div class="mermaid">
+      
+  ```mermaid
   graph LR
 
       subgraph stores
@@ -172,8 +173,7 @@ RelayX 是一个典型的electron应用，其架构主要分为前端 (React) �
       class Audio*,Blank*,Media*,RTC*,Tailscale*,DB*,Channel*,Remote*,Current*,MirrorState,PopoverState typeNode
       class ScreenShareStore_type typeNode
       class CurrentChannelStore_type typeNode
-  </div>
-  <script>mermaid.initialize({startOnLoad:true});</script>
+  ```
   </details>
 
   > 此mermaid图由ai生成，请以实际代码为准
