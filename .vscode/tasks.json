@@ -1,0 +1,11 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Go",
+            "type": "shell",
+            "command": "yarn build:go",
+            "problemMatcher": []
+        }
+    ]
+} 

@@ -1,0 +1,9 @@
+# tygo.yaml
+# this file is used to generate the types for the tailscale package using tygo
+# run `tygo generate` to generate the types
+
+packages:
+  - path: "tailscale.com/ipn/ipnstate"
+    output_path: "../src/types/tailscale-ipnstate.ts"
+  #- path: "tailscale.com/client/local"
+  #  output_path: "../src/types/tailscale-local.ts"
