@@ -4,13 +4,31 @@ export interface IpcBridge {
     send: (channel: string, data?: any) => void;
     invoke: (channel: string, data?: any) => Promise<any>;
     copy: (text: string) => void;
+    openURL: (url: string) => void;
     minimizeWindow: () => void;
     maximizeWindow: () => void;
     closeWindow: () => void;
+    resizeWindow: (wnh: { width?: number, height?: number }) => void;
+    extendWindow: (action: 'extend' | 'collapse') => void;
+
+    getUserConfig: () => Promise<any>;
+    setUserConfig: (config: any) => Promise<any>;
+}
+
+export interface WinAudioCapture {
+    getElectronProcessId: () => Promise<number[]>;
+    getAudioProcessInfo: () => any;
+    initializeCapture: () => void;
+    initializeCLoopbackCapture: (processId: number) => void;
+    getActivateStatus: () => { interfaceActivateResult: number };
+    whileCaptureProcessAudio: () => void;
+    capture_async: (intervalMs: number, callback: (err: any, result: any) => void) => void;
 }
 
 declare global {
     interface Window {
         ipcBridge: IpcBridge;
+        winAudioCapture: WinAudioCapture;
+        webkitAudioContext: typeof AudioContext;
     }
 } 

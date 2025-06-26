@@ -11,7 +11,7 @@ interface RTCStore {
     createConnection: (peerID: string, peerIP: string, isOffer: boolean) => void
     closeConnection: (peerID: string) => void
     updateConnectionState: (peerID: string, state: RTCPeerConnectionState) => void
-    getConnection: ({ peerID, peerIP }: { peerID?: string, peerIP?: string }) => rtcConnection | null
+    getConnection: ({ peerID, peerIP }: { peerID?: string, peerIP?: string }) => Promise<rtcConnection | null>
     getAllConnections: () => Map<string, rtcConnection>
     // 状态查询方法
     isConnected: (peerID: string) => boolean
@@ -33,18 +33,19 @@ const useRTCStore = create<RTCStore>((set, get) => {
         }));
     });
 
-    window.ipcBridge.receive('http/offer_ice', (message: RTCOfferMessage) => {
+    window.ipcBridge.receive('http/offer_ice', async (message: RTCOfferMessage) => {
         console.log("Received http/offer_ice message:", message);
-        const connection = get().getConnection({ peerIP: message.From })
-
+        const connection = await get().getConnection({ peerIP: message.From })
+        console.log('transceivers:', message.transceivers)
+        
         if (connection) {
-            connection.handleOffer(message.Offer, message.Ice)
+            connection.handleOffer(message.Offer, message.Ice, message.transceivers)
         }
     })
 
-    window.ipcBridge.receive('http/answer_ice', (message: RTCAnswerMessage) => {
+    window.ipcBridge.receive('http/answer_ice', async (message: RTCAnswerMessage) => {
         console.log("Received http/answer_ice message:", message);
-        const connection = get().getConnection({ peerIP: message.From })
+        const connection = await get().getConnection({ peerIP: message.From })
 
         if (connection) {
             connection.handleAnswer(message.Answer, message.Ice)
@@ -103,9 +104,9 @@ const useRTCStore = create<RTCStore>((set, get) => {
             }))
         },
 
-        getConnection: ({ peerID, peerIP }: { peerID?: string, peerIP?: string }) => {
+        getConnection: async ({ peerID, peerIP }: { peerID?: string, peerIP?: string }) => {
             const { manager } = get()
-            return manager.getConnection({ peerID, peerIP }) || null
+            return await manager.getConnection({ peerID, peerIP }) || null
         },
 
         getAllConnections: () => {

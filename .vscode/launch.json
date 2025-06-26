@@ -21,7 +21,7 @@
             "console": "integratedTerminal",
             "presentation": {
                 "group": "Debug Go TURN_on_Tailscale",
-                "hidden": false,
+                "hidden": true,
                 "order": 1
             }
         },
@@ -35,7 +35,7 @@
                 "concurrently",
                 "-k",
                 "vite --port 5173",
-                "cross-env DEV=true electron app/index.cjs --port=5173 --env=.env.node-A"
+                "cross-env DEV=true electron app/index.mjs --port=5173 --env=.env.node-A --config=user-config-A"
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
@@ -51,7 +51,7 @@
                 "concurrently",
                 "-k",
                 "vite --port 5174",
-                "cross-env DEV=true electron app/index.cjs --port=5174 --env=.env.node-B"
+                "cross-env DEV=true electron app/index.mjs --port=5174 --env=.env.node-B --config=user-config-B"
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",

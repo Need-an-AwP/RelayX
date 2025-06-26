@@ -1,5 +1,7 @@
-import { useTURNStore, useTailscaleStore } from '@/stores'
-import type { RTCOfferMessage, RTCAnswerMessage } from '@/types'
+import { useTURNStore, useTailscaleStore, usePeerStateStore, useMediaStore } from '@/stores'
+import type { PeerState } from '@/stores'
+import type { RTCOfferMessage, RTCAnswerMessage, TransceiverMetadata, TransceiverLabel, TransceiverInfo, TrackType } from '@/types'
+import StatusSender from './statusSender'
 
 type StateChangeCallback = (state: RTCPeerConnectionState) => void;
 
@@ -10,6 +12,7 @@ export default class rtcConnection {
     private isOffer: boolean;
     private state: RTCPeerConnectionState | null = null;
     private pc: RTCPeerConnection | null = null;
+    private localTransceiverMetadata: TransceiverMetadata = new Map();
     private iceList: RTCIceCandidate[] = [];
     private dataChannel: RTCDataChannel | null = null;
     private TURNconfig: RTCConfiguration | undefined = undefined;
@@ -18,6 +21,7 @@ export default class rtcConnection {
     private lastState: RTCPeerConnectionState = 'new';
     private reconnectTimer?: NodeJS.Timeout;
     private readonly RECONNECT_TIMEOUT = 10000;
+    private statusSender: StatusSender | null = null;
 
     constructor(peerID: string, peerIP: string, isOffer: boolean) {
         this.selfPeerIP = useTailscaleStore.getState().tailscaleStatus?.Self?.TailscaleIPs[0] || '';
@@ -57,7 +61,7 @@ export default class rtcConnection {
     private async handleReconnect() {
         if (!this.pc) return;
 
-        const currentState = this.pc.connectionState;
+        // const currentState = this.pc.connectionState;
 
         await this.init();
     }
@@ -125,12 +129,13 @@ export default class rtcConnection {
                     Target: this.peerID,
                     From: this.selfPeerIP,
                     Offer: this.pc.localDescription,
-                    Ice: [iceCandidate]
+                    Ice: [iceCandidate],
+                    transceivers: Object.fromEntries(this.localTransceiverMetadata)
                 };
 
                 const strOfferMessage = JSON.stringify(offerMessage)
                 window.ipcBridge.send('offer', strOfferMessage)
-                console.log('offer sent:', strOfferMessage)
+                // console.log('offer sent:', strOfferMessage)
             }
             else if (role === 'answer') {
                 const answerMessage: RTCAnswerMessage = {
@@ -138,12 +143,12 @@ export default class rtcConnection {
                     Target: this.peerID,
                     From: this.selfPeerIP,
                     Answer: this.pc.localDescription,
-                    Ice: [iceCandidate]
+                    Ice: [iceCandidate],
                 }
 
                 const strAnswerMessage = JSON.stringify(answerMessage)
                 window.ipcBridge.send('answer', strAnswerMessage)
-                console.log('answer sent:', strAnswerMessage)
+                // console.log('answer sent:', strAnswerMessage)
             }
             this.SDPsent = true;
         }
@@ -182,12 +187,35 @@ export default class rtcConnection {
         const dc = pc.createDataChannel('data', { ordered: false });
         this.handleDataChannel(dc);
 
-        const offer = await pc.createOffer();
+        const microphoneTransceiver = pc.addTransceiver('audio', { direction: 'sendrecv' });
+        const audioTransceiver = pc.addTransceiver('audio', { direction: 'sendrecv' });
+
+        pc.ontrack = (e) => {
+            console.log('offer side ontrack:', e)
+            const track = e.track
+            const transceiver = e.transceiver
+            if (transceiver.mid) {
+                this.storeTrack(track, transceiver.mid)
+            }
+        }
+
+        const offer = await pc.createOffer({
+            offerToReceiveAudio: true,
+            // offerToReceiveVideo: true
+            // offer to receive video will request answer side to provide a video track
+            // when video transceiver is not added, answer side will respond with a new sendonly video track
+        });
         await pc.setLocalDescription(offer);
+
+        // set local transceiver metadata after setting local description
+        if (microphoneTransceiver.mid && audioTransceiver.mid) {
+            this.localTransceiverMetadata.set('micphone', { type: 'audio', mid: microphoneTransceiver.mid });
+            this.localTransceiverMetadata.set('capture_audio', { type: 'audio', mid: audioTransceiver.mid });
+        }
 
         this.dataChannel = dc;
 
-        console.log('offer init done and try send SDP, iceList:', this.iceList)
+        // console.log('offer init done and try send SDP, iceList:', this.iceList)
         this.attemptSendSDP(this.iceList[0], 'offer');
 
         // this.setOfferSideReconnectTimer();
@@ -218,16 +246,26 @@ export default class rtcConnection {
 
         pc.ondatachannel = (e) => {
             const dc = e.channel
+            this.handleDataChannel(dc);
             this.dataChannel = dc
+        }
 
-            dc.onmessage = (e) => {
-                console.log('answer side Data channel received message', e.data);
+        pc.ontrack = (e) => {
+            console.log('answer side ontrack', e)
+            const track = e.track;
+            const transceiver = e.transceiver;
+            if (transceiver.mid) {
+                this.storeTrack(track, transceiver.mid)
             }
         }
     }
 
 
-    public async handleOffer(offer: RTCSessionDescription, iceList: RTCIceCandidate[]) {
+    public async handleOffer(
+        offer: RTCSessionDescription,
+        iceList: RTCIceCandidate[],
+        transceivers: Record<string, { type: string; mid: string }>
+    ) {
         if (this.isOffer) {
             console.error('offer side is not allow to call handlrOffer');
             return;
@@ -237,8 +275,23 @@ export default class rtcConnection {
             return;
         }
 
-        console.log('iceList', iceList)
+        const newMetadata: TransceiverMetadata = new Map();
+        for (const [label, info] of Object.entries(transceivers)) {
+            newMetadata.set(label as TransceiverLabel, {
+                mid: info.mid,
+                type: info.type as TrackType
+            });
+        }
+        this.localTransceiverMetadata = newMetadata;
+        console.log('Received and stored remote transceiver metadata:', this.localTransceiverMetadata);
+
         await this.pc.setRemoteDescription(offer);
+
+        // manually set direction to sendrecv for all transceivers
+        this.pc.getTransceivers().forEach(transceiver => {
+            transceiver.direction = 'sendrecv';
+        });
+
         await this.pc.addIceCandidate(iceList[0]);
         const answer = await this.pc.createAnswer();
         await this.pc.setLocalDescription(answer);
@@ -258,17 +311,63 @@ export default class rtcConnection {
 
         await this.pc.setRemoteDescription(answer);
         await this.pc.addIceCandidate(iceList[0]);
-        console.log('answer side has complete setting')
     }
 
+    public replaceTrack(track: MediaStreamTrack | null, label: TransceiverLabel) {
+        if (!this.pc) {
+            console.error('pc is not initialized when replacing track');
+            return;
+        }
+        if (!this.localTransceiverMetadata.has(label)) {
+            console.error('label is not found in localTransceiverMetadata');
+            return;
+        }
 
-    // only used as offer side
+        const targetMid = this.localTransceiverMetadata.get(label)?.mid
+        const transceiver = this.pc.getTransceivers().find(t => t.mid === targetMid)
+        if (!transceiver) {
+            console.error('transceiver is not found');
+            return;
+        }
+        transceiver.sender.replaceTrack(track)
+        console.log('replaceTrack ' + label + ' done')
+    }
+
+    private storeTrack(track: MediaStreamTrack, mid: string) {
+        let metadataLabel: TransceiverLabel | undefined;
+        let metadataInfo: TransceiverInfo | undefined;
+
+        for (const [label, info] of this.localTransceiverMetadata.entries()) {
+            if (info.mid === mid) {
+                metadataLabel = label;
+                metadataInfo = info;
+                break;
+            }
+        }
+
+        if (metadataInfo && metadataLabel) {
+            console.log(`Received and storing track with label: ${metadataLabel} from peer ${this.peerIP}`);
+            useMediaStore.getState().addTrack(
+                this.peerIP,
+                metadataInfo.type as TrackType,
+                metadataLabel as TransceiverLabel,
+                track
+            );
+        } else {
+            console.error(`Received track with mid: ${mid}, but no matching metadata was found.`);
+        }
+    }
+
     private handleDataChannel(dc: RTCDataChannel) {
         dc.onopen = () => {
             console.log('Data channel opened');
-            setInterval(() => {
-                dc.send(JSON.stringify({ type: 'ping', time: Date.now() }))
-            }, 2000)
+
+            // start status sender
+            this.statusSender = new StatusSender(dc, this.peerIP);
+            this.statusSender.start();
+
+            // add peer state store
+            usePeerStateStore.getState().addPeer(this.peerIP);
         }
 
         dc.onclose = () => {
@@ -280,7 +379,31 @@ export default class rtcConnection {
         }
 
         dc.onmessage = (e) => {
-            console.log('offer side Data channel received message', e.data);
+            try {
+                const data = JSON.parse(e.data)
+                const state = data.state as PeerState
+                if (data.type === 'ping') {
+                    const now = Date.now()
+                    const lastPingTime = usePeerStateStore.getState().getPeerState(this.peerIP)?.lastPingTime || 0;
+                    const latency = now - lastPingTime > 1000 ? 1000 : now - lastPingTime
+                    usePeerStateStore.getState().updatePeerState(this.peerIP, {
+                        ...(state.userName !== undefined ? { userName: state.userName } : {}),
+                        ...(state.userAvatar !== undefined ? { userAvatar: state.userAvatar } : {}),
+                        ...(state.isInChat !== undefined ? { isInChat: state.isInChat } : {}),
+                        ...(state.isInputMuted !== undefined ? { isInputMuted: state.isInputMuted } : {}),
+                        ...(state.isOutputMuted !== undefined ? { isOutputMuted: state.isOutputMuted } : {}),
+                        ...(state.isSharingScreen !== undefined ? { isSharingScreen: state.isSharingScreen } : {}),
+                        ...(state.isSharingAudio !== undefined ? { isSharingAudio: state.isSharingAudio } : {}),
+                        latency: latency,
+                        lastPingTime: now
+                    })
+                }
+            }
+            catch (e) {
+                console.error('Data channel received message is not a valid JSON', e)
+            }
+
+
         }
     }
 
@@ -293,6 +416,7 @@ export default class rtcConnection {
             this.dataChannel.close();
             this.dataChannel = null;
         }
+        useMediaStore.getState().removePeerTracks(this.peerIP);
         this.iceList = [];
         this.clearReconnectTimer();
     }

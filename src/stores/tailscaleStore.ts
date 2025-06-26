@@ -75,7 +75,9 @@ const initializeTailscaleListeners = () => {
 
     window.ipcBridge.receive('accessibility', (message: AccessibilityIPCMessage) => {
         if (message.type === "accessibility") {
-            console.log("Received accessibility message:", message);
+            if (message.character === "NONE") return;
+            // console.log("Received accessibility message:", message);
+            
             updateCharacter({ peerID: message.peerID, peerIP: message.peerIP, character: message.character });
             
             // 动态导入RTC store以避免循环依赖

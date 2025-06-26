@@ -17,6 +17,7 @@ export default defineConfig({
       ignored: [
         "**/TURN_on_Tailscale/**",
         "**/app/**",
+        "**/.vscode/**",
         "**/tsNodeDir/**",
       ],
     },

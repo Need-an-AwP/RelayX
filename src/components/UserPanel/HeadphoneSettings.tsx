@@ -1,0 +1,87 @@
+import { useState, useRef } from "react";
+import { Headphones, HeadphoneOff } from 'lucide-react'
+import { Button } from "@/components/ui/button";
+import { usePeerStateStore, useMediaStore } from "@/stores"
+import { Slider } from "@/components/ui/slider"
+
+
+const HeadphoneSettings = () => {
+    const selfState = usePeerStateStore(state => state.selfState)
+    const updateSelfState = usePeerStateStore(state => state.updateSelfState)
+    const setOutputGainValue = useMediaStore(state => state.setOutputGainValue)
+    const buttonRef = useRef<HTMLButtonElement>(null);
+
+    const isHeadphoneMuted = selfState.isOutputMuted
+    const setIsHeadphoneMuted = (isHeadphoneMuted: boolean) => {
+        updateSelfState({
+            isOutputMuted: isHeadphoneMuted
+        })
+    }
+
+    const [volumeBeforeMute, setVolumeBeforeMute] = useState(1)
+    const [outputVolume, setOutputVolume] = useState(1)
+    const [isTooltipOpen, setIsTooltipOpen] = useState(false)
+
+    const setTooltipOpenWithDelay = (isOpen: boolean) => {
+        setTimeout(() => {
+            setIsTooltipOpen(isOpen)
+        }, 50)
+    }
+
+    return (
+        <div className="relative">
+            <Button
+            ref={buttonRef}
+                size="icon"
+                variant={`${isHeadphoneMuted ? 'destructive' : 'ghost'}`}
+                onMouseEnter={() => setTooltipOpenWithDelay(true)}
+                onMouseLeave={() => setTooltipOpenWithDelay(false)}
+                onClick={() => {
+                    if (isHeadphoneMuted) {
+                        setOutputVolume(volumeBeforeMute)
+                        setOutputGainValue(volumeBeforeMute)
+                    } else {
+                        setVolumeBeforeMute(outputVolume)
+                        setOutputVolume(0)
+                        setOutputGainValue(0)
+                    }
+                    setIsHeadphoneMuted(!isHeadphoneMuted)
+                }}>
+                {isHeadphoneMuted ? (
+                    <HeadphoneOff className="h-4 w-4" />
+                ) : isTooltipOpen ? (
+                    <div className="h-4 w-4 flex items-center justify-center text-xs font-medium">
+                        {Math.round(outputVolume * 100)}
+                    </div>
+                ) : (
+                    <Headphones className="h-4 w-4" />
+                )}
+            </Button>
+
+            {isTooltipOpen && (
+                <div
+                    className={`absolute bottom-full z-50 left-1/2 -translate-x-1/2
+                        ${isHeadphoneMuted ? 'hidden' : ''}`}
+                    onMouseEnter={() => setTooltipOpenWithDelay(true)}
+                    onMouseLeave={() => setTooltipOpenWithDelay(false)}
+                >
+                    <div className='h-[200px] w-full bg-neutral-800 mb-1 px-4 py-4 rounded-md'>
+                        <Slider
+                            min={0}
+                            max={2}
+                            step={0.01}
+                            value={[outputVolume]}
+                            orientation="vertical"
+                            onValueChange={(value) => {
+                                setOutputVolume(value[0])
+                                setOutputGainValue(value[0])
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
+
+export default HeadphoneSettings

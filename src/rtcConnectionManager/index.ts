@@ -8,9 +8,7 @@ export default class rtcConnectionManager {
     public IPtoPeerID: Map<string, string> = new Map();
     private stateUpdateCallback?: StateUpdateCallback;
 
-    constructor() {
-
-    }
+    constructor() { }
 
     public static getInstance(): rtcConnectionManager {
         if (!rtcConnectionManager.instance) {
@@ -53,23 +51,38 @@ export default class rtcConnectionManager {
     }
 
     // 获取连接
-    public getConnection({peerID, peerIP}: {peerID?: string, peerIP?: string}): rtcConnection | undefined {
+    public async getConnection({ peerID, peerIP }: { peerID?: string, peerIP?: string }): Promise<rtcConnection | undefined> {
+
         if (peerID) {
-        const connection = this.RTCconnections.get(peerID)
-        if (connection) {
-            return connection;
+            const connection = this.RTCconnections.get(peerID)
+            if (connection) {
+                return connection;
             }
-            console.error(`Connection ${peerID} not found in manager`)
-            return undefined;
         }
         if (peerIP) {
             const peerID = this.IPtoPeerID.get(peerIP)
             if (peerID) {
                 return this.RTCconnections.get(peerID)
             }
-            console.error(`Connection ${peerIP} not found in manager`)
-            return undefined;
         }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        if (peerID) {
+            const connection = this.RTCconnections.get(peerID)
+            if (connection) {
+                return connection;
+            }
+        }
+        if (peerIP) {
+            const peerID = this.IPtoPeerID.get(peerIP)
+            if (peerID) {
+                return this.RTCconnections.get(peerID)
+            }
+        }
+        
+        console.error(`Connection ${peerIP} not found in manager`)
+        return undefined;
     }
 
     public getAllConnections(): Map<string, rtcConnection> {
