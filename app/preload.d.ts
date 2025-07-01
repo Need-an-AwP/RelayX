@@ -11,6 +11,8 @@ export interface IpcBridge {
     resizeWindow: (wnh: { width?: number, height?: number }) => void;
     extendWindow: (action: 'extend' | 'collapse') => void;
 
+    getScreenSources: () => Promise<any>;
+
     getUserConfig: () => Promise<any>;
     setUserConfig: (config: any) => Promise<any>;
 }

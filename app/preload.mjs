@@ -38,7 +38,8 @@ contextBridge.exposeInMainWorld('ipcBridge', {
     resizeWindow: (wnh) => ipcRenderer.send('resize-window', wnh),
     extendWindow: (action)=> ipcRenderer.send('extend-window', action),
     
-    // 用户配置相关接口
+    getScreenSources: () => ipcRenderer.invoke('getScreenSources'),
+
     getUserConfig: () => ipcRenderer.invoke('get-user-config'),
     setUserConfig: (config) => ipcRenderer.invoke('set-user-config', config)
 });

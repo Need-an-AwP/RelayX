@@ -6,10 +6,12 @@ export * from './rtcStore'
 
 export * from './peerStateStore'
 
-export * from './popoverStore'
+export * from './uiStore'
 
 export * from './audioDeviceStore'
 
 export * from './audioProcessingStore'
 
 export * from './mediaStore'
+
+export * from './screenShareStore'

@@ -16,26 +16,29 @@ import {
     ResizablePanelGroup,
 } from "@/components/ui/resizable"
 import type { ImperativePanelHandle } from "react-resizable-panels"
+import TitleBar from '@/components/TitleBar'
 import UserPanel from '@/components/UserPanel'
 import ChatPanel from '@/components/ChatPanel'
 import MediaTrackManager from '@/MediaTrackManager'
 import AudioPlaybackController from '@/mediaController/AudioPlaybackController'
+import AppSettingPanel from '@/components/AppSettingPanel'
+import StreamDisplay from '@/components/StreamDisplay'
 
 
 function App() {
     const initialized = useRef(false)
     const rightSideBarRef = useRef<ImperativePanelHandle>(null);
     const leftSideBarRef = useRef<ImperativePanelHandle>(null);
-    const [isExtended, setIsExtended] = useState(false);
+    const isExtended = usePopover(state => state.isExtended)
     const {
         isNetworkPopoverOpen,
         isSettingPopoverOpen,
-        isChannelPopoverOpen,
+        isAppSettingOpen,
         isAudioCapturePopoverOpen,
         isUserPopoverOpen,
         closeAll
     } = usePopover()
-    const isAnyPopoverOpen = isNetworkPopoverOpen || isSettingPopoverOpen || isChannelPopoverOpen || isAudioCapturePopoverOpen || isUserPopoverOpen
+    const isAnyPopoverOpen = isNetworkPopoverOpen || isSettingPopoverOpen || isAppSettingOpen || isAudioCapturePopoverOpen || isUserPopoverOpen
 
     useEffect(() => {
         if (initialized.current) return;
@@ -51,25 +54,37 @@ function App() {
         MediaTrackManager.getInstance()
         // init audio playback controller
         AudioPlaybackController.getInstance()
+        // reset window size
+        window.ipcBridge.extendWindow('collapse')
 
         return () => { }
     }, [])
 
+    useEffect(() => {
+        if (isExtended) {
+            leftSideBarRef.current?.resize(33)
+        } else {
+            leftSideBarRef.current?.resize(100)
+        }
+    }, [isExtended])
+
     return (
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
             <div className="flex flex-col h-screen w-screen">
+                <TitleBar />
 
-
-                <div className="flex-grow h-[calc(100vh-32px)]">
+                <div className="flex-grow h-full transition-all duration-300">
                     {/* Blur Overlay */}
-                    {isAnyPopoverOpen && (
-                        <div
-                            className="fixed inset-0 bg-black/10 backdrop-blur-sm z-40"
-                            onClick={() => closeAll()}
-                        />
-                    )}
+                    <div
+                        className={`
+                            fixed inset-0 bg-black/10 backdrop-blur-sm z-40 transition-opacity duration-300
+                            ${isAnyPopoverOpen ? "opacity-100" : "opacity-0 pointer-events-none"}
+                        `}
+                        onClick={() => closeAll()}
+                    />
 
                     <TailscaleStatusDisplay />
+                    <AppSettingPanel />
 
                     <ResizablePanelGroup direction="horizontal">
                         <ResizablePanel
@@ -100,8 +115,9 @@ function App() {
                             defaultSize={0}
                             collapsible={true}
                             ref={rightSideBarRef}
+                            className="h-[95vh]"
                         >
-                            <div className="h-full w-full bg-red-500"></div>
+                            <StreamDisplay />
                         </ResizablePanel>
                     </ResizablePanelGroup>
                 </div>

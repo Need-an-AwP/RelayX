@@ -61,7 +61,7 @@ const TailscaleStatusDisplay = () => {
         <div
             className={cn(
                 "fixed top-0 left-0 right-0 p-2 bg-background text-foreground border-b border-border shadow-lg transition-transform duration-500 ease-in-out z-50 text-xs",
-                isVisible ? "translate-y-0" : "-translate-y-full"
+                isVisible ? "translate-y-[100%]" : "-translate-y-full"
             )}
             aria-live="polite"
         >

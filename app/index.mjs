@@ -1,5 +1,6 @@
-import { app, shell, BrowserWindow, ipcMain, desktopCapturer, session } from 'electron';
+import { app, shell, BrowserWindow, ipcMain} from 'electron';
 import { getThrottledElectronProcessIds } from './electronPID.mjs';
+import { getAvailableSources, setCaptureId, setDisplayMediaRequestHandler } from './destopCapture.mjs';
 
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -46,7 +47,11 @@ const store = new Store({
         userName: 'default user name',
         userAvatar: 'https://github.com/shadcn.png',
         userStatus: 'online',
-        theme: 'dark'
+        theme: 'dark',
+        windowBounds: {
+            width: 500,
+            height: 832
+        }
     }
 });
 console.log('Config file path:', store.path);
@@ -155,7 +160,7 @@ function handleBasicWindowAction(window) {
             window.setSize(1200, currentSize[1])
             windowExtended = true;
         } else if (action === 'collapse' && windowExtended) {
-            window.setSize(400, currentSize[1])
+            window.setSize(500, currentSize[1])
             windowExtended = false;
         }
 
@@ -186,21 +191,36 @@ function createWebRTCInternalsWindow() {
 }
 
 function createWindow() {
-    mainWindow = new BrowserWindow({
-        width: 500,
-        height: 800 + 32,
+    // get window bounds from config
+    const { width, height } = store.get('windowBounds');
+    const windowBounds = store.get('windowBounds');
+    
+    // 创建窗口配置
+    const windowOptions = {
+        title: 'RelayX',
+        width: width,
+        height: height,
         autoHideMenuBar: true,
-        frame: true,
+        frame: false,
         webPreferences: {
             preload: join(__dirname, 'preload.mjs'),
             spellcheck: false,
             nodeIntegration: true,
             contextIsolation: true,
         }
-    });
+    };
+    
+    // 如果配置中有 x 和 y 值，则使用它们
+    if (windowBounds.x !== undefined && windowBounds.y !== undefined) {
+        windowOptions.x = windowBounds.x;
+        windowOptions.y = windowBounds.y;
+    }
+    
+    mainWindow = new BrowserWindow(windowOptions);
 
     startBackendProcess(mainWindow, envFilePath);
 
+    // sdp forward
     ipcMain.on('offer', (event, message) => {
         if (pionProcess) {
             console.log('forwarding offer to go subprocess')
@@ -222,6 +242,11 @@ function createWindow() {
 
     ipcMain.handle('get-electron-pids', async () => {
         return getThrottledElectronProcessIds();
+    })
+
+    // destop capture
+    ipcMain.handle('getScreenSources', async (e, d) => {
+        return await getAvailableSources();
     })
 
     handleBasicWindowAction(mainWindow);
@@ -256,6 +281,21 @@ function createWindow() {
         // createWebRTCInternalsWindow();
     });
 
+    // 保存窗口位置和大小
+    mainWindow.on('resize', () => {
+        if (!mainWindow.isMaximized()) {
+            const { x, y, width, height } = mainWindow.getBounds();
+            store.set('windowBounds', { x, y, width, height });
+        }
+    });
+    
+    mainWindow.on('move', () => {
+        if (!mainWindow.isMaximized()) {
+            const { x, y, width, height } = mainWindow.getBounds();
+            store.set('windowBounds', { x, y, width, height });
+        }
+    });
+    
     mainWindow.on('closed', () => {
         if (webrtcInternalsWindow && !webrtcInternalsWindow.isDestroyed()) {
             webrtcInternalsWindow.close();

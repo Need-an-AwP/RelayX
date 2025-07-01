@@ -2,5 +2,11 @@
 	"userName": "default aa user naaaaaameeeee",
 	"userAvatar": "https://unavatar.io/x/elonmusk",
 	"userStatus": "online",
-	"theme": "dark"
+	"theme": "dark",
+	"windowBounds": {
+		"x": 337,
+		"y": 40,
+		"width": 1200,
+		"height": 832
+	}
 }

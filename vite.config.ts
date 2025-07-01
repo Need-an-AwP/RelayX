@@ -19,6 +19,7 @@ export default defineConfig({
         "**/app/**",
         "**/.vscode/**",
         "**/tsNodeDir/**",
+        "**/README.md",
       ],
     },
   }

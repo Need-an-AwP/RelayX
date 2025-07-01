@@ -1,13 +1,24 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { LogIn, LogOut, PhoneOff, Airplay, LoaderCircle  } from 'lucide-react';
+import { LogIn, LogOut, PhoneOff, Airplay, LoaderCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { usePeerStateStore } from "@/stores"
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { usePeerStateStore, useDesktopCapture, usePopover } from "@/stores"
+import { MdMonitor, MdCameraAlt } from "react-icons/md";
+
 
 const ActionPanel = () => {
     const selfState = usePeerStateStore(state => state.selfState)
     const updateSelfState = usePeerStateStore(state => state.updateSelfState)
+    const requestSources = useDesktopCapture(state => state.requestSources)
+    const setIsExtended = usePopover(state => state.setIsExtended)
     const [isLoading, setIsLoading] = useState(false)
+
+    const screenshareOnClick = () => {
+        requestSources()
+        setIsExtended(true)
+    }
+
 
     return (
         <TooltipProvider>
@@ -41,20 +52,40 @@ const ActionPanel = () => {
                         <p>{selfState.isInChat ? 'leave chat' : 'join chat'}</p>
                     </TooltipContent>
                 </Tooltip>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button
-                            variant="outline"
-                            className={`hover:!bg-neutral-500 cursor-pointer transition-all duration-300`}
-                        // disabled={true}
+
+                <DropdownMenu>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className={`hover:!bg-neutral-500 cursor-pointer transition-all duration-300`}
+                                >
+                                    <Airplay className="h-5 w-5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            {selfState.isInChat ? <p>start screen sharing</p> : <p>join with screen</p>}
+                        </TooltipContent>
+                    </Tooltip>
+                    <DropdownMenuContent side="top" align="center">
+                        <DropdownMenuItem
+                            className="cursor-pointer"
+                            onClick={screenshareOnClick}
                         >
-                            <Airplay className="h-5 w-5" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        {selfState.isInChat ? <p>start screen sharing</p> : <p>join with screen</p>}
-                    </TooltipContent>
-                </Tooltip>
+                            <MdMonitor className="h-5 w-5" />
+                            <p>share screen</p>
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem disabled={true}>
+                            <MdCameraAlt className="h-5 w-5" />
+                            <p>open camera</p>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+
             </div>
         </TooltipProvider>
     )
