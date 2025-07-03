@@ -8,7 +8,8 @@ import {
     initializeTURNListeners,
     initialAudioDevices,
     initializeAudioProcessing,
-    usePopover
+    usePopover,
+    usePanelStore
 } from '@/stores'
 import {
     ResizableHandle,
@@ -18,18 +19,17 @@ import {
 import type { ImperativePanelHandle } from "react-resizable-panels"
 import TitleBar from '@/components/TitleBar'
 import UserPanel from '@/components/UserPanel'
-import ChatPanel from '@/components/ChatPanel'
+import VoiceChatPanel from '@/components/VoiceChatPanel'
 import MediaTrackManager from '@/MediaTrackManager'
 import AudioPlaybackController from '@/mediaController/AudioPlaybackController'
 import AppSettingPanel from '@/components/AppSettingPanel'
-import StreamDisplay from '@/components/StreamDisplay'
+import RightPanel from '@/components/RightPanel'
 
 
 function App() {
     const initialized = useRef(false)
     const rightSideBarRef = useRef<ImperativePanelHandle>(null);
     const leftSideBarRef = useRef<ImperativePanelHandle>(null);
-    const isExtended = usePopover(state => state.isExtended)
     const {
         isNetworkPopoverOpen,
         isSettingPopoverOpen,
@@ -38,6 +38,7 @@ function App() {
         isUserPopoverOpen,
         closeAll
     } = usePopover()
+    const { setRef } = usePanelStore((state) => state)
     const isAnyPopoverOpen = isNetworkPopoverOpen || isSettingPopoverOpen || isAppSettingOpen || isAudioCapturePopoverOpen || isUserPopoverOpen
 
     useEffect(() => {
@@ -55,18 +56,19 @@ function App() {
         // init audio playback controller
         AudioPlaybackController.getInstance()
         // reset window size
-        window.ipcBridge.extendWindow('collapse')
+        // window.ipcBridge.extendWindow('collapse')
+        setRef(leftSideBarRef, 30)
 
         return () => { }
     }, [])
 
-    useEffect(() => {
-        if (isExtended) {
-            leftSideBarRef.current?.resize(33)
-        } else {
-            leftSideBarRef.current?.resize(100)
-        }
-    }, [isExtended])
+    // useEffect(() => {
+    //     if (isExtended) {
+    //         leftSideBarRef.current?.resize(33)
+    //     } else {
+    //         leftSideBarRef.current?.resize(100)
+    //     }
+    // }, [isExtended])
 
     return (
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
@@ -88,19 +90,19 @@ function App() {
 
                     <ResizablePanelGroup direction="horizontal">
                         <ResizablePanel
-                            defaultSize={100}
-                            minSize={10}
+                            defaultSize={30}
+                            minSize={20}
                             collapsible={true}
                             ref={leftSideBarRef}
                         >
                             <div className="flex flex-col h-full justify-start">
                                 <ResizablePanelGroup direction="vertical">
-                                    <ResizablePanel defaultSize={30} collapsible={true}>
+                                    <ResizablePanel defaultSize={20} collapsible={true}>
                                         <OnlinePeersDisplay />
                                     </ResizablePanel>
                                     <ResizableHandle />
                                     <ResizablePanel>
-                                        <ChatPanel />
+                                        <VoiceChatPanel />
                                     </ResizablePanel>
                                 </ResizablePanelGroup>
 
@@ -112,12 +114,12 @@ function App() {
                         </ResizablePanel>
                         <ResizableHandle />
                         <ResizablePanel
-                            defaultSize={0}
+                            defaultSize={70}
                             collapsible={true}
                             ref={rightSideBarRef}
-                            className="h-[95vh]"
+                            className="h-full"
                         >
-                            <StreamDisplay />
+                            <RightPanel />
                         </ResizablePanel>
                     </ResizablePanelGroup>
                 </div>

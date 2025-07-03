@@ -49,7 +49,7 @@ const store = new Store({
         userStatus: 'online',
         theme: 'dark',
         windowBounds: {
-            width: 500,
+            width: 1200,
             height: 832
         }
     }
@@ -200,6 +200,8 @@ function createWindow() {
         title: 'RelayX',
         width: width,
         height: height,
+        minWidth: 500,
+        minHeight: 500,
         autoHideMenuBar: true,
         frame: false,
         webPreferences: {
@@ -247,6 +249,10 @@ function createWindow() {
     // destop capture
     ipcMain.handle('getScreenSources', async (e, d) => {
         return await getAvailableSources();
+    })
+
+    ipcMain.on('capture-id', (e, d) => {
+        setCaptureId(d);
     })
 
     handleBasicWindowAction(mainWindow);
@@ -321,6 +327,9 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+    // init display media request handler
+    setDisplayMediaRequestHandler();
+    
     createWindow();
 
     app.on('activate', () => {

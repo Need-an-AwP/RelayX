@@ -2,5 +2,11 @@
 	"userName": "default user name dont know who is AaaAA",
 	"userAvatar": "https://github.com/shadcn.png",
 	"userStatus": "online",
-	"theme": "dark"
+	"theme": "dark",
+	"windowBounds": {
+		"x": 342,
+		"y": 71,
+		"width": 1200,
+		"height": 832
+	}
 }

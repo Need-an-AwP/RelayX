@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { LogIn, LogOut, PhoneOff, Airplay, LoaderCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { usePeerStateStore, useDesktopCapture, usePopover } from "@/stores"
+import { usePeerStateStore, useDesktopCapture } from "@/stores"
 import { MdMonitor, MdCameraAlt } from "react-icons/md";
 
 
@@ -11,12 +11,14 @@ const ActionPanel = () => {
     const selfState = usePeerStateStore(state => state.selfState)
     const updateSelfState = usePeerStateStore(state => state.updateSelfState)
     const requestSources = useDesktopCapture(state => state.requestSources)
-    const setIsExtended = usePopover(state => state.setIsExtended)
+    const setIsSelectingSource = useDesktopCapture(state => state.setIsSelectingSource)
     const [isLoading, setIsLoading] = useState(false)
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
     const screenshareOnClick = () => {
+        setIsDropdownOpen(false)
+        setIsSelectingSource(true)
         requestSources()
-        setIsExtended(true)
     }
 
 
@@ -53,7 +55,7 @@ const ActionPanel = () => {
                     </TooltipContent>
                 </Tooltip>
 
-                <DropdownMenu>
+                <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>

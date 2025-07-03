@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Headphones, HeadphoneOff } from 'lucide-react'
 import { Button } from "@/components/ui/button";
 import { usePeerStateStore, useMediaStore } from "@/stores"
@@ -10,6 +10,7 @@ const HeadphoneSettings = () => {
     const updateSelfState = usePeerStateStore(state => state.updateSelfState)
     const setOutputGainValue = useMediaStore(state => state.setOutputGainValue)
     const buttonRef = useRef<HTMLButtonElement>(null);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     const isHeadphoneMuted = selfState.isOutputMuted
     const setIsHeadphoneMuted = (isHeadphoneMuted: boolean) => {
@@ -22,20 +23,38 @@ const HeadphoneSettings = () => {
     const [outputVolume, setOutputVolume] = useState(1)
     const [isTooltipOpen, setIsTooltipOpen] = useState(false)
 
-    const setTooltipOpenWithDelay = (isOpen: boolean) => {
-        setTimeout(() => {
-            setIsTooltipOpen(isOpen)
-        }, 50)
+    const handleMouseEnter = () => {
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current)
+            timeoutRef.current = null
+        }
+        setIsTooltipOpen(true)
     }
 
+    const handleMouseLeave = () => {
+        timeoutRef.current = setTimeout(() => {
+            setIsTooltipOpen(false)
+        }, 100)
+    }
+
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current)
+            }
+        }
+    }, [])
+
     return (
-        <div className="relative">
+        <div
+            className="relative"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
             <Button
-            ref={buttonRef}
+                ref={buttonRef}
                 size="icon"
                 variant={`${isHeadphoneMuted ? 'destructive' : 'ghost'}`}
-                onMouseEnter={() => setTooltipOpenWithDelay(true)}
-                onMouseLeave={() => setTooltipOpenWithDelay(false)}
                 onClick={() => {
                     if (isHeadphoneMuted) {
                         setOutputVolume(volumeBeforeMute)
@@ -62,8 +81,6 @@ const HeadphoneSettings = () => {
                 <div
                     className={`absolute bottom-full z-50 left-1/2 -translate-x-1/2
                         ${isHeadphoneMuted ? 'hidden' : ''}`}
-                    onMouseEnter={() => setTooltipOpenWithDelay(true)}
-                    onMouseLeave={() => setTooltipOpenWithDelay(false)}
                 >
                     <div className='h-[200px] w-full bg-neutral-800 mb-1 px-4 py-4 rounded-md'>
                         <Slider

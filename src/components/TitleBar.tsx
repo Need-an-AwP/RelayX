@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { Minus, X, Menu } from 'lucide-react';
 import { TiArrowMaximise, TiArrowMinimise } from "react-icons/ti";
-import { usePopover } from '@/stores/uiStore';
+import { VscLayoutSidebarLeft, VscLayoutSidebarLeftOff } from "react-icons/vsc";
+import { usePopover, usePanelStore } from '@/stores';
 
 
 const TitleBar: React.FC = () => {
     const { toggle } = usePopover()
+    const { isSideBarCollapsed, toggleSideBar } = usePanelStore((state) => state)
     const [isMaximized, setIsMaximized] = useState<boolean>(false);
+
     const buttonClassName = "h-[32px] w-10 hover:bg-muted flex items-center justify-center"
+    const buttonIconClassName = "h-4 w-4 pointer-events-none text-white/50"
 
     return (
         <div
@@ -19,7 +23,7 @@ const TitleBar: React.FC = () => {
                     onClick={() => toggle('isAppSettingOpen')}
                     className={buttonClassName}
                 >
-                    <Menu className="h-4 w-4 pointer-events-none" />
+                    <Menu className={buttonIconClassName} />
                 </div>
             </div>
 
@@ -31,9 +35,19 @@ const TitleBar: React.FC = () => {
             <div className="flex">
                 <div
                     className={buttonClassName}
+                    onClick={toggleSideBar}
+                >
+                    {isSideBarCollapsed ?
+                        <VscLayoutSidebarLeftOff className={buttonIconClassName} />
+                        :
+                        <VscLayoutSidebarLeft className={buttonIconClassName} />
+                    }
+                </div>
+                <div
+                    className={buttonClassName}
                     onClick={() => window.ipcBridge.minimizeWindow()}
                 >
-                    <Minus className="h-4 w-4 pointer-events-none" />
+                    <Minus className={buttonIconClassName} />
                 </div>
                 <div
                     className={buttonClassName}
@@ -42,13 +56,17 @@ const TitleBar: React.FC = () => {
                         setIsMaximized(!isMaximized);
                     }}
                 >
-                    {isMaximized ? <TiArrowMinimise className="h-4 w-4 pointer-events-none" /> : <TiArrowMaximise className="h-4 w-4 pointer-events-none" />}
+                    {isMaximized ?
+                        <TiArrowMinimise className={buttonIconClassName} />
+                        :
+                        <TiArrowMaximise className={buttonIconClassName} />
+                    }
                 </div>
                 <div
                     className={`${buttonClassName} hover:bg-red-800`}
                     onClick={() => window.ipcBridge.closeWindow()}
                 >
-                    <X className="h-4 w-4 pointer-events-none" />
+                    <X className={buttonIconClassName} />
                 </div>
             </div>
         </div>

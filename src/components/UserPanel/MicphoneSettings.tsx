@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff } from 'lucide-react';
 import { usePeerStateStore, useAudioProcessing } from "@/stores"
@@ -10,6 +10,7 @@ const MicphoneSettings = () => {
     const updateSelfState = usePeerStateStore(state => state.updateSelfState)
     const setGainValue = useAudioProcessing(state => state.setGainValue)
     const buttonRef = useRef<HTMLButtonElement>(null);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     const isMicMuted = selfState.isInputMuted
     const setIsMicMuted = (isMicMuted: boolean) => {
@@ -22,20 +23,38 @@ const MicphoneSettings = () => {
     const [inputVolume, setInputVolume] = useState(1)
     const [isTooltipOpen, setIsTooltipOpen] = useState(false)
 
-    const setTooltipOpenWithDelay = (isOpen: boolean) => {
-        setTimeout(() => {
-            setIsTooltipOpen(isOpen)
+    const handleMouseEnter = () => {
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current)
+            timeoutRef.current = null
+        }
+        setIsTooltipOpen(true)
+    }
+
+    const handleMouseLeave = () => {
+        timeoutRef.current = setTimeout(() => {
+            setIsTooltipOpen(false)
         }, 100)
     }
 
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current)
+            }
+        }
+    }, [])
+
     return (
-        <div className="relative">
+        <div
+            className="relative"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
             <Button
                 ref={buttonRef}
                 size="icon"
                 variant={`${isMicMuted ? 'destructive' : 'ghost'}`}
-                onMouseEnter={() => setTooltipOpenWithDelay(true)}
-                onMouseLeave={() => setIsTooltipOpen(false)}
                 onClick={() => {
                     if (isMicMuted) {
                         setInputVolume(volumeBeforeMute)
@@ -62,8 +81,6 @@ const MicphoneSettings = () => {
                 <div
                     className={`absolute bottom-full z-50 left-1/2 -translate-x-1/2
                         ${isMicMuted ? 'hidden' : ''}`}
-                    onMouseEnter={() => setTooltipOpenWithDelay(true)}
-                    onMouseLeave={() => setIsTooltipOpen(false)}
                 >
                     <div className='h-[200px] w-full bg-neutral-800 mb-1 px-4 py-4 rounded-md'>
                         <Slider
