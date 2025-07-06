@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Minus, X, Menu } from 'lucide-react';
-import { TiArrowMaximise, TiArrowMinimise } from "react-icons/ti";
 import { VscLayoutSidebarLeft, VscLayoutSidebarLeftOff } from "react-icons/vsc";
+import { TbWindowMaximize, TbWindowMinimize } from "react-icons/tb";
 import { usePopover, usePanelStore } from '@/stores';
+import TailscaleStatusDisplay from './TailscaleStatusDisplay';
 
-
-const TitleBar: React.FC = () => {
+const TitleBar = () => {
     const { toggle } = usePopover()
     const { isSideBarCollapsed, toggleSideBar } = usePanelStore((state) => state)
     const [isMaximized, setIsMaximized] = useState<boolean>(false);
@@ -27,10 +27,13 @@ const TitleBar: React.FC = () => {
                 </div>
             </div>
 
+            {/* draggable area */}
             <div
-                className="flex w-full h-full"
+                className="flex w-full h-full select-none justify-center items-baseline"
                 style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
-            />
+            >
+                <TailscaleStatusDisplay autoCollapse={true} />
+            </div>
 
             <div className="flex">
                 <div
@@ -57,9 +60,9 @@ const TitleBar: React.FC = () => {
                     }}
                 >
                     {isMaximized ?
-                        <TiArrowMinimise className={buttonIconClassName} />
+                        <TbWindowMinimize className={buttonIconClassName} />
                         :
-                        <TiArrowMaximise className={buttonIconClassName} />
+                        <TbWindowMaximize className={buttonIconClassName} />
                     }
                 </div>
                 <div

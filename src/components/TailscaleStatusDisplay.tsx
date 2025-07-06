@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTailscaleStore } from '@/stores/tailscaleStore';
 import { cn } from "@/lib/utils";
 
-const TailscaleStatusDisplay = () => {
+const TailscaleStatusDisplay = ({ autoCollapse = false }: { autoCollapse?: boolean }) => {
     const tailscaleStatus = useTailscaleStore((state) => state.tailscaleStatus);
     const [isVisible, setIsVisible] = useState(true);
     const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -58,14 +58,11 @@ const TailscaleStatusDisplay = () => {
     const statusColorClass = getStatusColor(tailscaleStatus?.BackendState);
 
     return (
-        <div
-            className={cn(
-                "fixed top-0 left-0 right-0 p-2 bg-background text-foreground border-b border-border shadow-lg transition-transform duration-500 ease-in-out z-50 text-xs",
-                isVisible ? "translate-y-[100%]" : "-translate-y-full"
-            )}
-            aria-live="polite"
-        >
-            <div className="container mx-auto flex items-center justify-between gap-2 sm:gap-4 px-2">
+        <div className={cn(autoCollapse && ('w-1/2  rounded-b-md bg-white/5 border-0 border-muted-foreground'),
+            'transition-all duration-300 text-xs py-1',
+            autoCollapse && (isVisible ? 'translate-y-0' : '-translate-y-full')
+        )}>
+            <div className="container mx-auto flex items-center justify-between gap-4 px-2">
                 <div className="flex items-center gap-1 min-w-0">
                     <span className="font-semibold">Tailscale:</span>
                     <span className={cn("truncate", statusColorClass)}>{backendStateToDisplay}</span>

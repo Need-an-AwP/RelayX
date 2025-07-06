@@ -56,7 +56,7 @@ const UserProfile = () => {
             onOpenChange={handlePopoverOpenChange}
         >
             <PopoverTrigger asChild>
-                <div className="flex items-center gap-4 cursor-pointer hover:bg-secondary/60 rounded-md p-2">
+                <div className="flex items-center gap-4 cursor-pointer select-none hover:bg-secondary/60 rounded-md p-2">
                     <Avatar className="flex-shrink-0">
                         <AvatarImage src={selfState.userAvatar} />
                         <AvatarFallback>

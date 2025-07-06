@@ -15,6 +15,12 @@ export interface IpcBridge {
 
     getUserConfig: () => Promise<any>;
     setUserConfig: (config: any) => Promise<any>;
+
+    getInitAudioDevice: () => Promise<any>;
+    setInitAudioDevice: (device: any) => Promise<any>;
+
+    getEnvConfig: () => Promise<any>;
+    setEnvConfig: (config: any) => Promise<any>;
 }
 
 export interface WinAudioCapture {

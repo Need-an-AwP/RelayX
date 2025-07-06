@@ -153,10 +153,10 @@ const SettingPopover = () => {
                             <div className="text-sm font-medium leading-none">
                                 RNN Noise Reduction
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                                Powered by <a href='https://jmvalin.ca/demo/rnnoise/' target='_blank' onClick={(e) => {
+                            <p className="text-xs text-muted-foreground">
+                                From <a href='https://jmvalin.ca/demo/rnnoise/' target='_blank' rel="noopener noreferrer" className="text-blue-500" onClick={(e) => {
                                     e.preventDefault();
-                                    window.ipcBridge.invoke('open-external-link', 'https://jmvalin.ca/demo/rnnoise/');
+                                    window.ipcBridge.openURL('https://jmvalin.ca/demo/rnnoise/');
                                 }}>RNNoise Demo</a>
                             </p>
                         </div>

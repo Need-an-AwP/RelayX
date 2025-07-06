@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain} from 'electron';
+import { app, shell, BrowserWindow, ipcMain } from 'electron';
 import { getThrottledElectronProcessIds } from './electronPID.mjs';
 import { getAvailableSources, setCaptureId, setDisplayMediaRequestHandler } from './destopCapture.mjs';
 
@@ -7,6 +7,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+import fs from 'fs';
+import dotenv from 'dotenv';
 
 import { join } from 'path';
 import { spawn } from 'child_process';
@@ -48,6 +50,10 @@ const store = new Store({
         userAvatar: 'https://github.com/shadcn.png',
         userStatus: 'online',
         theme: 'dark',
+        initAudioDevice: {
+            input: 'default',
+            output: 'default'
+        },
         windowBounds: {
             width: 1200,
             height: 832
@@ -194,7 +200,7 @@ function createWindow() {
     // get window bounds from config
     const { width, height } = store.get('windowBounds');
     const windowBounds = store.get('windowBounds');
-    
+
     // 创建窗口配置
     const windowOptions = {
         title: 'RelayX',
@@ -211,13 +217,13 @@ function createWindow() {
             contextIsolation: true,
         }
     };
-    
+
     // 如果配置中有 x 和 y 值，则使用它们
     if (windowBounds.x !== undefined && windowBounds.y !== undefined) {
         windowOptions.x = windowBounds.x;
         windowOptions.y = windowBounds.y;
     }
-    
+
     mainWindow = new BrowserWindow(windowOptions);
 
     startBackendProcess(mainWindow, envFilePath);
@@ -257,7 +263,7 @@ function createWindow() {
 
     handleBasicWindowAction(mainWindow);
 
-    // 添加用户配置相关的IPC处理
+    // user config read & write
     ipcMain.handle('get-user-config', () => {
         return {
             userName: store.get('userName'),
@@ -282,26 +288,79 @@ function createWindow() {
         return true;
     });
 
+    // env config read & write
+    ipcMain.handle('get-env-config', () => {
+        let env = '';
+        if (!envFilePath) {
+            env = `${__dirname}/../.env`;
+        } else {
+            env = envFilePath;
+        }
+        console.log('env file path:', env);
+        try {
+            // Check if file exists, if not return empty object
+            if (!fs.existsSync(env)) {
+                return {};
+            }
+            const envFileContent = fs.readFileSync(env, { encoding: 'utf8' });
+            const envConfig = dotenv.parse(envFileContent);
+            return envConfig;
+        } catch (error) {
+            console.error('Failed to read or parse .env file:', error);
+            return null;
+        }
+    });
+
+    ipcMain.handle('set-env-config', (event, config) => {
+        let env = '';
+        if (!envFilePath) {
+            env = `${__dirname}/../.env`;
+        } else {
+            env = envFilePath;
+        }
+        console.log('env file path:', env);
+        try {
+            const envString = Object.entries(config)
+                .map(([key, value]) => `${key}=${value}`)
+                .join('\n');
+            fs.writeFileSync(env, envString);
+            console.log('.env file updated at:', env);
+            return true;
+        } catch (error) {
+            console.error('Failed to write .env file:', error);
+            return false;
+        }
+    });
+
+    // init audio device
+    ipcMain.handle('get-init-audio-device', () => {
+        return store.get('initAudioDevice');
+    });
+    ipcMain.handle('set-init-audio-device', (event, device) => {
+        store.set('initAudioDevice', device);
+    });
+
+
     mainWindow.on('ready-to-show', () => {
         mainWindow.show();
         // createWebRTCInternalsWindow();
     });
 
-    // 保存窗口位置和大小
+    // save window bounds and position
     mainWindow.on('resize', () => {
         if (!mainWindow.isMaximized()) {
             const { x, y, width, height } = mainWindow.getBounds();
             store.set('windowBounds', { x, y, width, height });
         }
     });
-    
+
     mainWindow.on('move', () => {
         if (!mainWindow.isMaximized()) {
             const { x, y, width, height } = mainWindow.getBounds();
             store.set('windowBounds', { x, y, width, height });
         }
     });
-    
+
     mainWindow.on('closed', () => {
         if (webrtcInternalsWindow && !webrtcInternalsWindow.isDestroyed()) {
             webrtcInternalsWindow.close();
@@ -329,7 +388,7 @@ function createWindow() {
 app.whenReady().then(() => {
     // init display media request handler
     setDisplayMediaRequestHandler();
-    
+
     createWindow();
 
     app.on('activate', () => {

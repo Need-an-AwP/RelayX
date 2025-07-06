@@ -3,9 +3,12 @@
 	"userAvatar": "https://unavatar.io/x/elonmusk",
 	"userStatus": "online",
 	"theme": "dark",
+	"initAudioDevice": {
+		"output": "3acce9248a25a33ee5261f47c7132acb21fee332dbbb146fecca21dc7bd221cb"
+	},
 	"windowBounds": {
-		"x": 314,
-		"y": 207,
+		"x": 459,
+		"y": 162,
 		"width": 1200,
 		"height": 773
 	}

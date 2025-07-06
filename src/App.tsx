@@ -1,7 +1,6 @@
 import './App.css'
 import { useEffect, useRef, useState } from 'react'
 import OnlinePeersDisplay from '@/components/OnlinePeersDisplay'
-import TailscaleStatusDisplay from '@/components/TailscaleStatusDisplay'
 import { ThemeProvider } from '@/components/theme-provider'
 import {
     initializeTailscaleListeners,
@@ -85,7 +84,6 @@ function App() {
                         onClick={() => closeAll()}
                     />
 
-                    <TailscaleStatusDisplay />
                     <AppSettingPanel />
 
                     <ResizablePanelGroup direction="horizontal">

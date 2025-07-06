@@ -41,7 +41,13 @@ contextBridge.exposeInMainWorld('ipcBridge', {
     getScreenSources: () => ipcRenderer.invoke('getScreenSources'),
 
     getUserConfig: () => ipcRenderer.invoke('get-user-config'),
-    setUserConfig: (config) => ipcRenderer.invoke('set-user-config', config)
+    setUserConfig: (config) => ipcRenderer.invoke('set-user-config', config),
+
+    getInitAudioDevice: () => ipcRenderer.invoke('get-init-audio-device'),
+    setInitAudioDevice: (device) => ipcRenderer.invoke('set-init-audio-device', device),
+
+    getEnvConfig: () => ipcRenderer.invoke('get-env-config'),
+    setEnvConfig: (config) => ipcRenderer.invoke('set-env-config', config)
 });
 
 
