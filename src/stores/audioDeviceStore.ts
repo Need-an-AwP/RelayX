@@ -26,10 +26,9 @@ const useAudioDeviceStore = create<AudioDeviceState>((set) => ({
 
     setInputDevices: (devices: AudioDevice[]) => set({ inputDevices: devices }),
     setOutputDevices: (devices: AudioDevice[]) => set({ outputDevices: devices }),
-    // setSelectedInput: (deviceId: string) => set({ selectedInput: deviceId }),
     setSelectedInput: (deviceId: string) => {
         set({ selectedInput: deviceId })
-        window.ipcBridge.setInitAudioDevice({ input: deviceId });
+        window.ipcBridge.setUserConfig('initAudioDevices.input', deviceId);
         const { sourceNode, localOriginalStream, ctx_main, gainNode, setState } = useAudioProcessing.getState();
         if (sourceNode && localOriginalStream && gainNode) {
             stopAllTracks(localOriginalStream);
@@ -52,10 +51,9 @@ const useAudioDeviceStore = create<AudioDeviceState>((set) => ({
                 });
         }
     },
-    // setSelectedOutput: (deviceId: string) => set({ selectedOutput: deviceId }),
     setSelectedOutput: (deviceId: string) => {
         set({ selectedOutput: deviceId });
-        window.ipcBridge.setInitAudioDevice({ output: deviceId });
+        window.ipcBridge.setUserConfig('initAudioDevices.output', deviceId );
         const { destinationNode } = useAudioProcessing.getState();
         if (destinationNode) {
             // 如果 destinationNode 是 AudioNode，我们需要获取它的输出元素
@@ -85,7 +83,8 @@ const useAudioDeviceStore = create<AudioDeviceState>((set) => ({
 
 const initialAudioDevices = async () => {
     const store = useAudioDeviceStore.getState();
-    const initAudioDevice = await window.ipcBridge.getInitAudioDevice();
+    const userConfig = await window.ipcBridge.getUserConfig();
+    const initAudioDevices = userConfig.initAudioDevices;
     //enumerate input and output devices
     navigator.mediaDevices.enumerateDevices()
         .then(devices => {
@@ -103,7 +102,7 @@ const initialAudioDevices = async () => {
             store.setInputDevices(inputList);
             store.setOutputDevices(outputList);
 
-            const savedInputId = initAudioDevice?.input;
+            const savedInputId = initAudioDevices?.input;
             if (savedInputId && inputList.find(i => i.value === savedInputId)) {
                 store.setSelectedInput(savedInputId);
             }
@@ -114,7 +113,7 @@ const initialAudioDevices = async () => {
                 store.setSelectedInput(inputList[0].value);
             }
 
-            const savedOutputId = initAudioDevice?.output;
+            const savedOutputId = initAudioDevices?.output;
             if (savedOutputId && outputList.find(i => i.value === savedOutputId)) {
                 store.setSelectedOutput(savedOutputId);
             }

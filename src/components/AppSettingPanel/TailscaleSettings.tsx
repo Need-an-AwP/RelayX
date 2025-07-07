@@ -23,9 +23,11 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { RotateCcw, Copy, EyeOff } from "lucide-react";
 import { Separator } from "@/components/ui/separator"
+import { useTailscaleStore } from "@/stores/tailscaleStore";
 
 
 export default function TailscaleSettings() {
+    const tailscaleStatus = useTailscaleStore((state) => state.tailscaleStatus);
     const [currentTsKey, setCurrentTsKey] = useState('');
     const [currentHostName, setCurrentHostName] = useState('');
 
@@ -35,7 +37,6 @@ export default function TailscaleSettings() {
         window.ipcBridge.getEnvConfig()
             .then(config => {
                 if (isMounted) {
-                    console.log(config);
                     setCurrentTsKey(config.TAILSCALE_AUTH_KEY);
                     setCurrentHostName(config.NODE_HOSTNAME);
                 }
@@ -50,9 +51,18 @@ export default function TailscaleSettings() {
         <Card>
             <CardHeader>
                 <CardTitle>Tailscale Settings</CardTitle>
+
             </CardHeader>
             <CardContent>
                 <div className="flex flex-col gap-2">
+                    <div className="flex gap-2 justify-between">
+                        <Label className="whitespace-nowrap">current Tailnet:</Label>
+                        <div className="flex gap-2 w-[80%] text-green-300 text-sm">
+                            <span>{tailscaleStatus?.CurrentTailnet?.Name}</span>
+                        </div>
+                    </div>
+
+                    <Separator />
 
                     <div className="flex gap-2 justify-between">
                         <Label className="whitespace-nowrap">Tailscale Key:</Label>
@@ -63,6 +73,7 @@ export default function TailscaleSettings() {
                             </Button>
                         </div>
                     </div>
+
                     <div className="flex gap-2 justify-between">
                         <Label className="whitespace-nowrap">Host name:</Label>
                         <div className="flex gap-2 w-[80%]">

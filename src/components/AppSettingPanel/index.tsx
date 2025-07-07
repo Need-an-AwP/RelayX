@@ -8,13 +8,8 @@ import ConfigSettings from "./ConfigSettings";
 import TailscaleSettings from "./TailscaleSettings";
 import TailscaleStatus from "./TailscaleStatus";
 
-
 export default function AppSettingPanel() {
     const { isAppSettingOpen } = usePopover()
-    
-
-    
-
 
     return (
         <div
@@ -37,10 +32,8 @@ export default function AppSettingPanel() {
                     {/* config settings */}
                     <ConfigSettings />
 
-
                     {/* peer refresh time */}
                     <RefreshTime />
-
 
                     {/* Tailscale Status */}
                     <TailscaleStatus />

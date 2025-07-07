@@ -35,7 +35,7 @@ export default function RefreshTime() {
                 <CardTitle>Peer Refresh Time</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="flex flex-col gap-2 justify-center items-center text-muted-foreground">
+                <div className="flex flex-col gap-2 justify-center items-center text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {secondsAgo !== null ? `${secondsAgo}sec ago` : 'Not updated'}

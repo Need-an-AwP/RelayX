@@ -3,12 +3,13 @@
 	"userAvatar": "https://unavatar.io/x/elonmusk",
 	"userStatus": "online",
 	"theme": "dark",
-	"initAudioDevice": {
-		"output": "3acce9248a25a33ee5261f47c7132acb21fee332dbbb146fecca21dc7bd221cb"
+	"initAudioDevices": {
+		"input": "default",
+		"output": "8c9abcc1f3f5d4972695e4254922395756a7f4a5a92e1e778a197fdeb9b7c12f"
 	},
 	"windowBounds": {
-		"x": 459,
-		"y": 162,
+		"x": 703,
+		"y": 169,
 		"width": 1200,
 		"height": 773
 	}

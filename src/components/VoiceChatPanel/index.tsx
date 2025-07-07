@@ -1,12 +1,28 @@
+import { useState, useEffect } from "react"
 import { usePeerStateStore } from "@/stores"
 import SelfUser from "./SelfUser"
 import User from "./User"
+import PlaceHolder from "./PlaceHolder"
+
 
 export default function VoiceChatPanel() {
     const peers = usePeerStateStore(state => state.peers)
     const selfState = usePeerStateStore(state => state.selfState)
+    const [isEmpty, setIsEmpty] = useState(true)
 
-    return (
+    useEffect(() => {
+        if (peers.size === 0 && !selfState.isInChat) {
+            setIsEmpty(true)
+        } else {
+            setIsEmpty(false)
+        }
+    }, [peers, selfState])
+
+    return (isEmpty ?
+        <div className="h-full flex items-center justify-center">
+            <PlaceHolder />
+        </div>
+        :
         <div className="h-full w-full min-w-0 overflow-y-scroll
         [scrollbar-gutter:stable]
         [&::-webkit-scrollbar]:w-2

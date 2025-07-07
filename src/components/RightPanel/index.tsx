@@ -15,7 +15,7 @@ export default function RightPanel() {
                 :
                 <div className="relative h-full w-full flex justify-center items-center">
                     {selfState.isInChat && <MessageInput />}
-                    <NyancatBackground />
+                    {/* <NyancatBackground /> */}
                 </div>
             }
         </div>

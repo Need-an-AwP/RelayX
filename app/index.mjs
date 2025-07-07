@@ -41,26 +41,8 @@ args.forEach(arg => {
 });
 
 
-import Store from 'electron-store';
-const store = new Store({
-    cwd: __dirname,
-    name: configName,
-    defaults: {
-        userName: 'default user name',
-        userAvatar: 'https://github.com/shadcn.png',
-        userStatus: 'online',
-        theme: 'dark',
-        initAudioDevice: {
-            input: 'default',
-            output: 'default'
-        },
-        windowBounds: {
-            width: 1200,
-            height: 832
-        }
-    }
-});
-console.log('Config file path:', store.path);
+import { initConfigStore } from './config-store.mjs';
+const { store, userConfigKeys } = initConfigStore(configName);
 
 
 // Function to start and manage the Go backend process
@@ -265,27 +247,11 @@ function createWindow() {
 
     // user config read & write
     ipcMain.handle('get-user-config', () => {
-        return {
-            userName: store.get('userName'),
-            userAvatar: store.get('userAvatar'),
-            userStatus: store.get('userStatus')
-        };
+        return store.store;
     });
 
-    ipcMain.handle('set-user-config', (event, config) => {
-        if (config.userName !== undefined) {
-            store.set('userName', config.userName);
-            console.log('set user name', config.userName);
-        }
-        if (config.userAvatar !== undefined) {
-            store.set('userAvatar', config.userAvatar);
-            console.log('set user avatar', config.userAvatar);
-        }
-        if (config.userStatus !== undefined) {
-            store.set('userStatus', config.userStatus);
-            console.log('set user status', config.userStatus);
-        }
-        return true;
+    ipcMain.on('set-user-config', (event, config, value) => {
+        store.set(config, value);
     });
 
     // env config read & write
@@ -330,14 +296,6 @@ function createWindow() {
             console.error('Failed to write .env file:', error);
             return false;
         }
-    });
-
-    // init audio device
-    ipcMain.handle('get-init-audio-device', () => {
-        return store.get('initAudioDevice');
-    });
-    ipcMain.handle('set-init-audio-device', (event, device) => {
-        store.set('initAudioDevice', device);
     });
 
 
