@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
 
-type CaptureSource = {
+export type CaptureSource = {
     id: string
     name: string
     appIcon: string

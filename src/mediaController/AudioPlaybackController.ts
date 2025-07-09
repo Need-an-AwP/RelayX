@@ -7,7 +7,7 @@ export default class AudioPlaybackController {
     private static instance: AudioPlaybackController | null = null;
     private audioElements: Map<peerIP, HTMLAudioElement> = new Map();
     private audioEl: HTMLAudioElement | null = null;
-    private DEV = true;
+    private DEV = false;
     private audioContainer: HTMLElement | null = null;
 
     constructor() {

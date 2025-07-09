@@ -33,7 +33,7 @@ interface PeerStateStore {
     setPeerState: (peerID: peerID, state: PeerState) => void
     getPeerState: (peerID: peerID) => PeerState | undefined
     initializeSelfState: () => Promise<void>
-    updateSelfState: (partialState: Partial<PeerState>) => Promise<void>
+    updateSelfState: (partialState: Partial<PeerState>) => void
 }
 
 const defaultPeerState: PeerState = {
@@ -72,20 +72,13 @@ export const usePeerStateStore = create<PeerStateStore>()(
             set({ initialized: true })
         },
 
-        updateSelfState: async (partialState: Partial<PeerState>) => {
-            const userConfigToUpdate: { userName?: string; userAvatar?: string } = {};
-
-            if (partialState.userName !== undefined) {
-                userConfigToUpdate.userName = partialState.userName;
-            }
-            if (partialState.userAvatar !== undefined) {
-                userConfigToUpdate.userAvatar = partialState.userAvatar;
-            }
-
+        updateSelfState: (partialState: Partial<PeerState>) => {
             try {
-                if (Object.keys(userConfigToUpdate).length > 0) {
-                    console.log('update user config', userConfigToUpdate);
-                    await window.ipcBridge.setUserConfig(userConfigToUpdate);
+                if (partialState.userName !== undefined) {
+                    window.ipcBridge.setUserConfig('userName', partialState.userName);
+                }
+                if (partialState.userAvatar !== undefined) {
+                    window.ipcBridge.setUserConfig('userAvatar', partialState.userAvatar);
                 }
 
                 set((state) => ({

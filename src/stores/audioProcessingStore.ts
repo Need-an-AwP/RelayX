@@ -12,10 +12,14 @@ interface AudioProcessingState {
     gainNode: GainNode | null
     processorNode: AudioNode | null //ScriptProcessorNode
     mergerNode: ChannelMergerNode | null
+    mergerAnalyser: AnalyserNode | null
     analyser: AnalyserNode | null
     handleAddonDataNode: AudioWorkletNode | null
     addonGainNode: GainNode | null
     addonDestinationNode: MediaStreamAudioDestinationNode | null
+    audioCaptureSourceNode: MediaStreamAudioSourceNode | null
+    audioCaptureGainNode: GainNode | null
+    audioCaptureDestinationNode: MediaStreamAudioDestinationNode | null
     destinationNode: MediaStreamAudioDestinationNode | null
 
     localOriginalStream: MediaStream | null,
@@ -46,6 +50,7 @@ interface AudioProcessingState {
     updateCaptureProcess: (newProcessId: number | null) => void;
     setGainValue: (value: number) => void;
     setAddonGainValue: (value: number) => void;
+    addSource2AudioCapture: (stream: MediaStream | null) => void;
 }
 
 const useAudioProcessing = create<AudioProcessingState>((set, get) => ({
@@ -56,10 +61,14 @@ const useAudioProcessing = create<AudioProcessingState>((set, get) => ({
     gainNode: null,
     processorNode: null,
     mergerNode: null,
+    mergerAnalyser: null,
     analyser: null,
     handleAddonDataNode: null,
     addonGainNode: null,
     addonDestinationNode: null,
+    audioCaptureSourceNode: null,
+    audioCaptureGainNode: null,
+    audioCaptureDestinationNode: null,
     destinationNode: null,
 
     // streams
@@ -214,6 +223,22 @@ const useAudioProcessing = create<AudioProcessingState>((set, get) => ({
                 addonGainNode.gain.value = value / 100;
             });
         }
+    },
+    addSource2AudioCapture: (stream: MediaStream | null) => {
+        const { ctx_main, audioCaptureGainNode, audioCaptureSourceNode } = get();
+        if (!audioCaptureGainNode) return;
+
+        if (!stream) {
+            if (audioCaptureSourceNode) {
+                audioCaptureSourceNode.disconnect();
+            }
+            set({ audioCaptureSourceNode: null })
+            return;
+        } else {
+            const newAudioCaptureSourceNode = ctx_main.createMediaStreamSource(stream);
+            newAudioCaptureSourceNode.connect(audioCaptureGainNode)
+            set({ audioCaptureSourceNode: newAudioCaptureSourceNode })
+        }
     }
 }))
 
@@ -229,9 +254,12 @@ const initializeAudioProcessing = async () => {
     const sourceNode = ctx_main.createMediaStreamSource(localStream);
     const gainNode = ctx_main.createGain();
     const processorNode = await initNoiseReduceProcessorNode(ctx_main);
-    const addonGainNode = ctx_main.createGain();
-    const addonDestinationNode = ctx_main.createMediaStreamDestination();
-    const mergerNode = ctx_main.createChannelMerger();
+    // const addonGainNode = ctx_main.createGain();
+    // const addonDestinationNode = ctx_main.createMediaStreamDestination();
+    const audioCaptureGainNode = ctx_main.createGain();
+    const audioCaptureDestinationNode = ctx_main.createMediaStreamDestination();
+    const mergerNode = ctx_main.createGain();
+    const mergerAnalyser = ctx_main.createAnalyser();
     const analyser = ctx_main.createAnalyser();
     const destinationNode = ctx_main.createMediaStreamDestination();
     // connect nodes
@@ -257,20 +285,29 @@ const initializeAudioProcessing = async () => {
     processorNode.connect(destinationNode)
     processorNode.connect(analyser)
 
-    const { handleAddonDataNode } = useAudioProcessing.getState()
-    if (handleAddonDataNode) {
-        handleAddonDataNode.connect(addonGainNode)
-    }
-    addonGainNode.connect(addonDestinationNode)
+    // const { handleAddonDataNode } = useAudioProcessing.getState()
+    // if (handleAddonDataNode) {
+    //     handleAddonDataNode.connect(addonGainNode)
+    // }
+    // addonGainNode.connect(addonDestinationNode)
+    audioCaptureGainNode.connect(audioCaptureDestinationNode)
 
+    /*merger node combine micphone stream and addon stream*/
+    processorNode.connect(mergerNode)
+    // addonGainNode.connect(mergerNode)
+    audioCaptureGainNode.connect(mergerNode)
+    mergerNode.connect(mergerAnalyser)
 
     store.setState({
         sourceNode,
         gainNode,
         processorNode,
-        addonGainNode,
-        addonDestinationNode,
+        // addonGainNode,
+        // addonDestinationNode,
+        audioCaptureGainNode,
+        audioCaptureDestinationNode,
         mergerNode,
+        mergerAnalyser,
         analyser,
         destinationNode,
     })
@@ -278,8 +315,10 @@ const initializeAudioProcessing = async () => {
     const finalStream = destinationNode.stream
     store.setState({ localFinalStream: finalStream })
 
-    const addonStream = addonDestinationNode.stream
-    store.setState({ localAddonStream: addonStream })
+    // const addonStream = addonDestinationNode.stream
+    // store.setState({ localAddonStream: addonStream })
+    const audioCaptureStream = audioCaptureDestinationNode.stream
+    store.setState({ localAddonStream: audioCaptureStream })
 
     // initialize capture addon before capture
     if (!store.isAddonInitialized) {
@@ -325,6 +364,7 @@ const setupAddonHandleAudioWorklet = async (ctx: AudioContext) => {
                     this.lastReceivedTime = 0;
                     this.originData = new Float32Array(0);
                     this.offset = 0;
+                    this.updateCounter = 0;
                     this.port.onmessage = (event) => {// 拼接外部数据
                         // console.log('received data, '+(Date.now()-this.lastReceivedTime))
                         // console.log(event.data)
@@ -347,7 +387,10 @@ const setupAddonHandleAudioWorklet = async (ctx: AudioContext) => {
                             this.audioBuffer = this.audioBuffer.subarray(128)
                         }
                     });
-                    this.port.postMessage({type: 'bufferLength', data: this.audioBuffer.length})
+                    if (this.updateCounter++ > 100) { // Throttle the message posting
+                        this.port.postMessage({type: 'bufferLength', data: this.audioBuffer.length})
+                        this.updateCounter = 0;
+                    }
                     return true;
                 }
             }

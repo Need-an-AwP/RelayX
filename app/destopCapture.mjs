@@ -19,18 +19,31 @@ async function getAvailableSources() {
     return serializedSources;
 }
 
-let captureId;
-function setCaptureId(id) {
-    captureId = id;
+let screenCaptureId;
+function setScreenCaptureId(id) {
+    screenCaptureId = id;
+}
+
+let audioCaptureId;
+function setAudioCaptureId(id) {
+    audioCaptureId = id;
 }
 
 function setDisplayMediaRequestHandler() {
     session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
+        console.log('setDisplayMediaRequestHandler', request);
         try {
-            if (!captureId) {
-                throw new Error('Capture ID is not set');
+            let captureId;
+            if(!request.videoRequested && request.audioRequested){
+                captureId = audioCaptureId;
+            }else{
+                captureId = screenCaptureId;
             }
             
+            if(!captureId){
+                throw new Error('electronCaptureId is not set');
+            }
+            console.log('captureId', captureId);
             desktopCapturer.getSources({
                 types: captureId.startsWith('screen') ? ['screen'] : ['window']
             })
@@ -49,8 +62,10 @@ function setDisplayMediaRequestHandler() {
     }, { useSystemPicker: false })
 }
 
+
 export {
-    setCaptureId,
+    setScreenCaptureId,
+    setAudioCaptureId,
     getAvailableSources,
     setDisplayMediaRequestHandler
 }

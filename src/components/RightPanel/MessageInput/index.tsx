@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { TbSend, TbSendOff } from "react-icons/tb";
-import { AiOutlineEnter } from "react-icons/ai";
 import { ChevronUp, ChevronDown, Plus, TriangleAlert, SmilePlus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { EmojiPicker, EmojiPickerSearch, EmojiPickerContent, EmojiPickerFooter } from "@/components/ui/emoji-picker";

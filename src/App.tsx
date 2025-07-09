@@ -71,55 +71,57 @@ function App() {
 
     return (
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-            <div className="flex flex-col h-screen w-screen">
+            <div className="flex flex-col h-screen w-screen overflow-hidden">
                 <TitleBar />
+                
+                <div className="flex-1 overflow-hidden">
+                    <div className="h-full w-full">
+                        {/* Blur Overlay */}
+                        <div
+                            className={`
+                                fixed inset-0 bg-black/10 backdrop-blur-sm z-40 transition-opacity duration-300
+                                ${isAnyPopoverOpen ? "opacity-100" : "opacity-0 pointer-events-none"}
+                            `}
+                            onClick={() => closeAll()}
+                        />
 
-                <div className="flex-grow h-full transition-all duration-300">
-                    {/* Blur Overlay */}
-                    <div
-                        className={`
-                            fixed inset-0 bg-black/10 backdrop-blur-sm z-40 transition-opacity duration-300
-                            ${isAnyPopoverOpen ? "opacity-100" : "opacity-0 pointer-events-none"}
-                        `}
-                        onClick={() => closeAll()}
-                    />
+                        <AppSettingPanel />
 
-                    <AppSettingPanel />
-
-                    <ResizablePanelGroup direction="horizontal">
-                        <ResizablePanel
-                            defaultSize={30}
-                            minSize={20}
-                            collapsible={true}
-                            ref={leftSideBarRef}
-                        >
-                            <div className="flex flex-col h-full justify-start">
-                                <ResizablePanelGroup direction="vertical">
-                                    <ResizablePanel defaultSize={20} collapsible={true}>
-                                        <OnlinePeersDisplay />
-                                    </ResizablePanel>
-                                    <ResizableHandle />
-                                    <ResizablePanel>
-                                        <VoiceChatPanel />
-                                    </ResizablePanel>
-                                </ResizablePanelGroup>
+                        <ResizablePanelGroup direction="horizontal">
+                            <ResizablePanel
+                                defaultSize={30}
+                                maxSize={80}
+                                minSize={20}
+                                collapsible={true}
+                                ref={leftSideBarRef}
+                            >
+                                <div className="flex flex-col h-full justify-start">
+                                    <ResizablePanelGroup direction="vertical">
+                                        <ResizablePanel defaultSize={20} collapsible={true}>
+                                            <OnlinePeersDisplay />
+                                        </ResizablePanel>
+                                        <ResizableHandle />
+                                        <ResizablePanel>
+                                            <VoiceChatPanel />
+                                        </ResizablePanel>
+                                    </ResizablePanelGroup>
 
 
-                                <div className="pt-0 mt-auto">
-                                    <UserPanel />
+                                    <div className="pt-0 mt-auto">
+                                        <UserPanel />
+                                    </div>
                                 </div>
-                            </div>
-                        </ResizablePanel>
-                        <ResizableHandle />
-                        <ResizablePanel
-                            defaultSize={70}
-                            collapsible={true}
-                            ref={rightSideBarRef}
-                            className="h-full"
-                        >
-                            <RightPanel />
-                        </ResizablePanel>
-                    </ResizablePanelGroup>
+                            </ResizablePanel>
+                            <ResizableHandle />
+                            <ResizablePanel
+                                collapsible={true}
+                                ref={rightSideBarRef}
+                                className="h-full"
+                            >
+                                <RightPanel />
+                            </ResizablePanel>
+                        </ResizablePanelGroup>
+                    </div>
                 </div>
                 {/*         
             <RTCConnectionDisplay />

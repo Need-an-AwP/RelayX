@@ -39,7 +39,6 @@ const UserProfile = () => {
                 const finalUserName = localUserName.trim()
                 const finalAvatar = localAvatar.trim()
                 updateSelfState({ userName: finalUserName, userAvatar: finalAvatar })
-                window.ipcBridge.setUserConfig({ userName: finalUserName, userAvatar: finalAvatar })
             }
         }
         toggle('isUserPopoverOpen')
@@ -78,7 +77,7 @@ const UserProfile = () => {
                 }}
             >
                 <div className="flex flex-col gap-4">
-                    
+
                     <AvatarSelector currentAvatar={localAvatar} setCurrentAvatar={setLocalAvatar} />
 
                     <div className="flex flex-row gap-2">

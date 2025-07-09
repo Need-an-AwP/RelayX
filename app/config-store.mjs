@@ -19,7 +19,7 @@ export function initConfigStore(configName) {
                 output: 'default'
             },
             windowBounds: {
-                width: 1200,
+                width: 1400,
                 height: 832
             }
         }

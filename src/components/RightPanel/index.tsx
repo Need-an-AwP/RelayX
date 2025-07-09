@@ -1,7 +1,8 @@
 import { usePeerStateStore, useDesktopCapture } from '@/stores'
 import StreamDisplay from './StreamDisplay'
-import NyancatBackground from './NyancatBackground'
 import MessageInput from './MessageInput'
+import CardDisplay from './CardDisplay'
+
 
 export default function RightPanel() {
     const { selfState } = usePeerStateStore((state) => state)
@@ -10,14 +11,22 @@ export default function RightPanel() {
 
     return (
         <div className="h-full">
-            {isSelectingSource || selfState.isSharingScreen ?
-                <StreamDisplay />
-                :
-                <div className="relative h-full w-full flex justify-center items-center">
-                    {selfState.isInChat && <MessageInput />}
-                    {/* <NyancatBackground /> */}
+            {selfState.isInChat && <div className="h-full w-full flex flex-col">
+
+                <div className='flex-1 min-h-0'>
+                    <CardDisplay />
                 </div>
-            }
+
+                <MessageInput />
+            </div>}
         </div>
     )
 }
+
+{/* <div className="h-full">
+            {isSelectingSource || selfState.isSharingScreen ?
+                <StreamDisplay />
+                :
+                
+            }
+        </div> */}
