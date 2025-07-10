@@ -17,9 +17,6 @@ interface AudioProcessingState {
     handleAddonDataNode: AudioWorkletNode | null
     addonGainNode: GainNode | null
     addonDestinationNode: MediaStreamAudioDestinationNode | null
-    audioCaptureSourceNode: MediaStreamAudioSourceNode | null
-    audioCaptureGainNode: GainNode | null
-    audioCaptureDestinationNode: MediaStreamAudioDestinationNode | null
     destinationNode: MediaStreamAudioDestinationNode | null
 
     localOriginalStream: MediaStream | null,
@@ -50,7 +47,6 @@ interface AudioProcessingState {
     updateCaptureProcess: (newProcessId: number | null) => void;
     setGainValue: (value: number) => void;
     setAddonGainValue: (value: number) => void;
-    addSource2AudioCapture: (stream: MediaStream | null) => void;
 }
 
 const useAudioProcessing = create<AudioProcessingState>((set, get) => ({
@@ -224,22 +220,6 @@ const useAudioProcessing = create<AudioProcessingState>((set, get) => ({
             });
         }
     },
-    addSource2AudioCapture: (stream: MediaStream | null) => {
-        const { ctx_main, audioCaptureGainNode, audioCaptureSourceNode } = get();
-        if (!audioCaptureGainNode) return;
-
-        if (!stream) {
-            if (audioCaptureSourceNode) {
-                audioCaptureSourceNode.disconnect();
-            }
-            set({ audioCaptureSourceNode: null })
-            return;
-        } else {
-            const newAudioCaptureSourceNode = ctx_main.createMediaStreamSource(stream);
-            newAudioCaptureSourceNode.connect(audioCaptureGainNode)
-            set({ audioCaptureSourceNode: newAudioCaptureSourceNode })
-        }
-    }
 }))
 
 const initializeAudioProcessing = async () => {
@@ -254,10 +234,8 @@ const initializeAudioProcessing = async () => {
     const sourceNode = ctx_main.createMediaStreamSource(localStream);
     const gainNode = ctx_main.createGain();
     const processorNode = await initNoiseReduceProcessorNode(ctx_main);
-    // const addonGainNode = ctx_main.createGain();
-    // const addonDestinationNode = ctx_main.createMediaStreamDestination();
-    const audioCaptureGainNode = ctx_main.createGain();
-    const audioCaptureDestinationNode = ctx_main.createMediaStreamDestination();
+    const addonGainNode = ctx_main.createGain();
+    const addonDestinationNode = ctx_main.createMediaStreamDestination();
     const mergerNode = ctx_main.createGain();
     const mergerAnalyser = ctx_main.createAnalyser();
     const analyser = ctx_main.createAnalyser();
@@ -285,27 +263,23 @@ const initializeAudioProcessing = async () => {
     processorNode.connect(destinationNode)
     processorNode.connect(analyser)
 
-    // const { handleAddonDataNode } = useAudioProcessing.getState()
-    // if (handleAddonDataNode) {
-    //     handleAddonDataNode.connect(addonGainNode)
-    // }
-    // addonGainNode.connect(addonDestinationNode)
-    audioCaptureGainNode.connect(audioCaptureDestinationNode)
+    const { handleAddonDataNode } = useAudioProcessing.getState()
+    if (handleAddonDataNode) {
+        handleAddonDataNode.connect(addonGainNode)
+    }
+    addonGainNode.connect(addonDestinationNode)
 
     /*merger node combine micphone stream and addon stream*/
     processorNode.connect(mergerNode)
-    // addonGainNode.connect(mergerNode)
-    audioCaptureGainNode.connect(mergerNode)
+    addonGainNode.connect(mergerNode)
     mergerNode.connect(mergerAnalyser)
 
     store.setState({
         sourceNode,
         gainNode,
         processorNode,
-        // addonGainNode,
-        // addonDestinationNode,
-        audioCaptureGainNode,
-        audioCaptureDestinationNode,
+        addonGainNode,
+        addonDestinationNode,
         mergerNode,
         mergerAnalyser,
         analyser,
@@ -315,10 +289,8 @@ const initializeAudioProcessing = async () => {
     const finalStream = destinationNode.stream
     store.setState({ localFinalStream: finalStream })
 
-    // const addonStream = addonDestinationNode.stream
-    // store.setState({ localAddonStream: addonStream })
-    const audioCaptureStream = audioCaptureDestinationNode.stream
-    store.setState({ localAddonStream: audioCaptureStream })
+    const addonStream = addonDestinationNode.stream
+    store.setState({ localAddonStream: addonStream })
 
     // initialize capture addon before capture
     if (!store.isAddonInitialized) {

@@ -24,23 +24,14 @@ function setScreenCaptureId(id) {
     screenCaptureId = id;
 }
 
-let audioCaptureId;
-function setAudioCaptureId(id) {
-    audioCaptureId = id;
-}
 
 function setDisplayMediaRequestHandler() {
     session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
         console.log('setDisplayMediaRequestHandler', request);
         try {
-            let captureId;
-            if(!request.videoRequested && request.audioRequested){
-                captureId = audioCaptureId;
-            }else{
-                captureId = screenCaptureId;
-            }
-            
-            if(!captureId){
+            let captureId = screenCaptureId;
+
+            if (!captureId) {
                 throw new Error('electronCaptureId is not set');
             }
             console.log('captureId', captureId);
@@ -65,7 +56,6 @@ function setDisplayMediaRequestHandler() {
 
 export {
     setScreenCaptureId,
-    setAudioCaptureId,
     getAvailableSources,
     setDisplayMediaRequestHandler
 }

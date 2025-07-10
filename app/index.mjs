@@ -1,11 +1,6 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron';
 import { getThrottledElectronProcessIds } from './electronPID.mjs';
-import {
-    getAvailableSources,
-    setScreenCaptureId,
-    setAudioCaptureId,
-    setDisplayMediaRequestHandler
-} from './destopCapture.mjs';
+import { getAvailableSources, setScreenCaptureId, setDisplayMediaRequestHandler } from './destopCapture.mjs';
 
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -49,9 +44,6 @@ args.forEach(arg => {
 import { initConfigStore } from './config-store.mjs';
 const { store, userConfigKeys } = initConfigStore(configName);
 
-import { getAudioSessions } from './audioEnumProcess.mjs';
-const AUDIOENUMEXE = join(__dirname, 'AudioSessionEnumerator.exe');
-// getAudioSessions(AUDIOENUMEXE);
 
 
 // Function to start and manage the Go backend process
@@ -252,9 +244,6 @@ function createWindow() {
         setScreenCaptureId(d);
     })
 
-    ipcMain.on('audio-capture-id', (e, d) => {
-        setAudioCaptureId(d);
-    })
 
     handleBasicWindowAction(mainWindow);
 
@@ -311,11 +300,6 @@ function createWindow() {
             return false;
         }
     });
-
-    // audio enum
-    ipcMain.handle('get-audio-sessions', async () => {
-        return await getAudioSessions(AUDIOENUMEXE);
-    })
 
 
     mainWindow.on('ready-to-show', () => {
