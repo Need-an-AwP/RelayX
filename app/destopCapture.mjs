@@ -40,7 +40,7 @@ function setDisplayMediaRequestHandler() {
             })
                 .then((sources) => {
                     const source = sources.find(s => s.id === captureId);
-                    callback({ video: source, audio: 'loopback' })
+                    callback({ video: source })
                 })
 
         } catch (error) {

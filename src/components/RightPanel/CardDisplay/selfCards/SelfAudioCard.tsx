@@ -1,13 +1,15 @@
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LoaderCircle } from "lucide-react";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu"
-import UserAudioSpectrum from "./UserAudioSpectrum";
-import type { PeerState } from "@/stores";
+import { LoaderCircle } from "lucide-react";
+import { useAudioProcessing, usePeerStateStore } from "@/stores"
+import UserAudioSpectrum from "../UserAudioSpectrum";
 
 
-export default function PeerAudioCard({className, onClick, peerState}: {className?: string, onClick?: () => void, peerState: PeerState}) {
-    const mergerAnalyser = null
+export default function SelfAudioCard({ className, onClick }: { className?: string, onClick?: () => void }) {
+    const { selfState } = usePeerStateStore()
+    const { mergerAnalyser } = useAudioProcessing()
+
     return (
         <ContextMenu>
             <ContextMenuTrigger>
@@ -20,7 +22,7 @@ export default function PeerAudioCard({className, onClick, peerState}: {classNam
                 >
                     <div className="flex h-full justify-center items-center gap-4 aspect-square p-5 z-10">
                         <Avatar className="flex-shrink-0 h-full w-full">
-                            <AvatarImage src={peerState.userAvatar} />
+                            <AvatarImage src={selfState.userAvatar} />
                             <AvatarFallback>
                                 <LoaderCircle className="w-4 h-4 animate-spin" />
                             </AvatarFallback>
