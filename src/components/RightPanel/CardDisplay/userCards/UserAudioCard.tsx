@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { LoaderCircle } from "lucide-react";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu"
-import UserAudioSpectrum from "../UserAudioSpectrum";
+import UserAudioSpectrum from "@/components/UserAudioSpectrum";
 import type { PeerState } from "@/stores";
 
 
@@ -29,7 +29,7 @@ export default function UserAudioCard({className, onClick, peerState}: {classNam
                     {mergerAnalyser &&
                         <UserAudioSpectrum
                             analyser={mergerAnalyser}
-                            className="absolute w-[100%+10px] h-full top-0 left-0 opacity-60
+                            className="absolute w-full h-full top-0 left-0 opacity-60
                     group-hover:opacity-100 transition-opacity duration-300"
                         />}
                 </Card>

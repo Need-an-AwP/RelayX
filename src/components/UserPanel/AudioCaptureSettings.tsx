@@ -6,25 +6,44 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { usePopover, useAudioProcessing, usePeerStateStore } from '@/stores'
-import AudioSpectrum from '@/components/AudioSpectrum'
+import UserAudioSpectrum from "@/components/UserAudioSpectrum";
 
 
 const AudioCaptureSettings = () => {
-    const audioProcesses = useAudioProcessing(state => state.audioProcesses);
-    const captureProcess = useAudioProcessing(state => state.captureProcess);
-    const processorInterval = useAudioProcessing(state => state.processorInterval);
-    const updateAudioProcessList = useAudioProcessing(state => state.updateAudioProcessList);
-    const updateCaptureProcess = useAudioProcessing(state => state.updateCaptureProcess);
+    const {
+        audioSessions, getAudioSessions, isCapturing,
+        startCapture, stopCapture, cpaAnalyser
+    } = useAudioProcessing();
+
     const addonStream = useAudioProcessing(state => state.localAddonStream);
-    const addonGainValue = useAudioProcessing(state => state.addonGainValue);
-    const setAddonGainValue = useAudioProcessing(state => state.setAddonGainValue);
-    const isCapturing = useAudioProcessing(state => state.isCapturing);
+
 
     const isAudioCapturePopoverOpen = usePopover(state => state.isAudioCapturePopoverOpen);
     const toggle = usePopover(state => state.toggle);
 
     const selfState = usePeerStateStore(state => state.selfState)
     const updateSelfState = usePeerStateStore(state => state.updateSelfState)
+
+
+    const handleStartCapture = (pid: string) => {
+        if (isCapturing.length > 0) {
+            stopCapture()
+        }
+        startCapture(pid)
+
+        updateSelfState({
+            isSharingAudio: true
+        })
+    }
+
+    const handleStopCapture = () => {
+        stopCapture()
+        toggle('isAudioCapturePopoverOpen');
+        updateSelfState({
+            isSharingAudio: false
+        })
+    }
+
     /*
     const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -37,14 +56,8 @@ const AudioCaptureSettings = () => {
     */
     useEffect(() => {
         if (!isAudioCapturePopoverOpen) return;
-        // set audio processes check in component
-        const audioCaptureInterval = setInterval(() => {
-            updateAudioProcessList();
-        }, 800);
+        getAudioSessions();
 
-        return () => {
-            clearInterval(audioCaptureInterval);
-        };
     }, [isAudioCapturePopoverOpen])
 
     return (
@@ -54,50 +67,43 @@ const AudioCaptureSettings = () => {
                     size="icon"
                     variant="ghost"
                     className={`${isAudioCapturePopoverOpen && 'z-50'} ${isCapturing && 'bg-green-800'} cursor-pointer`}
-                    disabled={audioProcesses === null}
-                // disabled={true}
                 >
                     <Music className="h-4 w-4" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="z-50">
-                <div className='flex flex-col gap-2'>
+            <PopoverContent className="relative z-50">
+                <div className='relative flex flex-col gap-2 z-50'>
                     <p className='text-md font-bold'>Select Input Process</p>
                     <p className='text-sm text-muted-foreground mb-2'>Choose an audio process to capture</p>
                     <div className='flex flex-row gap-3 items-center'>
                         <Select
-                            value={captureProcess?.toString() ?? ''}
-                            onValueChange={(processId) => {
-                                updateCaptureProcess(parseInt(processId))
-                                updateSelfState({
-                                    isSharingAudio: true
-                                })
-                            }}
+                            value={isCapturing}
+                            onValueChange={handleStartCapture}
                         >
                             <SelectTrigger className="w-full">
                                 <SelectValue placeholder="select a process" />
                             </SelectTrigger>
                             <SelectContent>
-                                {audioProcesses.map(item =>
-                                    <SelectItem value={item.processId.toString()} key={item.processId}>
-                                        {item.processName}
+                                {audioSessions.map((session) => (
+                                    <SelectItem
+                                        key={session.pid}
+                                        value={session.pid.toString()}
+                                    >
+                                        {session.processName}
+                                        <span className='text-xs text-muted-foreground'>
+                                            {session.pid}
+                                        </span>
                                     </SelectItem>
-                                )}
+                                ))}
                             </SelectContent>
                         </Select>
-                        {captureProcess !== null && (
+                        {isCapturing.length > 0 && (
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Button
                                             variant="outline"
-                                            onClick={() => {
-                                                updateCaptureProcess(null);
-                                                toggle('isAudioCapturePopoverOpen');
-                                                updateSelfState({
-                                                    isSharingAudio: false
-                                                })
-                                            }}
+                                            onClick={handleStopCapture}
                                             className="rounded-full w-9 h-9 cursor-pointer hover:!bg-red-800"
                                         >
                                             <Square />
@@ -110,7 +116,7 @@ const AudioCaptureSettings = () => {
                             </TooltipProvider>
                         )}
                     </div>
-                    <div className="flex flex-col gap-2 my-2">
+                    {/* <div className="flex flex-col gap-2 my-2">
                         <div className="flex justify-between text-sm">
                             <span>Output Volume</span>
                             <span className="text-zinc-400">{Math.round(addonGainValue)}%</span>
@@ -121,24 +127,18 @@ const AudioCaptureSettings = () => {
                             value={[addonGainValue]}
                             onValueChange={(value) => setAddonGainValue(value[0])}
                         />
-                    </div>
+                    </div> */}
                     {/* <audio ref={audioRef} autoPlay controls className='w-full' /> */}
-                    {captureProcess !== null && addonStream && (
-                        <div className="relative">
-                            <AudioSpectrum
-                                stream={addonStream}
-                                isEnabled={isAudioCapturePopoverOpen}
-                                className="h-[120px] rounded-md border-1 border-muted-foreground"
-                            />
-                            <div className='absolute right-0 top-0 text-xs text-muted-foreground m-2'>
-                                {processorInterval}ms
-                            </div>
-
-                        </div>
-                    )}
-
-
                 </div>
+                {isCapturing.length > 0 && cpaAnalyser && (
+                    <div className="absolute top-0 left-0 w-full h-full z-0">
+                        <UserAudioSpectrum
+                            analyser={cpaAnalyser}
+                            className="h-full w-full rounded-md opacity-50"
+                        />
+
+                    </div>
+                )}
             </PopoverContent>
         </Popover>
     )

@@ -30,10 +30,17 @@ export interface WinAudioCapture {
     capture_async: (intervalMs: number, callback: (err: any, result: any) => void) => void;
 }
 
+export interface Cpa {
+    getAudioSessions: () => void;
+    startCapture: (pid: number) => void;
+    stopCapture: () => void;
+}
+
 declare global {
     interface Window {
         ipcBridge: IpcBridge;
         winAudioCapture: WinAudioCapture;
+        cpa: Cpa;
         webkitAudioContext: typeof AudioContext;
     }
 } 

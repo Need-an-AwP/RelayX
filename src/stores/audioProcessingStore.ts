@@ -1,8 +1,9 @@
 import { create } from 'zustand'
 import initNoiseReduceProcessorNode from '@/utils/noiseProcessorNode'
 
-type AudioProcess = {
-    processId: number;
+type AduioSessionInfo = {
+    device: string;
+    pid: number;
     processName: string;
 }
 
@@ -14,9 +15,10 @@ interface AudioProcessingState {
     mergerNode: ChannelMergerNode | null
     mergerAnalyser: AnalyserNode | null
     analyser: AnalyserNode | null
-    handleAddonDataNode: AudioWorkletNode | null
-    addonGainNode: GainNode | null
-    addonDestinationNode: MediaStreamAudioDestinationNode | null
+    cpaSourceNode: AudioWorkletNode | null
+    cpaGainNode: GainNode | null
+    cpaAnalyser: AnalyserNode | null
+    cpaDestinationNode: MediaStreamAudioDestinationNode | null
     destinationNode: MediaStreamAudioDestinationNode | null
 
     localOriginalStream: MediaStream | null,
@@ -25,28 +27,27 @@ interface AudioProcessingState {
 
     isNoiseReductionEnabled: boolean;
 
-    isAddonInitialized: boolean;
-    isWorkletModuleRegistered: boolean;
-    audioProcesses: AudioProcess[];
-    captureProcess: number | null;
-    isCapturing: boolean;
+    isCapturing: string;
     intervalMs: number;
     captureControl: any;
     bufferLength: any;
-    processorInterval: any;
 
-    addonGainValue: number;
+    cpaGainValue: number;
+    audioSessions: AduioSessionInfo[];
 
 
     setState: (state: Partial<AudioProcessingState>) => void
     toggleNoiseReduction: (isEnabled: boolean) => void
-    setIntervalMs: (ms: number) => void
-    updateAudioProcessList: () => void
-    startCapture: () => void;
+
+    startCapture: (pid: string) => void;
     stopCapture: () => void;
-    updateCaptureProcess: (newProcessId: number | null) => void;
+
+    getAudioSessions: () => void;
+    setAudioSessions: (data: AduioSessionInfo[]) => void;
+    setCpaGainValue: (value: number) => void;
+    handlePcmData: (data: any) => void;
+
     setGainValue: (value: number) => void;
-    setAddonGainValue: (value: number) => void;
 }
 
 const useAudioProcessing = create<AudioProcessingState>((set, get) => ({
@@ -59,12 +60,10 @@ const useAudioProcessing = create<AudioProcessingState>((set, get) => ({
     mergerNode: null,
     mergerAnalyser: null,
     analyser: null,
-    handleAddonDataNode: null,
-    addonGainNode: null,
-    addonDestinationNode: null,
-    audioCaptureSourceNode: null,
-    audioCaptureGainNode: null,
-    audioCaptureDestinationNode: null,
+    cpaSourceNode: null,
+    cpaGainNode: null,
+    cpaAnalyser: null,
+    cpaDestinationNode: null,
     destinationNode: null,
 
     // streams
@@ -76,19 +75,14 @@ const useAudioProcessing = create<AudioProcessingState>((set, get) => ({
     isNoiseReductionEnabled: true,
 
     // audio capture
-    isAddonInitialized: false,
-    isWorkletModuleRegistered: false,
-    audioProcesses: [],
-    captureProcess: null,
-    isCapturing: false,
+    isCapturing: '',
     intervalMs: 500,
     captureControl: null,
     bufferLength: null,
-    processorInterval: null,
 
     // values
-    addonGainValue: 100,
-
+    cpaGainValue: 100,
+    audioSessions: [],
 
     setState: (state: Partial<AudioProcessingState>) => set(state),
     toggleNoiseReduction: (isEnabled: boolean) => {
@@ -132,77 +126,13 @@ const useAudioProcessing = create<AudioProcessingState>((set, get) => ({
 
         set({ isNoiseReductionEnabled: isEnabled });
     },
-    setIntervalMs: (ms: number) => set({ intervalMs: ms }),
-    updateAudioProcessList: async () => {
-        try {
-            const electronPid = await window.winAudioCapture.getElectronProcessId();
-            const processesList = window.winAudioCapture.getAudioProcessInfo();
-            const newProcessList = processesList.filter((item: any) => {
-                return !electronPid.includes(item.processId) &&
-                    item.processId !== 0 &&
-                    item.processName !== 'audiodg.exe' &&
-                    item.processName !== 'electron.exe';
-            });
-            // console.log('newProcessList:', newProcessList,'\n', 'electronPid:', electronPid);
-            set({ audioProcesses: newProcessList });
-        } catch (error) {
-            console.error("error updating audio process list:", error);
-        }
-    },
-    startCapture: () => {
-        const { captureProcess, intervalMs, handleAddonDataNode, ctx_main } = get();
-        if (captureProcess !== null) {
-            set({ isCapturing: true });
-            console.log(window.winAudioCapture.initializeCLoopbackCapture(captureProcess));
-
-            const res = window.winAudioCapture.getActivateStatus();
-            if (res.interfaceActivateResult === 0) {
-                try {
-                    const control = window.winAudioCapture.capture_async(intervalMs, (err: any, result: any) => {
-                        if (err) {
-                            console.error("Capture error:", err);
-                            return;
-                        }
-
-                        if (result !== null && handleAddonDataNode !== null) {
-                            ctx_main.decodeAudioData(result.wavData.buffer)
-                                .then((audioBuffer: AudioBuffer) => {
-                                    const wavChannelData = audioBuffer.getChannelData(0)
-                                    handleAddonDataNode.port.postMessage(wavChannelData)
-                                })
-                                .catch((err) => {
-                                    console.log("decode error:", err);
-                                })
-                        }
-                    });
-                    set({ captureControl: control });
-                } catch (error) {
-                    console.error("Capture error:", error);
-                }
-            } else {
-                console.log('initialize capture failed');
-            }
-        }
+    startCapture: (pid) => {
+        window.ipcBridge.send('start-capture', pid)
+        set({ isCapturing: pid })
     },
     stopCapture: () => {
-        const { captureControl } = get();
-        if (captureControl && captureControl.stop) {
-            captureControl.stop();
-            set({ captureControl: null, isCapturing: false });
-        }
-    },
-    updateCaptureProcess: (newProcessId: number | null) => {
-        const { captureControl, stopCapture, startCapture } = get();
-        set({ captureProcess: newProcessId });
-        if (newProcessId === null) {
-            stopCapture();
-            return;
-        }
-        if (captureControl !== null) {
-            console.log("new capture process:", newProcessId);
-            stopCapture();
-        }
-        startCapture();
+        window.ipcBridge.send('stop-capture')
+        set({ isCapturing: '' })
     },
     setGainValue: (value: number) => {
         const { gainNode } = get();
@@ -210,19 +140,49 @@ const useAudioProcessing = create<AudioProcessingState>((set, get) => ({
             gainNode.gain.value = value;
         }
     },
-    setAddonGainValue: (value: number) => {
-        const { addonGainNode } = get();
-        set({ addonGainValue: value });
-        // 使用 requestAnimationFrame 平滑更新 gainNode 的值
-        if (addonGainNode) {
-            requestAnimationFrame(() => {
-                addonGainNode.gain.value = value / 100;
-            });
+    setCpaGainValue: (value: number) => {
+        const { cpaGainNode } = get();
+        if (cpaGainNode) {
+            cpaGainNode.gain.value = value;
+        }
+    },
+    getAudioSessions: () => {
+        window.cpa.getAudioSessions();
+    },
+    setAudioSessions: (data: any) => {
+        set({ audioSessions: data })
+    },
+    handlePcmData: (data: any) => {
+        const { cpaSourceNode } = get();
+        if (cpaSourceNode) {
+            // using default array buffer
+            const pcm16 = new Int16Array(data.buffer, data.byteOffset, data.byteLength / 2);
+            const pcm32 = new Float32Array(pcm16.length);
+            for (let i = 0; i < pcm32.length; i++) {
+                pcm32[i] = pcm16[i] / 32768.0; // Convert from 16-bit int to float
+            }
+
+            cpaSourceNode.port.postMessage({ type: 'pcm-data', pcm: pcm32 });
         }
     },
 }))
 
 const initializeAudioProcessing = async () => {
+    window.ipcBridge.receive('audio-sessions', (data: AduioSessionInfo[]) => {
+        console.log(data)
+        const { setAudioSessions } = useAudioProcessing.getState();
+        setAudioSessions(data)
+    })
+
+    window.ipcBridge.receive('capture-format', (data) => {
+        console.log('Received capture format:', data);
+    })
+
+    window.ipcBridge.receive('pcm-data', (data) => {
+        const { handlePcmData } = useAudioProcessing.getState();
+        handlePcmData(data)
+    })
+
     const store = useAudioProcessing.getState();
 
     //start with default input and output devices
@@ -230,56 +190,52 @@ const initializeAudioProcessing = async () => {
     store.setState({ localOriginalStream: localStream });
 
     // define nodes
+    /*micphone */
     const ctx_main = store.ctx_main;
     const sourceNode = ctx_main.createMediaStreamSource(localStream);
     const gainNode = ctx_main.createGain();
     const processorNode = await initNoiseReduceProcessorNode(ctx_main);
-    const addonGainNode = ctx_main.createGain();
-    const addonDestinationNode = ctx_main.createMediaStreamDestination();
+    /*cpa*/
+    try {
+        await ctx_main.audioWorklet.addModule('audio-processor.js');
+    } catch (error) {
+        console.error('Error loading audio worklet:', error);
+    }
+    const cpaSourceNode = new AudioWorkletNode(ctx_main, 'pcm-player', {
+        outputChannelCount: [2],
+    });
+    const cpaGainNode = ctx_main.createGain();
+    const cpaAnalyser = ctx_main.createAnalyser();
+    const cpaDestinationNode = ctx_main.createMediaStreamDestination();
+    /*combine*/
     const mergerNode = ctx_main.createGain();
     const mergerAnalyser = ctx_main.createAnalyser();
     const analyser = ctx_main.createAnalyser();
     const destinationNode = ctx_main.createMediaStreamDestination();
     // connect nodes
-    /*merge connection
-    await setupAddonHandleAudioWorklet(ctx_main);
+    /*separate micphone stream and cpa stream*/
     sourceNode.connect(gainNode)
     gainNode.connect(processorNode)
-    processorNode.connect(mergerNode)
-    mergerNode.connect(destinationNode)
-    mergerNode.connect(analyser)
-    const { handleAddonDataNode } = useAudioProcessing.getState()
-    if (handleAddonDataNode) {
-        handleAddonDataNode.connect(addonGainNode)
-    }
-    addonGainNode.connect(mergerNode)
-    addonGainNode.connect(addonDestinationNode)
-    */
-
-    /*separate micphone stream and addon stream*/
-    await setupAddonHandleAudioWorklet(ctx_main);
-    sourceNode.connect(gainNode)
-    gainNode.connect(processorNode)
-    processorNode.connect(destinationNode)
     processorNode.connect(analyser)
+    processorNode.connect(destinationNode)
 
-    const { handleAddonDataNode } = useAudioProcessing.getState()
-    if (handleAddonDataNode) {
-        handleAddonDataNode.connect(addonGainNode)
-    }
-    addonGainNode.connect(addonDestinationNode)
+    cpaSourceNode.connect(cpaGainNode)
+    cpaGainNode.connect(cpaAnalyser)
+    cpaAnalyser.connect(cpaDestinationNode)
 
     /*merger node combine micphone stream and addon stream*/
-    processorNode.connect(mergerNode)
-    addonGainNode.connect(mergerNode)
+    analyser.connect(mergerNode)
+    cpaAnalyser.connect(mergerNode)
     mergerNode.connect(mergerAnalyser)
 
     store.setState({
         sourceNode,
         gainNode,
         processorNode,
-        addonGainNode,
-        addonDestinationNode,
+        cpaSourceNode,
+        cpaGainNode,
+        cpaAnalyser,
+        cpaDestinationNode,
         mergerNode,
         mergerAnalyser,
         analyser,
@@ -289,15 +245,8 @@ const initializeAudioProcessing = async () => {
     const finalStream = destinationNode.stream
     store.setState({ localFinalStream: finalStream })
 
-    const addonStream = addonDestinationNode.stream
-    store.setState({ localAddonStream: addonStream })
-
-    // initialize capture addon before capture
-    if (!store.isAddonInitialized) {
-        const res = window.winAudioCapture.initializeCapture()
-        console.log('initialize capture addon status:', res)
-        store.setState({ isAddonInitialized: true })
-    }
+    const cpaStream = cpaDestinationNode.stream
+    store.setState({ localAddonStream: cpaStream })
 }
 
 const getDefaultLocalAudioStream = async (): Promise<MediaStream> => {
@@ -315,82 +264,5 @@ const getDefaultLocalAudioStream = async (): Promise<MediaStream> => {
     return stream;
 }
 
-const setupAddonHandleAudioWorklet = async (ctx: AudioContext) => {
-    if (useAudioProcessing.getState().isWorkletModuleRegistered) return;
-
-    try {
-        // import handle-addon-data.js is not working in package, so use blob to load it
-        const workletCode = `
-            function concatenateByteArrays(array1, array2) {
-                const result = new Float32Array(array1.length + array2.length);
-                result.set(array1, 0);
-                result.set(array2, array1.length);
-                return result;
-            }
-
-
-            class HandleAddonData extends AudioWorkletProcessor {
-                constructor() {
-                    super();
-                    this.audioBuffer = new Float32Array(0); // 用于缓存外部音频数据
-                    this.lastReceivedTime = 0;
-                    this.originData = new Float32Array(0);
-                    this.offset = 0;
-                    this.updateCounter = 0;
-                    this.port.onmessage = (event) => {// 拼接外部数据
-                        // console.log('received data, '+(Date.now()-this.lastReceivedTime))
-                        // console.log(event.data)
-                        this.port.postMessage(Date.now()-this.lastReceivedTime)
-                        this.lastReceivedTime = Date.now()
-                        this.audioBuffer = concatenateByteArrays(this.audioBuffer, event.data)
-                        this.originData = event.data
-                    };
-
-                }
-
-                process(inputs, outputs, parameters) {
-                    const output = outputs[0]
-                    output.forEach((channel) => {
-                        if (!this.audioBuffer.length) {
-                            channel.fill(0); // 如果dataBuffer为空,输出静默
-                        } else {
-                            const blockData = this.audioBuffer.subarray(0, 128)
-                            channel.set(blockData)
-                            this.audioBuffer = this.audioBuffer.subarray(128)
-                        }
-                    });
-                    if (this.updateCounter++ > 100) { // Throttle the message posting
-                        this.port.postMessage({type: 'bufferLength', data: this.audioBuffer.length})
-                        this.updateCounter = 0;
-                    }
-                    return true;
-                }
-            }
-
-            registerProcessor('handle-addon-data', HandleAddonData);
-        `
-        const blob = new Blob([workletCode], { type: 'application/javascript' });
-        const workletUrl = URL.createObjectURL(blob);
-        await ctx.audioWorklet.addModule(workletUrl);
-        const handleAddonDataNode = new AudioWorkletNode(ctx, 'handle-addon-data')
-        useAudioProcessing.getState().setState({ handleAddonDataNode })
-        const { addonGainNode } = useAudioProcessing.getState();
-        if (addonGainNode) {
-            handleAddonDataNode.connect(addonGainNode)
-        }
-
-        handleAddonDataNode.port.onmessage = (event) => {
-            if (event.data.type === 'bufferLength') {
-                useAudioProcessing.getState().setState({ bufferLength: event.data.data });
-            } else {
-                useAudioProcessing.getState().setState({ processorInterval: event.data });
-            }
-        }
-
-        useAudioProcessing.getState().setState({ isWorkletModuleRegistered: true })
-    } catch (error) {
-        console.error("Failed to set up AudioWorklet:", error);
-    }
-}
 
 export { useAudioProcessing, initializeAudioProcessing }

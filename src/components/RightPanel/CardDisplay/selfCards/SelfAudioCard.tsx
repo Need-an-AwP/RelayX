@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu"
 import { LoaderCircle } from "lucide-react";
 import { useAudioProcessing, usePeerStateStore } from "@/stores"
-import UserAudioSpectrum from "../UserAudioSpectrum";
+import UserAudioSpectrum from "@/components/UserAudioSpectrum";
 
 
 export default function SelfAudioCard({ className, onClick }: { className?: string, onClick?: () => void }) {
@@ -31,8 +31,9 @@ export default function SelfAudioCard({ className, onClick }: { className?: stri
                     {mergerAnalyser &&
                         <UserAudioSpectrum
                             analyser={mergerAnalyser}
-                            className="absolute w-[100%+10px] h-full top-0 left-0 opacity-60
+                            className="absolute w-full h-full top-0 left-0 opacity-60
                     group-hover:opacity-100 transition-opacity duration-300"
+                            verticalAlignment='center'
                         />}
                 </Card>
             </ContextMenuTrigger>

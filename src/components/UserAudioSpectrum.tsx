@@ -7,9 +7,15 @@ interface UserAudioSpectrumProps {
     analyser: AnalyserNode;
     className?: string;
     displayStyle?: 'bar' | 'line';
+    verticalAlignment?: 'center' | 'bottom';
 }
 
-export default function UserAudioSpectrum({ analyser, className, displayStyle = 'line' }: UserAudioSpectrumProps) {
+export default function UserAudioSpectrum({ 
+    analyser, 
+    className, 
+    displayStyle = 'line', 
+    verticalAlignment = 'bottom' 
+}: UserAudioSpectrumProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const smoothedDataRef = useRef<Float32Array | null>(null);
 
@@ -60,25 +66,44 @@ export default function UserAudioSpectrum({ analyser, className, displayStyle = 
                 canvasCtx.beginPath();
                 let x = 0;
 
-                // Move to the first point on the top curve
-                let barHeight = smoothedDataArray[0] / 255 * height;
-                let y = (height - barHeight) / 2;
-                canvasCtx.moveTo(x, y);
+                if (verticalAlignment === 'center') {
+                    // 垂直居中模式 - 原有逻辑
+                    // Move to the first point on the top curve
+                    let barHeight = smoothedDataArray[0] / 255 * height;
+                    let y = (height - barHeight) / 2;
+                    canvasCtx.moveTo(x, y);
 
-                // Draw the rest of the top curve
-                for (let i = 1; i < binsToDisplay; i++) {
-                    x += barWidth;
-                    barHeight = smoothedDataArray[i] / 255 * height;
-                    y = (height - barHeight) / 2;
-                    canvasCtx.lineTo(x, y);
-                }
+                    // Draw the rest of the top curve
+                    for (let i = 1; i < binsToDisplay; i++) {
+                        x += barWidth;
+                        barHeight = smoothedDataArray[i] / 255 * height;
+                        y = (height - barHeight) / 2;
+                        canvasCtx.lineTo(x, y);
+                    }
 
-                // Now draw the bottom curve, from right to left
-                for (let i = binsToDisplay - 1; i >= 0; i--) {
-                    barHeight = smoothedDataArray[i] / 255 * height;
-                    y = (height + barHeight) / 2;
-                    canvasCtx.lineTo(x, y);
-                    x -= barWidth;
+                    // Now draw the bottom curve, from right to left
+                    for (let i = binsToDisplay - 1; i >= 0; i--) {
+                        barHeight = smoothedDataArray[i] / 255 * height;
+                        y = (height + barHeight) / 2;
+                        canvasCtx.lineTo(x, y);
+                        x -= barWidth;
+                    }
+                } else {
+                    // 底部对齐模式 - 从底部开始绘制
+                    // Move to the first point at the bottom
+                    canvasCtx.moveTo(0, height);
+
+                    // Draw the curve from left to right
+                    for (let i = 0; i < binsToDisplay; i++) {
+                        x = i * barWidth;
+                        barHeight = smoothedDataArray[i] / 255 * height;
+                        let y = height - barHeight;
+                        canvasCtx.lineTo(x, y);
+                    }
+
+                    // Complete the path by drawing to the bottom right corner and back to start
+                    canvasCtx.lineTo(width, height);
+                    canvasCtx.lineTo(0, height);
                 }
 
                 canvasCtx.closePath();
@@ -88,7 +113,13 @@ export default function UserAudioSpectrum({ analyser, className, displayStyle = 
                 for (let i = 0; i < binsToDisplay; i++) {
                     const barHeight = dataArray[i] / 255 * height;
 
-                    canvasCtx.fillRect(x, (height - barHeight) / 2, barWidth, barHeight);
+                    if (verticalAlignment === 'center') {
+                        // 垂直居中模式
+                        canvasCtx.fillRect(x, (height - barHeight) / 2, barWidth, barHeight);
+                    } else {
+                        // 底部对齐模式
+                        canvasCtx.fillRect(x, height - barHeight, barWidth, barHeight);
+                    }
 
                     x += barWidth;
                 }
@@ -100,7 +131,7 @@ export default function UserAudioSpectrum({ analyser, className, displayStyle = 
         return () => {
             cancelAnimationFrame(animationFrameId);
         };
-    }, [analyser, displayStyle]);
+    }, [analyser, displayStyle, verticalAlignment]);
 
     return (
         <canvas ref={canvasRef} className={className} />

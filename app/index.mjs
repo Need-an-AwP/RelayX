@@ -44,6 +44,8 @@ args.forEach(arg => {
 import { initConfigStore } from './config-store.mjs';
 const { store, userConfigKeys } = initConfigStore(configName);
 
+import { startCaptureProcessAudio } from './captureProcess.mjs';
+const captureProcessEXE = join(__dirname, 'process-audio-capture.exe');
 
 
 // Function to start and manage the Go backend process
@@ -211,6 +213,8 @@ function createWindow() {
 
     startBackendProcess(mainWindow, envFilePath);
 
+    const quitCpaProcess = startCaptureProcessAudio(captureProcessEXE, mainWindow);
+
     // sdp forward
     ipcMain.on('offer', (event, message) => {
         if (pionProcess) {
@@ -323,6 +327,7 @@ function createWindow() {
     });
 
     mainWindow.on('closed', () => {
+        quitCpaProcess();
         if (webrtcInternalsWindow && !webrtcInternalsWindow.isDestroyed()) {
             webrtcInternalsWindow.close();
         }

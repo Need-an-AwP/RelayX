@@ -59,3 +59,9 @@ contextBridge.exposeInMainWorld('winAudioCapture', {
     whileCaptureProcessAudio: () => test_addon.whileCaptureProcessAudio(),
     capture_async: (intervalMs, callback) => test_addon.capture_async(intervalMs, callback),
 });
+
+contextBridge.exposeInMainWorld('cpa', {
+    getAudioSessions: () => ipcRenderer.send('get-audio-sessions'),
+    startCapture: (pid) => ipcRenderer.send('start-capture', pid),
+    stopCapture: () => ipcRenderer.send('stop-capture'),
+})
