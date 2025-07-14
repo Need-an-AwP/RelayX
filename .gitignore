@@ -38,3 +38,7 @@ tsNodeDir
 
 #test dir
 ts-udp-test
+
+# exe files
+process-audio-capture.exe
+turn-on-tailscale.exe
