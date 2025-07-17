@@ -20,16 +20,6 @@ export interface IpcBridge {
     setEnvConfig: (config: any) => Promise<any>;
 }
 
-export interface WinAudioCapture {
-    getElectronProcessId: () => Promise<number[]>;
-    getAudioProcessInfo: () => any;
-    initializeCapture: () => void;
-    initializeCLoopbackCapture: (processId: number) => void;
-    getActivateStatus: () => { interfaceActivateResult: number };
-    whileCaptureProcessAudio: () => void;
-    capture_async: (intervalMs: number, callback: (err: any, result: any) => void) => void;
-}
-
 export interface Cpa {
     getAudioSessions: () => void;
     startCapture: (pid: number) => void;
@@ -39,7 +29,6 @@ export interface Cpa {
 declare global {
     interface Window {
         ipcBridge: IpcBridge;
-        winAudioCapture: WinAudioCapture;
         cpa: Cpa;
         webkitAudioContext: typeof AudioContext;
     }

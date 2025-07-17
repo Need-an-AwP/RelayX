@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
-    "@lottiefiles/dotlottie-react": "^0.14.2",
+    "@floating-ui/react": "^0.27.13",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-avatar": "^1.1.10",
@@ -83,7 +83,6 @@
     "styled-components": "^6.1.19",
     "tailwind-merge": "^3.3.0",
     "tailwindcss": "^4.1.7",
-    "win-process-audio-capture": "./win-process-audio-capture-0.0.4.tgz",
     "zustand": "^5.0.5"
   },
   "devDependencies": {

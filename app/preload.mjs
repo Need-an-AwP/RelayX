@@ -48,18 +48,6 @@ contextBridge.exposeInMainWorld('ipcBridge', {
 });
 
 
-const test_addon = require('win-process-audio-capture');
-
-contextBridge.exposeInMainWorld('winAudioCapture', {
-    getElectronProcessId: () => ipcRenderer.invoke('get-electron-pids'),
-    getAudioProcessInfo: () => test_addon.getAudioProcessInfo(),
-    initializeCapture: () => test_addon.initializeCapture(),
-    initializeCLoopbackCapture: (processId) => test_addon.initializeCLoopbackCapture(processId),
-    getActivateStatus: () => test_addon.getActivateStatus(),
-    whileCaptureProcessAudio: () => test_addon.whileCaptureProcessAudio(),
-    capture_async: (intervalMs, callback) => test_addon.capture_async(intervalMs, callback),
-});
-
 contextBridge.exposeInMainWorld('cpa', {
     getAudioSessions: () => ipcRenderer.send('get-audio-sessions'),
     startCapture: (pid) => ipcRenderer.send('start-capture', pid),

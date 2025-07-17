@@ -15,3 +15,5 @@ export * from './audioProcessingStore'
 export * from './mediaStore'
 
 export * from './screenShareStore'
+
+export * from './messageStore'

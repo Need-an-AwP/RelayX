@@ -10,7 +10,7 @@ export default function RightPanel() {
 
 
     return (
-        <div className="h-full">
+        <div id="right-panel" className="h-full">
             {selfState.isInChat && <div className="h-full w-full flex flex-col">
 
                 <div className='flex-1 min-h-0'>

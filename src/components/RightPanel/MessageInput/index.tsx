@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { TbSend, TbSendOff } from "react-icons/tb";
 import { ChevronUp, ChevronDown, Plus, TriangleAlert, SmilePlus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import PeersSelector from "./peersSelector";
+import { useMessageStore } from "@/stores";
 
 
 export default function MessageInput() {
@@ -16,7 +17,7 @@ export default function MessageInput() {
     const [isEmojiOpen, setIsEmojiOpen] = useState(false);
     const [isSendToEveryone, setIsSendToEveryone] = useState(true);
     const [targetPeers, setTargetPeers] = useState<string[]>([]);
-    const [message, setMessage] = useState('');
+    const { inputMessage, setInputMessage, handleSendMessage } = useMessageStore()
 
     const handlePeerChange = (peerIP: string) => {
         setTargetPeers(prev => {
@@ -32,6 +33,15 @@ export default function MessageInput() {
         setIsSendToEveryone(checked);
         if (checked) {
             setTargetPeers([]);
+        }
+    }
+
+    const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && e.ctrlKey) {
+            e.preventDefault()
+            if (inputMessage.trim()) {
+                handleSendMessage()
+            }
         }
     }
 
@@ -65,8 +75,9 @@ export default function MessageInput() {
 
                 <input
                     type="text"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyDown={handleKeyDown}
                     className="w-full h-full bg-transparent outline-none border-0 border-amber-500"
                 />
 
@@ -81,7 +92,8 @@ export default function MessageInput() {
                             className="h-[342px]"
                             onEmojiSelect={({ emoji }) => {
                                 setIsEmojiOpen(false);
-                                setMessage(prev => prev + emoji);
+                                const newInput = inputMessage + emoji;
+                                setInputMessage(newInput);
                             }}
                         >
                             <EmojiPickerSearch />
@@ -108,8 +120,12 @@ export default function MessageInput() {
                     </PopoverContent>
                 </Popover>
 
-                <div className="flex rounded-full bg-foreground/20 p-2 cursor-pointer items-center gap-2
-                hover:bg-foreground/30">
+                <div
+                    className={`flex rounded-full bg-foreground/20 p-2 cursor-pointer items-center gap-2
+                        hover:bg-foreground/30
+                        ${inputMessage.trim().length > 0 ? '' : 'hidden'}`}
+                    onClick={handleSendMessage}
+                >
                     <TbSend className="w-4 h-4" />
                     <span className="text-xs">Ctrl+Enter</span>
                 </div>
