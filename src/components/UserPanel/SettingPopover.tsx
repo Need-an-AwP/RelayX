@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { useAudioDeviceStore, useAudioProcessing, usePopover } from '@/stores'
-import AudioSpectrum from '@/components/AudioSpectrum'
+import UserAudioSpectrum from '@/components/UserAudioSpectrum'
 
 
 const SettingPopover = () => {
@@ -19,9 +19,7 @@ const SettingPopover = () => {
     const selectedOutput = useAudioDeviceStore(state => state.selectedOutput);
     const setSelectedInput = useAudioDeviceStore(state => state.setSelectedInput);
     const setSelectedOutput = useAudioDeviceStore(state => state.setSelectedOutput);
-    const localFinalStream = useAudioProcessing(state => state.localFinalStream);
-    const isNoiseReductionEnabled = useAudioProcessing(state => state.isNoiseReductionEnabled);
-    const toggleNoiseReduction = useAudioProcessing(state => state.toggleNoiseReduction);
+    const { localFinalStream, analyser, isNoiseReductionEnabled, toggleNoiseReduction } = useAudioProcessing()
 
     const [isTesting, setIsTesting] = useState(false);
     const audioPlaybackRef = useRef<HTMLAudioElement>(null);
@@ -43,15 +41,48 @@ const SettingPopover = () => {
                     <Settings className="h-4 w-4" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="z-50 w-[400px] p-4 space-y-4 mx-4">
-                <div className='flex flex-col gap-2 '>
-                    <div className="text-md flex items-center gap-2">
-                        <Volume2 className="w-5 h-5" />
-                        <h3 className='text-md font-bold'>Audio Device Settings</h3>
-                    </div>
+            <PopoverContent className="relative z-50 w-[400px] p-4 space-y-4 mx-4">
+                <div className='relative z-10 flex flex-row gap-2 justify-between'>
+                    <h3 className='text-md font-bold'>Audio Device Settings</h3>
+                    <TooltipProvider>
+                        <Tooltip disableHoverableContent>
+                            <TooltipTrigger 
+                                asChild
+                                onFocus={(e) => e.preventDefault()}
+                            >
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-2 cursor-pointer"
+                                    onClick={() => {
+                                        if (audioPlaybackRef.current && localFinalStream) {
+                                            audioPlaybackRef.current.srcObject = localFinalStream;
+                                            if (isTesting) {
+                                                audioPlaybackRef.current.pause();
+                                            } else {
+                                                audioPlaybackRef.current.play();
+                                            }
+                                            setIsTesting(!isTesting);
+                                        }
+                                    }}
+                                >
+                                    {isTesting ?
+                                        <Pause className="w-4 h-4" />
+                                        :
+                                        <AudioWaveformIcon className="w-4 h-4" />
+                                    }
+
+                                    {!isTesting ? 'Enable Sidetone' : 'Stop Testing'}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>It is highly recommended to use headphones when testing audio feedback</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 </div>
 
-                <div className="grid gap-6">
+                <div className="relative z-10 grid gap-4 mb-0">
                     <div className="space-y-2 min-w-0">
                         <Label className="text-sm font-medium leading-none">
                             Input Device
@@ -94,61 +125,7 @@ const SettingPopover = () => {
                         </Select>
                     </div>
 
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium leading-none">
-                                Input Level
-                            </label>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="gap-2 cursor-pointer"
-                                            onClick={() => {
-                                                if (audioPlaybackRef.current && localFinalStream) {
-                                                    audioPlaybackRef.current.srcObject = localFinalStream;
-                                                    if (isTesting) {
-                                                        audioPlaybackRef.current.pause();
-                                                    } else {
-                                                        audioPlaybackRef.current.play();
-                                                    }
-                                                    setIsTesting(!isTesting);
-                                                }
-                                            }}
-                                        >
-                                            {isTesting ?
-                                                <Pause className="w-4 h-4" />
-                                                :
-                                                <AudioWaveformIcon className="w-4 h-4" />
-                                            }
-
-                                            {!isTesting ? 'Enable Sidetone' : 'Stop Testing'}
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>It is highly recommended to use headphones when testing audio feedback</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </div>
-                        <div className='flex flex-col justify-start w-full'>
-                            <audio
-                                hidden
-                                controls
-                                autoPlay
-                                ref={audioPlaybackRef}
-                            />
-                            <AudioSpectrum
-                                stream={localFinalStream}
-                                isEnabled={isSettingPopoverOpen}
-                                className="h-[150px] border-1 border-white-500"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex items-start justify-between pt-4 border-t">
+                    <div className="flex items-center justify-between pt-4 px-1 border-t">
                         <div className="space-y-1">
                             <div className="text-sm font-medium leading-none">
                                 RNN Noise Reduction
@@ -157,8 +134,9 @@ const SettingPopover = () => {
                                 From <a href='https://jmvalin.ca/demo/rnnoise/' target='_blank' rel="noopener noreferrer" className="text-blue-500" onClick={(e) => {
                                     e.preventDefault();
                                     window.ipcBridge.openURL('https://jmvalin.ca/demo/rnnoise/');
-                                }}>RNNoise Demo</a>
+                                }}>xiph.org RNNoise</a>
                             </p>
+
                         </div>
                         <Switch
                             checked={isNoiseReductionEnabled}
@@ -167,6 +145,22 @@ const SettingPopover = () => {
                             }}
                         />
                     </div>
+                </div>
+
+                <div className="absolute top-0 left-0 w-full h-full z-0">
+                    <audio
+                        hidden
+                        controls
+                        autoPlay
+                        ref={audioPlaybackRef}
+                    />
+                    {analyser &&
+                        <UserAudioSpectrum
+                            analyser={analyser}
+                            className="h-full w-full rounded-md opacity-50"
+                            displayStyle='bar'
+                        />
+                    }
                 </div>
 
             </PopoverContent>

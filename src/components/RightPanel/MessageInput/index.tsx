@@ -46,7 +46,7 @@ export default function MessageInput() {
     }
 
     return (
-        <div className="flex flex-col justify-center items-center w-full p-4">
+        <div className="flex flex-col justify-center items-center w-full p-3 pt-1">
             <div className="flex justify-center items-center w-full h-12 px-2 gap-2 bg-primary-foreground rounded-full">
                 <Popover open={isSelectorOpen} onOpenChange={setIsSelectorOpen}>
                     <PopoverTrigger>

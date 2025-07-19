@@ -3,9 +3,13 @@
 	"userAvatar": "https://github.com/shadcn.png",
 	"userStatus": "online",
 	"theme": "dark",
+	"initAudioDevices": {
+		"input": "default",
+		"output": "default"
+	},
 	"windowBounds": {
-		"x": 6,
-		"y": 212,
+		"x": 476,
+		"y": 214,
 		"width": 1200,
 		"height": 832
 	}

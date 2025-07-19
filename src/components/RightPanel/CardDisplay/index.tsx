@@ -1,8 +1,9 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { SelfAudioCard, SelfThumbnailCard } from "./selfCards"
 import { ChevronUp, ChevronDown } from "lucide-react"
 import { usePeerStateStore } from "@/stores"
+import { UserAudioCard } from "./userCards"
 
 
 export default function CardDisplay() {
@@ -10,6 +11,11 @@ export default function CardDisplay() {
     const [isHovered, setIsHovered] = useState(false)
     const [isScrollingUp, setIsScrollingUp] = useState(true)
     const [maximiumCard, setMaximiumCard] = useState<string | null>(null)
+
+
+    useEffect(() => {
+        console.log('maximiumCard', maximiumCard)
+    }, [maximiumCard])
 
     return (
         <div
@@ -38,21 +44,41 @@ export default function CardDisplay() {
 
 
             <div className='relative h-full w-full flex justify-center items-center min-h-0 overflow-hidden'>
-                <CardGrid>
-                    {Array.from({ length: 3 }).map((_, index) => (
+                {maximiumCard === null ? (
+                    <CardGrid>
                         <SelfAudioCard
-                            className={`${maximiumCard === null ? '' : maximiumCard === 'self' ? 'col-span-full' : 'hidden'}`}
                             onClick={() => {
-                                if (maximiumCard === 'self') {
-                                    setMaximiumCard(null)
-                                } else {
-                                    setMaximiumCard('self')
-                                }
+                                setMaximiumCard('self')
                             }}
                         />
-                    ))}
-
-                </CardGrid>
+                        {Array.from(peers.entries())
+                            .filter(([peerIP, peerState]) => peerState.isInChat)
+                            .map(([peerIP, peerState]) => (
+                                <UserAudioCard
+                                    key={peerIP}
+                                    peerIP={peerIP}
+                                    peerState={peerState}
+                                    onClick={() => {
+                                        setMaximiumCard(peerIP)
+                                    }}
+                                />
+                            ))}
+                        {/* {Array.from({ length: 9 }).map((_, index) => (
+                            
+                        ))} */}
+                    </CardGrid>
+                ) : (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center">
+                        <div className="w-[95%]">
+                            <SelfAudioCard
+                                className="w-full h-full"
+                                onClick={() => {
+                                    setMaximiumCard(null)
+                                }}
+                            />
+                        </div>
+                    </div>
+                )}
 
                 {/* collapse button */}
                 {isHovered && <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
@@ -65,7 +91,6 @@ export default function CardDisplay() {
                             <ChevronUp className="w-4 h-4" /> :
                             <ChevronDown className="w-4 h-4" />
                         }
-
                     </div>
                 </div>}
             </div>

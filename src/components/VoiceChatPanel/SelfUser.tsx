@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useId } from "react"
 import { usePeerStateStore, useAudioProcessing } from "@/stores"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { ChevronDown, ChevronUp, MicOff, HeadphoneOff, Music, Cast } from "lucide-react"
+import { animationLoopManager } from "@/utils/animationLoopManager"
 
 
 const SelfUser = () => {
@@ -12,6 +13,7 @@ const SelfUser = () => {
     const [isReady, setIsReady] = useState(initialized)
     const [audioActive, setAudioActive] = useState(false)
     const [isExtended, setIsExtended] = useState(false)
+    const id = useId()
 
     useEffect(() => {
         if (!initialized) {
@@ -28,7 +30,6 @@ const SelfUser = () => {
         }
 
         const dataArray = new Uint8Array(selfAnalyser.frequencyBinCount)
-        let animationFrameId: number
 
         const checkAudioLevel = () => {
             selfAnalyser.getByteFrequencyData(dataArray)
@@ -40,15 +41,14 @@ const SelfUser = () => {
             } else {
                 setAudioActive(false)
             }
-            animationFrameId = requestAnimationFrame(checkAudioLevel)
         }
 
-        checkAudioLevel()
+        animationLoopManager.add(id, checkAudioLevel)
 
         return () => {
-            cancelAnimationFrame(animationFrameId)
+            animationLoopManager.remove(id)
         }
-    }, [selfAnalyser])
+    }, [selfAnalyser, id])
 
     // 获取用户名首字母作为头像备用显示
     const getInitials = (name: string) => {

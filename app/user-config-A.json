@@ -1,11 +1,15 @@
 {
 	"userName": "default user name dont know who is AaaAA",
-	"userAvatar": "https://github.com/shadcn.png",
+	"userAvatar": "https://unavatar.io/x/lemoontya",
 	"userStatus": "online",
 	"theme": "dark",
+	"initAudioDevices": {
+		"input": "default",
+		"output": "default"
+	},
 	"windowBounds": {
-		"x": 342,
-		"y": 71,
+		"x": 56,
+		"y": 114,
 		"width": 1200,
 		"height": 832
 	}

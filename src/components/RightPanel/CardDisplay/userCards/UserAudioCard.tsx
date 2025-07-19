@@ -3,13 +3,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { LoaderCircle } from "lucide-react";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu"
 import UserAudioSpectrum from "@/components/UserAudioSpectrum";
-import type { PeerState } from "@/stores";
+import { useMediaStore, type PeerState, type peerIP } from "@/stores";
 
 
-export default function UserAudioCard({className, onClick, peerState}: {className?: string, onClick?: () => void, peerState: PeerState}) {
-    const mergerAnalyser = null
+export default function UserAudioCard({ className, onClick, peerIP, peerState }: { className?: string, onClick?: () => void, peerIP: peerIP, peerState: PeerState }) {
+    const getPeerAnalyserNode = useMediaStore(state => state.getPeerAnalyserNode)
+    const analyser = getPeerAnalyserNode(peerIP)
+
     return (
-        <ContextMenu>
+        <ContextMenu key={peerIP}>
             <ContextMenuTrigger>
                 <Card
                     className={`group relative p-4 aspect-video select-none
@@ -26,11 +28,12 @@ export default function UserAudioCard({className, onClick, peerState}: {classNam
                             </AvatarFallback>
                         </Avatar>
                     </div>
-                    {mergerAnalyser &&
+                    {analyser &&
                         <UserAudioSpectrum
-                            analyser={mergerAnalyser}
+                            analyser={analyser}
+                            verticalAlignment='center'
                             className="absolute w-full h-full top-0 left-0 opacity-60
-                    group-hover:opacity-100 transition-opacity duration-300"
+                            group-hover:opacity-100 transition-opacity duration-300"
                         />}
                 </Card>
             </ContextMenuTrigger>

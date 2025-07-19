@@ -1,6 +1,10 @@
-import { useEffect, useRef } from "react";
+// this component need to be used with animationLoopManager
 
-const DISPLAY_BINS_PERCENTAGE = 0.5; // percentage of bins to display
+
+import { useId, useEffect, useRef } from "react";
+import { animationLoopManager } from "@/utils/animationLoopManager";
+
+const DISPLAY_BINS_PERCENTAGE = 0.8; // percentage of bins to display
 const SMOOTHING_CONSTANT = 0.6; // Higher value = more smoothing (slower response). 0 means no smoothing.
 
 interface UserAudioSpectrumProps {
@@ -18,6 +22,7 @@ export default function UserAudioSpectrum({
 }: UserAudioSpectrumProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const smoothedDataRef = useRef<Float32Array | null>(null);
+    const id = useId();
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -36,11 +41,7 @@ export default function UserAudioSpectrum({
         }
         const smoothedDataArray = smoothedDataRef.current;
 
-        let animationFrameId: number;
-
         const draw = () => {
-            animationFrameId = requestAnimationFrame(draw);
-
             analyser.getByteFrequencyData(dataArray);
 
             if (displayStyle === 'line') {
@@ -52,7 +53,9 @@ export default function UserAudioSpectrum({
             const { width, height } = canvas;
             canvasCtx.clearRect(0, 0, width, height);
 
-            const barWidth = (width / binsToDisplay);
+            const barWidth = displayStyle === 'line' && binsToDisplay > 1 
+                ? width / (binsToDisplay - 1)  // line 模式：确保从 0 到 width
+                : width / binsToDisplay;       // bar 模式：保持原有逻辑
             let barHeight;
             let x = 0;
 
@@ -126,12 +129,12 @@ export default function UserAudioSpectrum({
             }
         };
 
-        draw();
+        animationLoopManager.add(id, draw);
 
         return () => {
-            cancelAnimationFrame(animationFrameId);
+            animationLoopManager.remove(id);
         };
-    }, [analyser, displayStyle, verticalAlignment]);
+    }, [analyser, displayStyle, verticalAlignment, id]);
 
     return (
         <canvas ref={canvasRef} className={className} />

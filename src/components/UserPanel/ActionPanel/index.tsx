@@ -3,20 +3,22 @@ import { Button } from "@/components/ui/button"
 import { LogIn, LogOut, PhoneOff, Airplay, LoaderCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { usePeerStateStore, useDesktopCapture } from "@/stores"
 import { MdMonitor, MdCameraAlt } from "react-icons/md";
+import SourceSelector from "./SourceSelector"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+
 
 
 const ActionPanel = () => {
     const selfState = usePeerStateStore(state => state.selfState)
     const updateSelfState = usePeerStateStore(state => state.updateSelfState)
-    const requestSources = useDesktopCapture(state => state.requestSources)
-    const setIsSelectingSource = useDesktopCapture(state => state.setIsSelectingSource)
+    const { isSelectingSource, setIsSelectingSource, requestSources } = useDesktopCapture()
     const [isLoading, setIsLoading] = useState(false)
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
-    const screenshareOnClick = () => {
-        setIsDropdownOpen(false)
+    const handleScreenShareClick = () => {
         setIsSelectingSource(true)
         requestSources()
     }
@@ -55,41 +57,41 @@ const ActionPanel = () => {
                     </TooltipContent>
                 </Tooltip>
 
-                <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+                <AlertDialog open={isSelectingSource} onOpenChange={setIsSelectingSource}>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <DropdownMenuTrigger asChild>
+                            <AlertDialogTrigger asChild>
                                 <Button
+                                    onClick={handleScreenShareClick}
                                     variant="outline"
                                     className={`hover:!bg-neutral-500 cursor-pointer transition-all duration-300`}
                                 >
                                     <Airplay className="h-5 w-5" />
                                 </Button>
-                            </DropdownMenuTrigger>
+                            </AlertDialogTrigger>
                         </TooltipTrigger>
                         <TooltipContent>
                             {selfState.isInChat ? <p>start screen sharing</p> : <p>join with screen</p>}
                         </TooltipContent>
                     </Tooltip>
-                    <DropdownMenuContent side="top" align="center">
-                        <DropdownMenuItem
-                            className="cursor-pointer"
-                            onClick={screenshareOnClick}
-                        >
-                            <MdMonitor className="h-5 w-5" />
-                            <p>share screen</p>
-                        </DropdownMenuItem>
 
-                        <DropdownMenuItem disabled={true}>
-                            <MdCameraAlt className="h-5 w-5" />
-                            <p>open camera</p>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                    <AlertDialogContent className="w-[80vw] !max-w-none">
+                        <VisuallyHidden>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Select a screen to share</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    a selector for selecting a video source, including screen, window, and camera
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                        </VisuallyHidden>
+                        <SourceSelector />
+                    </AlertDialogContent>
+                </AlertDialog>
+
 
 
             </div>
-        </TooltipProvider>
+        </TooltipProvider >
     )
 }
 

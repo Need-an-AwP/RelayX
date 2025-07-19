@@ -7,7 +7,7 @@
   "type": "module",
   "main": "app/index.mjs",
   "scripts": {
-    "postinstall": "download https://github.com/Need-an-AwP/process-audio-capture-stdio/releases/download/v0.0.1/process-audio-capture.exe --out app/",
+    "postinstall": "if not exist node_modules (download https://github.com/Need-an-AwP/process-audio-capture-stdio/releases/download/v0.0.1/process-audio-capture.exe --out app/)",
     "dev:noBuild": "concurrently -k \"vite\" \"cross-env DEV=true electron app/index.mjs\"",
     "dev": "yarn build:go && concurrently -k \"vite\" \"cross-env DEV=true electron app/index.mjs\"",
     "build:go": "cd TURN_on_Tailscale && go build -o ../app/ && cd ..",
@@ -62,6 +62,7 @@
     "@radix-ui/react-switch": "^1.2.5",
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-tooltip": "^1.2.7",
+    "@radix-ui/react-visually-hidden": "^1.2.3",
     "@tailwindcss/vite": "^4.1.7",
     "@types/lodash-es": "^4.17.12",
     "animejs": "^4.0.2",

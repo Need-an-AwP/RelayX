@@ -30,7 +30,7 @@ export default function PlaceHolder() {
     // }, []);
 
     return (
-        <div className='scale-100'>
+        <div className='scale-100 select-none'>
             {/* <canvas
                 ref={canvasRef}
                 id="dotLottie-canvas"
@@ -39,6 +39,7 @@ export default function PlaceHolder() {
                 src="ghost-spin-no-background.gif"
                 alt="ghost-spin-no-background"
                 className="scale-80"
+                draggable="false"
             />
         </div>
     )

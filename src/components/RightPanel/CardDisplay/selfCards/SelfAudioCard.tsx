@@ -64,6 +64,7 @@ export default function SelfAudioCard({ className, onClick }: { className?: stri
                             className="absolute w-full h-full top-0 left-0 opacity-60
                             group-hover:opacity-100 transition-opacity duration-300"
                             verticalAlignment='center'
+                            displayStyle='line'
                         />}
                 </Card>
             </ContextMenuTrigger>

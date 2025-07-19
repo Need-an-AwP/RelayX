@@ -58,7 +58,7 @@ export default function SourceSelector() {
     const tabsTriggerClass = `flex items-center gap-2 px-10 cursor-pointer`
 
     return (
-        <div className="flex-1 flex-col p-4">
+        <div className="flex-1 flex-col select-none">
             {/* title */}
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold">Select Share Source</h3>
@@ -110,7 +110,7 @@ export default function SourceSelector() {
                 </TabsList>
             </Tabs>
 
-            <div className='h-[80vh]'>
+            <div className='h-[70vh]'>
                 <ScrollArea className="h-full">
                     <div className="flex flex-row flex-wrap gap-4 items-center justify-center p-4">
                         {sources

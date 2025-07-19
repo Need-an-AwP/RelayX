@@ -29,10 +29,12 @@ export default class StatusSender {
 
     private sendStatus(): void {
         if (this.dc.readyState === 'open') {
+            const selfState = usePeerStateStore.getState().selfState
             const payload = {
                 type: 'ping',
-                state: usePeerStateStore.getState().getSelfState()
+                state: selfState
             };
+            console.log('[StatusSender] sendStatus:', payload)
             this.dc.send(JSON.stringify(payload));
 
             usePeerStateStore.getState().updatePeerState(this.peerIP, {

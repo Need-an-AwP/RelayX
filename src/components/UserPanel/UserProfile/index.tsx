@@ -2,10 +2,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { usePeerStateStore, usePopover } from '@/stores'
 import { useEffect, useState } from "react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import AvatarSelector from "./AvatarSelector"
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle, X } from "lucide-react";
 
 
 
@@ -44,6 +46,20 @@ const UserProfile = () => {
         toggle('isUserPopoverOpen')
     }
 
+    // 检查是否有有效的更改
+    const hasChanges = () => {
+        const trimmedUserName = localUserName.trim()
+        const trimmedAvatar = localAvatar.trim()
+        return trimmedUserName !== selfState.userName || trimmedAvatar !== selfState.userAvatar
+    }
+
+    // 放弃所有更改
+    const discardChanges = () => {
+        setLocalUserName(selfState.userName)
+        setLocalAvatar(selfState.userAvatar)
+        toggle('isUserPopoverOpen')
+    }
+
     // 获取用户名首字母作为头像备用显示
     const getInitials = (name: string) => {
         return name ? name.charAt(0).toUpperCase() : 'U'
@@ -76,8 +92,27 @@ const UserProfile = () => {
                     e.preventDefault()
                 }}
             >
-                <div className="flex flex-col gap-4">
-
+                <div className="relative flex flex-col gap-4">
+                    {hasChanges() && (
+                        <div className="absolute top-0 right-0">
+                            <TooltipProvider>
+                                <Tooltip disableHoverableContent>
+                                    <TooltipTrigger 
+                                        asChild
+                                        onFocus={(e) => e.preventDefault()}
+                                    >
+                                        <Button variant="destructive" size="icon" onClick={discardChanges}>
+                                            <X className="w-4 h-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        Discard all changes<br />
+                                        Click outside popover to save changes
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
+                    )}
                     <AvatarSelector currentAvatar={localAvatar} setCurrentAvatar={setLocalAvatar} />
 
                     <div className="flex flex-row gap-2">

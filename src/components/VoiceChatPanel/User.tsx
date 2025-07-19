@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useId } from "react"
 import { useMediaStore, usePeerStateStore } from "@/stores"
 import type { PeerState, peerIP } from "@/stores"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -21,6 +21,7 @@ import {
     ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import { Label } from "@/components/ui/label"
+import { animationLoopManager } from "@/utils/animationLoopManager"
 
 
 const User = ({ peerIP, peerState }: { peerIP: peerIP, peerState: PeerState }) => {
@@ -28,6 +29,7 @@ const User = ({ peerIP, peerState }: { peerIP: peerIP, peerState: PeerState }) =
     const [isMuted, setIsMuted] = useState(false)
     const [isMutedForThisUser, setIsMutedForThisUser] = useState(false)
     const [isExtended, setIsExtended] = useState(false)
+    const id = useId()
 
     const getPeerAnalyserNode = useMediaStore(state => state.getPeerAnalyserNode)
 
@@ -39,7 +41,6 @@ const User = ({ peerIP, peerState }: { peerIP: peerIP, peerState: PeerState }) =
         }
 
         const dataArray = new Uint8Array(analyser.frequencyBinCount)
-        let animationFrameId: number
 
         const checkAudioLevel = () => {
             analyser.getByteFrequencyData(dataArray)
@@ -51,15 +52,14 @@ const User = ({ peerIP, peerState }: { peerIP: peerIP, peerState: PeerState }) =
             } else {
                 setAudioActive(false)
             }
-            animationFrameId = requestAnimationFrame(checkAudioLevel)
         }
 
-        checkAudioLevel()
+        animationLoopManager.add(id, checkAudioLevel)
 
         return () => {
-            cancelAnimationFrame(animationFrameId)
+            animationLoopManager.remove(id)
         }
-    }, [peerIP, getPeerAnalyserNode])
+    }, [peerIP, getPeerAnalyserNode, id])
 
     // 获取用户名首字母作为头像备用显示
     const getInitials = (name: string) => {
