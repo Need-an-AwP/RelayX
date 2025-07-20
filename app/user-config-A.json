@@ -1,5 +1,5 @@
 {
-	"userName": "default user name dont know who is AaaAA",
+	"userName": "default user name dont know who is AaaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
 	"userAvatar": "https://unavatar.io/x/lemoontya",
 	"userStatus": "online",
 	"theme": "dark",
@@ -8,8 +8,8 @@
 		"output": "default"
 	},
 	"windowBounds": {
-		"x": 56,
-		"y": 114,
+		"x": 660,
+		"y": 125,
 		"width": 1200,
 		"height": 832
 	}

@@ -42,8 +42,8 @@ export default class MediaTrackManager {
             // 'isSharingScreen', 'isSharingAudio'
         ];
 
-        for (const [peerIP, currentPeerState] of currentPeers) {
-            const prevPeerState = prevPeers.get(peerIP);
+        for (const [peerIP, currentPeerState] of Object.entries(currentPeers)) {
+            const prevPeerState = prevPeers[peerIP];
             if (!prevPeerState) {
                 return true; // New peer
             }
@@ -62,8 +62,8 @@ export default class MediaTrackManager {
      * 这是在任何状态更改时触发的主要"规则引擎"。
      */
     private async updateAllPeerTracks(selfState: PeerState, peers: peerMap) {
-        for (const peerIP of peers.keys()) {
-            const peerState = peers.get(peerIP);
+        for (const peerIP of Object.keys(peers)) {
+            const peerState = peers[peerIP];
             if (!peerState) continue;
 
             if (!this.replacedTracks.has(peerIP)) {
@@ -135,8 +135,8 @@ export default class MediaTrackManager {
         console.log("MediaTrackManager: Clearing all peer tracks...");
         this.replacedTracks.clear();
 
-        for (const peerIP of peers.keys()) {
-            const peerState = peers.get(peerIP);
+        for (const peerIP of Object.keys(peers)) {
+            const peerState = peers[peerIP];
             if (!peerState) continue;
 
             const connection = await useRTCStore.getState().getConnection({ peerIP })

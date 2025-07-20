@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
+import { immer } from 'zustand/middleware/immer'
 
 
 export interface PeerState {
@@ -22,7 +23,7 @@ export const PeerStateKeys = [
 
 export type peerIP = string;
 export type peerID = string;
-export type peerMap = Map<peerIP, PeerState>
+export type peerMap = Record<peerIP, PeerState>
 
 interface PeerStateStore {
     peers: peerMap
@@ -50,88 +51,80 @@ const defaultPeerState: PeerState = {
 }
 
 export const usePeerStateStore = create<PeerStateStore>()(
-    subscribeWithSelector((set, get) => ({
-        peers: new Map(),
-        selfState: { ...defaultPeerState, isSelf: true },
-        initialized: false,
+    subscribeWithSelector(
+        immer((set, get) => ({
+            peers: {},
+            selfState: { ...defaultPeerState, isSelf: true },
+            initialized: false,
 
-        initializeSelfState: async () => {
-            try {
-                const userConfig = await window.ipcBridge.getUserConfig();
-                set((state) => ({
-                    ...state,
-                    selfState: {
-                        ...state.selfState,
-                        ...(userConfig.userName !== undefined ? { userName: userConfig.userName } : {}),
-                        ...(userConfig.userAvatar !== undefined ? { userAvatar: userConfig.userAvatar } : {})
+            initializeSelfState: async () => {
+                try {
+                    const userConfig = await window.ipcBridge.getUserConfig();
+                    set((state) => {
+                        if (userConfig.userName !== undefined) {
+                            state.selfState.userName = userConfig.userName;
+                        }
+                        if (userConfig.userAvatar !== undefined) {
+                            state.selfState.userAvatar = userConfig.userAvatar;
+                        }
+                        state.initialized = true;
+                    });
+                } catch (error) {
+                    console.error('Failed to load user config:', error);
+                    set((state) => {
+                        state.initialized = true;
+                    });
+                }
+            },
+
+            updateSelfState: (partialState: Partial<PeerState>) => {
+                try {
+                    if (partialState.userName !== undefined) {
+                        window.ipcBridge.setUserConfig('userName', partialState.userName);
                     }
-                }));
-            } catch (error) {
-                console.error('Failed to load user config:', error);
-            }
-            set({ initialized: true })
-        },
-
-        updateSelfState: (partialState: Partial<PeerState>) => {
-            try {
-                if (partialState.userName !== undefined) {
-                    window.ipcBridge.setUserConfig('userName', partialState.userName);
-                }
-                if (partialState.userAvatar !== undefined) {
-                    window.ipcBridge.setUserConfig('userAvatar', partialState.userAvatar);
-                }
-
-                set((state) => ({
-                    ...state,
-                    selfState: {
-                        ...state.selfState,
-                        ...partialState
+                    if (partialState.userAvatar !== undefined) {
+                        window.ipcBridge.setUserConfig('userAvatar', partialState.userAvatar);
                     }
-                }));
-            } catch (error) {
-                console.error('Failed to update user config:', error);
-            }
-        },
 
-        addPeer: (peerIP: string) => {
-            set((state) => ({
-                ...state,
-                peers: new Map(state.peers).set(peerIP, defaultPeerState)
-            }))
-        },
-
-        updatePeerState: (peerIP: string, partialState: Partial<Omit<PeerState, 'peerIP'>>) => {
-            set((state) => {
-                const peer = state.peers.get(peerIP);
-                if (!peer) {
-                    const updatedPeer = { ...defaultPeerState, ...partialState };
-                    const newPeers = new Map(state.peers);
-                    newPeers.set(peerIP, updatedPeer);
-                    return { peers: newPeers };
+                    set((state) => {
+                        Object.assign(state.selfState, partialState);
+                    });
+                } catch (error) {
+                    console.error('Failed to update user config:', error);
                 }
-                const updatedPeer = { ...peer, ...partialState };
-                const newPeers = new Map(state.peers);
-                newPeers.set(peerIP, updatedPeer);
-                return { ...state, peers: newPeers };
-            });
-        },
+            },
 
-        setPeerState: (peerIP: string, state: PeerState) => {
-            set((currentState) => {
-                const newPeers = new Map(currentState.peers);
-                newPeers.set(peerIP, state);
-                return { ...currentState, peers: newPeers };
-            });
-        },
+            addPeer: (peerIP: string) => {
+                set((state) => {
+                    state.peers[peerIP] = { ...defaultPeerState };
+                });
+            },
 
-        getPeerState: (peerIP: string) => {
-            return get().peers.get(peerIP);
-        },
+            updatePeerState: (peerIP: string, partialState: Partial<Omit<PeerState, 'peerIP'>>) => {
+                set((state) => {
+                    if (!state.peers[peerIP]) {
+                        state.peers[peerIP] = { ...defaultPeerState, ...partialState };
+                    } else {
+                        Object.assign(state.peers[peerIP], partialState);
+                    }
+                });
+            },
 
-        getSelfState: () => {
-            return get().selfState;
-        }
-    }))
+            setPeerState: (peerIP: string, peerState: PeerState) => {
+                set((state) => {
+                    state.peers[peerIP] = peerState;
+                });
+            },
+
+            getPeerState: (peerIP: string) => {
+                return get().peers[peerIP];
+            },
+
+            getSelfState: () => {
+                return get().selfState;
+            }
+        }))
+    )
 );
 
 // 自动初始化用户配置

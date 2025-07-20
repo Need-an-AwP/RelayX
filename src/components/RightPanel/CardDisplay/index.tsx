@@ -46,12 +46,15 @@ export default function CardDisplay() {
             <div className='relative h-full w-full flex justify-center items-center min-h-0 overflow-hidden'>
                 {maximiumCard === null ? (
                     <CardGrid>
-                        <SelfAudioCard
+                        
+                        {Array.from({ length: 9 }).map((_, index) => (
+                            <SelfAudioCard
                             onClick={() => {
                                 setMaximiumCard('self')
                             }}
                         />
-                        {Array.from(peers.entries())
+                        ))}
+                        {Object.entries(peers)
                             .filter(([peerIP, peerState]) => peerState.isInChat)
                             .map(([peerIP, peerState]) => (
                                 <UserAudioCard
@@ -63,9 +66,7 @@ export default function CardDisplay() {
                                     }}
                                 />
                             ))}
-                        {/* {Array.from({ length: 9 }).map((_, index) => (
-                            
-                        ))} */}
+                        
                     </CardGrid>
                 ) : (
                     <div className="absolute inset-0 z-10 flex items-center justify-center">

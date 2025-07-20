@@ -11,15 +11,13 @@ interface PeersSelectorProps {
 export default function PeersSelector({ targetPeers, onPeerChange, disabled }: PeersSelectorProps) {
     const { peers } = usePeerStateStore();
 
-    const peersArray = Array.from(peers.entries());
-
     const getInitials = (name: string) => {
         return name ? name.charAt(0).toUpperCase() : 'U'
     }
 
     return (
         <div className={`space-y-2 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
-            {peersArray.map(([peerIP, peerState]) => (
+            {Object.entries(peers).map(([peerIP, peerState]) => (
                 <div key={peerIP} className="flex items-center gap-2">
                     <Checkbox
                         checked={targetPeers.includes(peerIP)}

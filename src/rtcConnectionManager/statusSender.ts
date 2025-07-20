@@ -34,14 +34,13 @@ export default class StatusSender {
                 type: 'ping',
                 state: selfState
             };
-            console.log('[StatusSender] sendStatus:', payload)
+            // console.log('[StatusSender] sendStatus:', payload)
             this.dc.send(JSON.stringify(payload));
 
             usePeerStateStore.getState().updatePeerState(this.peerIP, {
                 lastPingTime: Date.now()
             })
         } else {
-            // 如果通道不是打开状态，可以考虑停止定时器以避免无效操作
             console.warn('Data channel is not open. Stopping status sender.');
             this.stop();
         }

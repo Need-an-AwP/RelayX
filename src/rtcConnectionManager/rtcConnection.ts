@@ -6,7 +6,6 @@ import StatusSender from './statusSender'
 type StateChangeCallback = (state: RTCPeerConnectionState) => void;
 
 export default class rtcConnection {
-    private selfPeerIP: string;
     private peerID: string;
     private peerIP: string;
     private isOffer: boolean;
@@ -24,11 +23,15 @@ export default class rtcConnection {
     private statusSender: StatusSender | null = null;
 
     constructor(peerID: string, peerIP: string, isOffer: boolean) {
-        this.selfPeerIP = useTailscaleStore.getState().tailscaleStatus?.Self?.TailscaleIPs[0] || '';
         this.peerID = peerID;
         this.peerIP = peerIP;
         this.isOffer = isOffer;
         this.init();
+    }
+
+    // 获取当前的 selfPeerIP
+    private getSelfPeerIP(): string {
+        return useTailscaleStore.getState().tailscaleStatus?.Self?.TailscaleIPs[0] || '';
     }
 
     // 设置状态变化回调
@@ -127,7 +130,7 @@ export default class rtcConnection {
                 const offerMessage: RTCOfferMessage = {
                     type: 'offer',
                     Target: this.peerID,
-                    From: this.selfPeerIP,
+                    From: this.getSelfPeerIP(),
                     Offer: this.pc.localDescription,
                     Ice: [iceCandidate],
                     transceivers: Object.fromEntries(this.localTransceiverMetadata)
@@ -141,7 +144,7 @@ export default class rtcConnection {
                 const answerMessage: RTCAnswerMessage = {
                     type: 'answer',
                     Target: this.peerID,
-                    From: this.selfPeerIP,
+                    From: this.getSelfPeerIP(),
                     Answer: this.pc.localDescription,
                     Ice: [iceCandidate],
                 }
@@ -386,16 +389,18 @@ export default class rtcConnection {
                     const now = Date.now()
                     const lastPingTime = usePeerStateStore.getState().getPeerState(this.peerIP)?.lastPingTime || 0;
                     const latency = now - lastPingTime > 1000 ? 1000 : now - lastPingTime
+                    
+                    // pass full state to peerStateStore, let immer handle it
                     usePeerStateStore.getState().updatePeerState(this.peerIP, {
-                        ...(state.userName !== undefined ? { userName: state.userName } : {}),
-                        ...(state.userAvatar !== undefined ? { userAvatar: state.userAvatar } : {}),
-                        ...(state.isInChat !== undefined ? { isInChat: state.isInChat } : {}),
-                        ...(state.isInputMuted !== undefined ? { isInputMuted: state.isInputMuted } : {}),
-                        ...(state.isOutputMuted !== undefined ? { isOutputMuted: state.isOutputMuted } : {}),
-                        ...(state.isSharingScreen !== undefined ? { isSharingScreen: state.isSharingScreen } : {}),
-                        ...(state.isSharingAudio !== undefined ? { isSharingAudio: state.isSharingAudio } : {}),
+                        userName: state.userName,
+                        userAvatar: state.userAvatar,
+                        isInChat: state.isInChat,
+                        isInputMuted: state.isInputMuted,
+                        isOutputMuted: state.isOutputMuted,
+                        isSharingScreen: state.isSharingScreen,
+                        isSharingAudio: state.isSharingAudio,
                         latency: latency,
-                        lastPingTime: now
+                        // lastPingTime: now
                     })
                 }
             }
@@ -419,6 +424,10 @@ export default class rtcConnection {
         useMediaStore.getState().removePeerTracks(this.peerIP);
         this.iceList = [];
         this.clearReconnectTimer();
+        
+        if (this.statusSender) {
+            this.statusSender = null;
+        }
     }
 
 }

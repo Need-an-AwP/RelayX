@@ -1,5 +1,7 @@
 import { create } from 'zustand'
+import { subscribeWithSelector } from 'zustand/middleware'
 import type { Status, PeerStatus } from '@/types'
+import { useRTCStore } from './rtcStore'
 
 // 定义 "onlinePeers" 事件的核心数据结构
 interface OnlinePeersEventPayload {
@@ -52,10 +54,12 @@ interface TailscaleState {
     updateTailscaleStatus: (status: Status) => void;
 }
 
-const useTailscaleStore = create<TailscaleState>((set) => ({
-    tailscaleStatus: null,
-    updateTailscaleStatus: (status) => set({ tailscaleStatus: status }),
-}))
+const useTailscaleStore = create<TailscaleState>()(
+    subscribeWithSelector((set) => ({
+        tailscaleStatus: null,
+        updateTailscaleStatus: (status) => set({ tailscaleStatus: status }),
+    }))
+)
 
 const initializeTailscaleListeners = () => {
     const { updateOnlinePeers, updateCharacter } = useOnlinePeersStore.getState();
@@ -77,19 +81,17 @@ const initializeTailscaleListeners = () => {
         if (message.type === "accessibility") {
             if (message.character === "NONE") return;
             // console.log("Received accessibility message:", message);
-            
+
             updateCharacter({ peerID: message.peerID, peerIP: message.peerIP, character: message.character });
-            
-            // 动态导入RTC store以避免循环依赖
-            import('./rtcStore').then(({ useRTCStore }) => {
-                const { createConnection } = useRTCStore.getState();
-                
-                if (message.character === "OFFER") {
-                    createConnection(message.peerID, message.peerIP, true); // isOffer = true
-                } else if (message.character === "ANSWER") {
-                    createConnection(message.peerID, message.peerIP, false); // isOffer = false
+            const { manager, createConnection } = useRTCStore.getState();
+            if (message.character === "OFFER") {
+                createConnection(message.peerID, message.peerIP, true); // isOffer = true
+            } else if (message.character === "ANSWER") {
+                if (!manager.RTCconnections.has(message.peerID)) {
+                    // create answer sdp when receiving offer
+                    console.log(`Answer side for peer ${message.peerID} (${message.peerIP}) - will create connection when offer received`);
                 }
-            });
+            }
         }
     })
 }

@@ -66,7 +66,8 @@ export default class rtcConnectionManager {
             }
         }
         
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // 只等待很短时间，主要用于answer端动态创建的连接
+        await new Promise(resolve => setTimeout(resolve, 100));
         
         if (peerID) {
             const connection = this.RTCconnections.get(peerID)

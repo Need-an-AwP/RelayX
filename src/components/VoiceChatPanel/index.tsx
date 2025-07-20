@@ -6,12 +6,11 @@ import PlaceHolder from "./PlaceHolder"
 
 
 export default function VoiceChatPanel() {
-    const peers = usePeerStateStore(state => state.peers)
-    const selfState = usePeerStateStore(state => state.selfState)
+    const {peers, selfState} = usePeerStateStore()
     const [isEmpty, setIsEmpty] = useState(true)
 
     useEffect(() => {
-        if (peers.size === 0 && !selfState.isInChat) {
+        if (Object.keys(peers).length === 0 && !selfState.isInChat) {
             setIsEmpty(true)
         } else {
             setIsEmpty(false)
@@ -34,7 +33,7 @@ export default function VoiceChatPanel() {
                 {/* {selfState.isInChat && Array.from({ length: 10 }).map((_, index) => <SelfUser key={index} />)} */}
                 {selfState.isInChat && <SelfUser />}
 
-                {Array.from(peers.entries()).map(([peerIP, peerState]) => {
+                {Object.entries(peers).map(([peerIP, peerState]) => {
                     if (peerState.isInChat) {
                         return (
                             <User key={peerIP} peerIP={peerIP} peerState={peerState} />

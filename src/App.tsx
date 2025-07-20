@@ -97,7 +97,7 @@ function App() {
                             >
                                 <div className="flex flex-col h-full justify-start">
                                     <ResizablePanelGroup direction="vertical">
-                                        <ResizablePanel defaultSize={20} collapsible={true}>
+                                        <ResizablePanel defaultSize={30} collapsible={true}>
                                             <OnlinePeersDisplay />
                                         </ResizablePanel>
                                         <ResizableHandle />
