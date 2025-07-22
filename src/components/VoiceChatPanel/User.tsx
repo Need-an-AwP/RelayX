@@ -81,7 +81,7 @@ const User = ({ peerIP, peerState }: { peerIP: peerIP, peerState: PeerState }) =
                     >
                         <div className="flex items-center gap-3 min-w-0">
                             <Avatar className={`flex-shrink-0 transition-all ${audioActive ? 'ring-2 ring-offset-2 ring-green-500 ring-offset-background' : ''}`}>
-                                <AvatarImage src={peerState.userAvatar} />
+                                <AvatarImage src={peerState.userAvatar} draggable={false} />
                                 <AvatarFallback>{getInitials(peerState.userName)}</AvatarFallback>
                             </Avatar>
                             <span className="text-sm text-left truncate">

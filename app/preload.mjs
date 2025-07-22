@@ -38,7 +38,8 @@ contextBridge.exposeInMainWorld('ipcBridge', {
     resizeWindow: (wnh) => ipcRenderer.send('resize-window', wnh),
     extendWindow: (action)=> ipcRenderer.send('extend-window', action),
     
-    getScreenSources: () => ipcRenderer.invoke('getScreenSources'),
+    getScreenSources: () => ipcRenderer.invoke('get-screen-sources'),
+    setScreenCaptureId: (id) => ipcRenderer.send('set-screen-capture-id', id),
 
     getUserConfig: () => ipcRenderer.invoke('get-user-config'),
     setUserConfig: (config, value) => ipcRenderer.send('set-user-config', config, value),

@@ -49,7 +49,7 @@ const PeersView = () => {
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-3 min-w-0 overflow-hidden">
                                                         <Avatar className="h-8 w-8">
-                                                            <AvatarImage src={user.userAvatar} alt={user.userName} />
+                                                            <AvatarImage src={user.userAvatar} alt={user.userName} draggable={false} />
                                                             <AvatarFallback>{user.userName.slice(0, 2)}</AvatarFallback>
                                                         </Avatar>
                                                         <span

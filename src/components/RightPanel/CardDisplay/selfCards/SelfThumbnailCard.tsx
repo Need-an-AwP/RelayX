@@ -24,7 +24,7 @@ export default function SelfThumbnailCard({ className }: { className?: string })
                 >
                     <div className="flex h-full justify-center items-center gap-4 aspect-square p-2 z-10">
                         <Avatar className="flex-shrink-0 h-full w-full">
-                            <AvatarImage src={selfState.userAvatar} />
+                            <AvatarImage src={selfState.userAvatar} draggable={false}/>
                             <AvatarFallback>
                                 <LoaderCircle className="w-4 h-4 animate-spin" />
                             </AvatarFallback>

@@ -156,6 +156,7 @@ const SettingPopover = () => {
                     />
                     {analyser &&
                         <UserAudioSpectrum
+                            renderId='setting-popover'
                             analyser={analyser}
                             className="h-full w-full rounded-md opacity-50"
                             displayStyle='bar'

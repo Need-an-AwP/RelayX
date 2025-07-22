@@ -12,6 +12,7 @@ export interface IpcBridge {
     extendWindow: (action: 'extend' | 'collapse') => void;
 
     getScreenSources: () => Promise<any>;
+    setScreenCaptureId: (id: string) => void;
 
     getUserConfig: () => Promise<any>;
     setUserConfig: (config: string, value: string) => void;

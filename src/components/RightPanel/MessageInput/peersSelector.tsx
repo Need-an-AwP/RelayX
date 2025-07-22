@@ -26,7 +26,7 @@ export default function PeersSelector({ targetPeers, onPeerChange, disabled }: P
                     />
                     <div className="flex items-center gap-3 min-w-0">
                         <Avatar className={`flex-shrink-0 transition-all`}>
-                            <AvatarImage src={peerState.userAvatar} />
+                            <AvatarImage src={peerState.userAvatar} draggable={false} />
                             <AvatarFallback>{getInitials(peerState.userName)}</AvatarFallback>
                         </Avatar>
                         <span className="text-sm text-left truncate">

@@ -4,30 +4,18 @@ import { SelfAudioCard, SelfThumbnailCard } from "./selfCards"
 import { ChevronUp, ChevronDown } from "lucide-react"
 import { usePeerStateStore } from "@/stores"
 import { UserAudioCard } from "./userCards"
+import ControlPanel from "./controlPanel"
 
 
-export default function CardDisplay() {
+export default function CardDisplay({ isHovering, switchFullScreen }: { isHovering: boolean, switchFullScreen: any }) {
     const { peers } = usePeerStateStore()
-    const [isHovered, setIsHovered] = useState(false)
     const [isScrollingUp, setIsScrollingUp] = useState(true)
     const [maximiumCard, setMaximiumCard] = useState<string | null>(null)
 
 
-    useEffect(() => {
-        console.log('maximiumCard', maximiumCard)
-    }, [maximiumCard])
-
     return (
-        <div
-            className={`@container overflow-hidden h-full flex flex-col`}
-            onMouseEnter={() => {
-                setIsHovered(true)
-            }}
-            onMouseLeave={() => {
-                setIsHovered(false)
-            }}
-        >
-
+        <div className={`@container overflow-hidden h-full flex flex-col`}>
+            {/* horizontal thumbnail cards scroll area */}
             <ScrollArea className={`w-full flex-none overflow-hidden
                 transition-[max-height] duration-300 ease-in-out
                 ${isScrollingUp ? 'max-h-[15cqh]' : 'max-h-0'}`
@@ -44,45 +32,31 @@ export default function CardDisplay() {
 
 
             <div className='relative h-full w-full flex justify-center items-center min-h-0 overflow-hidden'>
-                {maximiumCard === null ? (
-                    <CardGrid>
-                        
-                        {Array.from({ length: 9 }).map((_, index) => (
-                            <SelfAudioCard
-                            onClick={() => {
-                                setMaximiumCard('self')
-                            }}
-                        />
-                        ))}
-                        {Object.entries(peers)
-                            .filter(([peerIP, peerState]) => peerState.isInChat)
-                            .map(([peerIP, peerState]) => (
-                                <UserAudioCard
-                                    key={peerIP}
-                                    peerIP={peerIP}
-                                    peerState={peerState}
-                                    onClick={() => {
-                                        setMaximiumCard(peerIP)
-                                    }}
-                                />
-                            ))}
-                        
-                    </CardGrid>
-                ) : (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center">
-                        <div className="w-[95%]">
-                            <SelfAudioCard
-                                className="w-full h-full"
-                                onClick={() => {
-                                    setMaximiumCard(null)
-                                }}
+                <CardGrid>
+                    <SelfAudioCard
+                        key="self-audio-card"
+                        isMaximized={maximiumCard === 'self'}
+                        onClick={() => setMaximiumCard(maximiumCard === 'self' ? null : 'self')}
+                    />
+                    {Object.entries(peers)
+                        .filter(([peerIP, peerState]) => peerState.isInChat)
+                        .map(([peerIP, peerState]) => (
+                            <UserAudioCard
+                                key={peerIP}
+                                peerIP={peerIP}
+                                peerState={peerState}
+                                onClick={() => setMaximiumCard(maximiumCard === peerIP ? null : peerIP)}
                             />
-                        </div>
-                    </div>
-                )}
+                        ))}
+                </CardGrid>
 
                 {/* collapse button */}
-                {isHovered && <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
+                <div
+                    className={`absolute top-0 left-1/2 -translate-x-1/2 z-20
+                    ${isHovering ? 'opacity-100' : 'opacity-0'}
+                    transition-opacity duration-300 ease-in-out
+                    `}
+                >
                     <div className="bg-white/30 p-0.5 pt-0 rounded-b-full cursor-pointer"
                         onClick={() => {
                             setIsScrollingUp(!isScrollingUp)
@@ -93,7 +67,17 @@ export default function CardDisplay() {
                             <ChevronDown className="w-4 h-4" />
                         }
                     </div>
-                </div>}
+                </div>
+
+                {/* control panel */}
+                <div
+                    className={`absolute top-0 right-0 z-20
+                    ${isHovering ? 'opacity-100' : 'opacity-0'}
+                    transition-opacity duration-300 ease-in-out
+                    `}
+                >
+                    <ControlPanel switchFullScreen={switchFullScreen} />
+                </div>
             </div>
 
 

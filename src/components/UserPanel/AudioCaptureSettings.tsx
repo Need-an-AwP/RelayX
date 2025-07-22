@@ -133,6 +133,7 @@ const AudioCaptureSettings = () => {
                 {isCapturing.length > 0 && cpaAnalyser && (
                     <div className="absolute top-0 left-0 w-full h-full z-0">
                         <UserAudioSpectrum
+                            renderId="audio-capture"
                             analyser={cpaAnalyser}
                             className="h-full w-full rounded-md opacity-50"
                         />

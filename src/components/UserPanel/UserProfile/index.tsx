@@ -73,7 +73,7 @@ const UserProfile = () => {
             <PopoverTrigger asChild>
                 <div className="flex items-center gap-4 cursor-pointer select-none hover:bg-secondary/60 rounded-md p-2">
                     <Avatar className="flex-shrink-0">
-                        <AvatarImage src={selfState.userAvatar} />
+                        <AvatarImage src={selfState.userAvatar} draggable={false} />
                         <AvatarFallback>
                             <LoaderCircle className="w-4 h-4 animate-spin" />
                         </AvatarFallback>
@@ -97,7 +97,7 @@ const UserProfile = () => {
                         <div className="absolute top-0 right-0">
                             <TooltipProvider>
                                 <Tooltip disableHoverableContent>
-                                    <TooltipTrigger 
+                                    <TooltipTrigger
                                         asChild
                                         onFocus={(e) => e.preventDefault()}
                                     >

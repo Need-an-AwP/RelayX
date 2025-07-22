@@ -118,7 +118,7 @@ export default function AvatarSelector({ currentAvatar, setCurrentAvatar }: Avat
                                 onMouseEnter={() => setIsMouseHoverAvatar(true)}
                                 onMouseLeave={() => setIsMouseHoverAvatar(false)}
                             >
-                                <AvatarImage src={currentAvatar} />
+                                <AvatarImage src={currentAvatar} draggable={false} />
                                 <AvatarFallback>
                                     <LoaderCircle className="w-4 h-4 animate-spin" />
                                 </AvatarFallback>

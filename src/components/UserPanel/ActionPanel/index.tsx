@@ -5,7 +5,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { usePeerStateStore, useDesktopCapture } from "@/stores"
-import { MdMonitor, MdCameraAlt } from "react-icons/md";
+import { LuScreenShare, LuScreenShareOff } from "react-icons/lu";
+
 import SourceSelector from "./SourceSelector"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
@@ -14,19 +15,28 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 const ActionPanel = () => {
     const selfState = usePeerStateStore(state => state.selfState)
     const updateSelfState = usePeerStateStore(state => state.updateSelfState)
-    const { isSelectingSource, setIsSelectingSource, requestSources } = useDesktopCapture()
+    const { isSelectingSource, setIsSelectingSource, requestSources, stopScreenShare } = useDesktopCapture()
     const [isLoading, setIsLoading] = useState(false)
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
     const handleScreenShareClick = () => {
-        setIsSelectingSource(true)
-        requestSources()
+        if (selfState.isSharingScreen) {
+            stopScreenShare()
+            updateSelfState({
+                isSharingScreen: false
+            })
+        } else {
+            setIsSelectingSource(true)
+            requestSources()
+        }
     }
 
 
     return (
         <TooltipProvider>
-            <div className={`grid items-center space-x-2 transition-[grid-template-columns] duration-300 ease-in-out ${selfState.isInChat ? 'grid-cols-[minmax(0,1fr)_minmax(0,2fr)]' : 'grid-cols-[minmax(0,2fr)_minmax(0,1fr)]'}`}>
+            <div className={`grid items-center space-x-2 transition-[grid-template-columns] duration-300 ease-in-out 
+                ${selfState.isInChat ? 
+                    selfState.isSharingScreen ?'grid-cols-[minmax(0,1fr)_minmax(0,1fr)]':'grid-cols-[minmax(0,1fr)_minmax(0,2fr)]'
+                    : 'grid-cols-[minmax(0,2fr)_minmax(0,0fr)]'}`}>
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button
@@ -57,21 +67,24 @@ const ActionPanel = () => {
                     </TooltipContent>
                 </Tooltip>
 
-                <AlertDialog open={isSelectingSource} onOpenChange={setIsSelectingSource}>
+                <AlertDialog open={isSelectingSource}>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <AlertDialogTrigger asChild>
                                 <Button
                                     onClick={handleScreenShareClick}
                                     variant="outline"
-                                    className={`hover:!bg-neutral-500 cursor-pointer transition-all duration-300`}
+                                    className={`hover:!bg-neutral-500 cursor-pointer 
+                                        ${selfState.isSharingScreen ? 'hover:!bg-red-600' : ''}
+                                        ${selfState.isInChat ? '' : 'hidden'}
+                                        transition-all duration-300`}
                                 >
-                                    <Airplay className="h-5 w-5" />
+                                    {selfState.isSharingScreen ? <LuScreenShareOff className="h-5 w-5" /> : <LuScreenShare className="h-5 w-5" />}
                                 </Button>
                             </AlertDialogTrigger>
                         </TooltipTrigger>
                         <TooltipContent>
-                            {selfState.isInChat ? <p>start screen sharing</p> : <p>join with screen</p>}
+                            {selfState.isSharingScreen ? <p>stop screen sharing</p> : <p>start screen sharing</p>}
                         </TooltipContent>
                     </Tooltip>
 

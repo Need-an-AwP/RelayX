@@ -22,7 +22,7 @@ export default function UserAudioCard({ className, onClick, peerIP, peerState }:
                 >
                     <div className="flex h-full justify-center items-center gap-4 aspect-square p-5 z-10">
                         <Avatar className="flex-shrink-0 h-full w-full">
-                            <AvatarImage src={peerState.userAvatar} />
+                            <AvatarImage src={peerState.userAvatar} draggable={false} />
                             <AvatarFallback>
                                 <LoaderCircle className="w-4 h-4 animate-spin" />
                             </AvatarFallback>
@@ -30,6 +30,7 @@ export default function UserAudioCard({ className, onClick, peerIP, peerState }:
                     </div>
                     {analyser &&
                         <UserAudioSpectrum
+                            renderId={`user-audio-card-${peerIP}`}
                             analyser={analyser}
                             verticalAlignment='center'
                             className="absolute w-full h-full top-0 left-0 opacity-60

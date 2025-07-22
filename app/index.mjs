@@ -240,11 +240,11 @@ function createWindow() {
     })
 
     // destop capture
-    ipcMain.handle('getScreenSources', async (e, d) => {
+    ipcMain.handle('get-screen-sources', async (e, d) => {
         return await getAvailableSources();
     })
 
-    ipcMain.on('screen-capture-id', (e, d) => {
+    ipcMain.on('set-screen-capture-id', (e, d) => {
         setScreenCaptureId(d);
     })
 

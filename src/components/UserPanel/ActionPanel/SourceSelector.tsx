@@ -24,13 +24,13 @@ export default function SourceSelector() {
         }
         try {
             // set source id first then use getdisplaymedia method
-            window.ipcBridge.send('capture-id', sourceId);
+            window.ipcBridge.setScreenCaptureId(sourceId);
 
             const captureStream = await navigator.mediaDevices.getDisplayMedia({
                 video: {
-                    frameRate: 120,
+                    frameRate: 60,//120,
                 },
-                audio: true,
+                audio: false,
             })
             console.log('captureStream:', captureStream);
             setStream(captureStream);
@@ -110,43 +110,45 @@ export default function SourceSelector() {
                 </TabsList>
             </Tabs>
 
-            <div className='h-[70vh]'>
+            <div className='h-[60vh]'>
                 <ScrollArea className="h-full">
                     <div className="flex flex-row flex-wrap gap-4 items-center justify-center p-4">
                         {sources
                             .filter(source => source.id.startsWith(selectedCategory))
                             .map((source) => {
-                                return (<div
-                                    key={source.id}
-                                    onClick={() => startCapture(source.id)}
-                                    className="group cursor-pointer border rounded-lg p-2 hover:bg-accent transition-colors
+                                return (
+                                    <div
+                                        key={source.id}
+                                        onClick={() => startCapture(source.id)}
+                                        className="group cursor-pointer border rounded-lg p-2 hover:bg-accent transition-colors
                                             w-60 xl:w-80"
-                                >
-                                    <div className="mb-2 overflow-hidden rounded-md">
-                                        <img
-                                            src={source.thumbnail}
-                                            alt={source.name}
-                                            className="object-cover"
-                                        />
+                                    >
+                                        <div className="mb-2 overflow-hidden rounded-md">
+                                            <img
+                                                src={source.thumbnail}
+                                                alt={source.name}
+                                                className="object-cover"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-[auto_1fr] items-center gap-2 px-1 max-w-full min-w-0">
+                                            {selectedCategory === 'screen' ?
+                                                <Monitor className="h-4 w-4 text-muted-foreground" />
+                                                :
+                                                <>
+                                                    {source.appIcon ? (
+                                                        <img
+                                                            src={source.appIcon}
+                                                            alt="app icon"
+                                                            className="h-4 w-4"
+                                                        />
+                                                    ) : (
+                                                        <AppWindow className="h-4 w-4 text-muted-foreground" />
+                                                    )}
+                                                </>}
+                                            <span className="text-sm text-left truncate">{source.name}</span>
+                                        </div>
                                     </div>
-                                    <div className="grid grid-cols-[auto_1fr] items-center gap-2 px-1 max-w-full min-w-0">
-                                        {selectedCategory === 'screen' ?
-                                            <Monitor className="h-4 w-4 text-muted-foreground" />
-                                            :
-                                            <>
-                                                {source.appIcon ? (
-                                                    <img
-                                                        src={source.appIcon}
-                                                        alt="app icon"
-                                                        className="h-4 w-4"
-                                                    />
-                                                ) : (
-                                                    <AppWindow className="h-4 w-4 text-muted-foreground" />
-                                                )}
-                                            </>}
-                                        <span className="text-sm text-left truncate">{source.name}</span>
-                                    </div>
-                                </div>)
+                                )
                             })}
                     </div>
                 </ScrollArea>
