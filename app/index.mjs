@@ -1,4 +1,5 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron';
+import { installExtension, REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
 import { getThrottledElectronProcessIds } from './electronPID.mjs';
 import { getAvailableSources, setScreenCaptureId, setDisplayMediaRequestHandler } from './destopCapture.mjs';
 
@@ -191,7 +192,7 @@ function createWindow() {
         title: 'RelayX',
         width: width,
         height: height,
-        minWidth: 500,
+        minWidth: 600,
         minHeight: 500,
         autoHideMenuBar: true,
         frame: false,
@@ -203,6 +204,10 @@ function createWindow() {
         }
     };
 
+    if (!windowOptions.width || !windowOptions.height) {
+        windowOptions.width = 1400;
+        windowOptions.height = 800;
+    }
     // 如果配置中有 x 和 y 值，则使用它们
     if (windowBounds.x !== undefined && windowBounds.y !== undefined) {
         windowOptions.x = windowBounds.x;
@@ -342,6 +347,9 @@ function createWindow() {
         callback(true);
     });
 
+    // this will disable showing menu by alt and ctrl+r refresh
+    // mainWindow.removeMenu();
+
     if (isDev) {
         mainWindow.loadURL(`http://localhost:${devServerPort}`);
         mainWindow.webContents.openDevTools({ mode: 'detach' });
@@ -352,6 +360,8 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+    
+        
     // init display media request handler
     setDisplayMediaRequestHandler();
 
@@ -362,6 +372,11 @@ app.whenReady().then(() => {
             createWindow();
         }
     });
+    
+    // install extension
+    installExtension(REACT_DEVELOPER_TOOLS)
+        .then((ext) => console.log(`Added Extension:  ${ext.name}`))
+        .catch((err) => console.log('An error occurred: ', err));
 });
 
 app.on('window-all-closed', () => {

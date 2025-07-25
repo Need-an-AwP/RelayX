@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { SelfAudioCard, SelfThumbnailCard } from "./selfCards"
+import { SelfCard, SelfThumbnailCard } from "./selfCards"
 import { ChevronUp, ChevronDown } from "lucide-react"
 import { usePeerStateStore } from "@/stores"
-import { UserAudioCard } from "./userCards"
+import { UserCard, UserThumbnailCard } from "./userCards"
 import ControlPanel from "./controlPanel"
 
 
@@ -18,7 +18,7 @@ export default function CardDisplay({ isHovering, switchFullScreen }: { isHoveri
             {/* horizontal thumbnail cards scroll area */}
             <ScrollArea className={`w-full flex-none overflow-hidden
                 transition-[max-height] duration-300 ease-in-out
-                ${isScrollingUp ? 'max-h-[15cqh]' : 'max-h-0'}`
+                ${isScrollingUp ? 'max-h-0' : 'max-h-[15cqh]'}`
             }>
                 <div className='flex justify-center w-full h-[15cqh] gap-3 p-2
                 bg-white/10'>
@@ -33,16 +33,17 @@ export default function CardDisplay({ isHovering, switchFullScreen }: { isHoveri
 
             <div className='relative h-full w-full flex justify-center items-center min-h-0 overflow-hidden'>
                 <CardGrid>
-                    <SelfAudioCard
+                    <SelfCard
                         key="self-audio-card"
-                        isMaximized={maximiumCard === 'self'}
+                        maximiumCard={maximiumCard}
                         onClick={() => setMaximiumCard(maximiumCard === 'self' ? null : 'self')}
                     />
                     {Object.entries(peers)
                         .filter(([peerIP, peerState]) => peerState.isInChat)
                         .map(([peerIP, peerState]) => (
-                            <UserAudioCard
+                            <UserCard
                                 key={peerIP}
+                                maximiumCard={maximiumCard}
                                 peerIP={peerIP}
                                 peerState={peerState}
                                 onClick={() => setMaximiumCard(maximiumCard === peerIP ? null : peerIP)}

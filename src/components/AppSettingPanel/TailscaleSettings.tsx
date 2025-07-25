@@ -49,9 +49,8 @@ export default function TailscaleSettings() {
 
     return (
         <Card>
-            <CardHeader>
+            <CardHeader className="text-center">
                 <CardTitle>Tailscale Settings</CardTitle>
-
             </CardHeader>
             <CardContent>
                 <div className="flex flex-col gap-2">

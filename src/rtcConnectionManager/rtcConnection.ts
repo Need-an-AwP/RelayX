@@ -1,6 +1,9 @@
-import { useTURNStore, useTailscaleStore, usePeerStateStore, useMediaStore } from '@/stores'
+import { useTURNStore, useTailscaleStore, usePeerStateStore, useMediaStore, useMessageStore } from '@/stores'
 import type { PeerState } from '@/stores'
-import type { RTCOfferMessage, RTCAnswerMessage, TransceiverMetadata, TransceiverLabel, TransceiverInfo, TrackType } from '@/types'
+import type {
+    RTCOfferMessage, RTCAnswerMessage, TransceiverMetadata, TransceiverLabel,
+    TransceiverInfo, TrackType, DirectMessage, PingMessage, MessageType
+} from '@/types'
 import StatusSender from './statusSender'
 
 type StateChangeCallback = (state: RTCPeerConnectionState) => void;
@@ -11,6 +14,11 @@ export default class rtcConnection {
     private isOffer: boolean;
     private state: RTCPeerConnectionState | null = null;
     private pc: RTCPeerConnection | null = null;
+    private reservedTracks: Array<{ type: TrackType, label: TransceiverLabel, transceiver: RTCRtpTransceiver | null }> = [
+        { type: 'audio', label: 'micphone', transceiver: null },
+        { type: 'audio', label: 'capture_audio', transceiver: null },
+        { type: 'video', label: 'screen_share_video', transceiver: null },
+    ];
     private localTransceiverMetadata: TransceiverMetadata = new Map();
     private iceList: RTCIceCandidate[] = [];
     private dataChannel: RTCDataChannel | null = null;
@@ -190,8 +198,10 @@ export default class rtcConnection {
         const dc = pc.createDataChannel('data', { ordered: false });
         this.handleDataChannel(dc);
 
-        const microphoneTransceiver = pc.addTransceiver('audio', { direction: 'sendrecv' });
-        const audioTransceiver = pc.addTransceiver('audio', { direction: 'sendrecv' });
+        this.reservedTracks.forEach(obj => {
+            const transceiver = pc.addTransceiver(obj.type, { direction: 'sendrecv' });
+            obj.transceiver = transceiver;
+        });
 
         pc.ontrack = (e) => {
             console.log('offer side ontrack:', e)
@@ -204,17 +214,18 @@ export default class rtcConnection {
 
         const offer = await pc.createOffer({
             offerToReceiveAudio: true,
-            // offerToReceiveVideo: true
-            // offer to receive video will request answer side to provide a video track
+            offerToReceiveVideo: true
+            // offer to receive video will request answer side to provide a video track ONLY ENABLED WHEN VIDEO TRANCEIVER IS ADDED
             // when video transceiver is not added, answer side will respond with a new sendonly video track
         });
         await pc.setLocalDescription(offer);
 
         // set local transceiver metadata after setting local description
-        if (microphoneTransceiver.mid && audioTransceiver.mid) {
-            this.localTransceiverMetadata.set('micphone', { type: 'audio', mid: microphoneTransceiver.mid });
-            this.localTransceiverMetadata.set('capture_audio', { type: 'audio', mid: audioTransceiver.mid });
-        }
+        this.reservedTracks.forEach(obj => {
+            if (obj.transceiver?.mid) {
+                this.localTransceiverMetadata.set(obj.label, { type: obj.type, mid: obj.transceiver.mid });
+            }
+        });
 
         this.dataChannel = dc;
 
@@ -316,6 +327,21 @@ export default class rtcConnection {
         await this.pc.addIceCandidate(iceList[0]);
     }
 
+    public sendDirectMessage(content: string) {
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
+            const message: DirectMessage = {
+                type: 'dm' as MessageType,
+                content: content,
+                from: this.peerIP,
+                timestamp: Date.now(),
+                messageId: crypto.randomUUID()
+            };
+            this.dataChannel.send(JSON.stringify(message));
+        } else {
+            console.warn(`Data channel to ${this.peerIP} is not open, cannot send message.`);
+        }
+    }
+
     public replaceTrack(track: MediaStreamTrack | null, label: TransceiverLabel) {
         if (!this.pc) {
             console.error('pc is not initialized when replacing track');
@@ -384,24 +410,42 @@ export default class rtcConnection {
         dc.onmessage = (e) => {
             try {
                 const data = JSON.parse(e.data)
-                const state = data.state as PeerState
-                if (data.type === 'ping') {
-                    const now = Date.now()
-                    const lastPingTime = usePeerStateStore.getState().getPeerState(this.peerIP)?.lastPingTime || 0;
-                    const latency = now - lastPingTime > 1000 ? 1000 : now - lastPingTime
-                    
-                    // pass full state to peerStateStore, let immer handle it
-                    usePeerStateStore.getState().updatePeerState(this.peerIP, {
-                        userName: state.userName,
-                        userAvatar: state.userAvatar,
-                        isInChat: state.isInChat,
-                        isInputMuted: state.isInputMuted,
-                        isOutputMuted: state.isOutputMuted,
-                        isSharingScreen: state.isSharingScreen,
-                        isSharingAudio: state.isSharingAudio,
-                        latency: latency,
-                        // lastPingTime: now
-                    })
+
+                switch (data.type) {
+                    case 'ping':
+                        data as PingMessage
+                        const state = data.state
+                        // pass full state to peerStateStore, let immer handle it
+                        usePeerStateStore.getState().updatePeerState(this.peerIP, {
+                            userName: state.userName,
+                            userAvatar: state.userAvatar,
+                            isInChat: state.isInChat,
+                            isInputMuted: state.isInputMuted,
+                            isOutputMuted: state.isOutputMuted,
+                            isSharingScreen: state.isSharingScreen,
+                            isSharingAudio: state.isSharingAudio,
+                            // latency: latency,
+                            // lastPingTime: now
+                        })
+
+                        dc.send(JSON.stringify({
+                            type: 'pong',
+                        }))
+                        break;
+                    case 'pong':
+                        const now = Date.now()
+                        const lastPingTime = usePeerStateStore.getState().getPeerLatency(this.peerIP)?.lastPingTime || 0;
+                        const latency = now - lastPingTime > 2000 ? 2000 : now - lastPingTime
+                        usePeerStateStore.getState().updatePeerLatency(this.peerIP, { latency })
+                        break;
+                    case 'dm':
+                        data as DirectMessage
+                        console.log('receive dm', data)
+                        useMessageStore.getState().addMessage(this.peerIP, data as DirectMessage)
+                        break;
+                    default:
+                        console.error('Unknown data type', data.type)
+                        break;
                 }
             }
             catch (e) {
@@ -424,7 +468,7 @@ export default class rtcConnection {
         useMediaStore.getState().removePeerTracks(this.peerIP);
         this.iceList = [];
         this.clearReconnectTimer();
-        
+
         if (this.statusSender) {
             this.statusSender = null;
         }

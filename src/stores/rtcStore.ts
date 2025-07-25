@@ -12,6 +12,7 @@ interface RTCStore {
     closeConnection: (peerID: string) => void
     updateConnectionState: (peerID: string, state: RTCPeerConnectionState) => void
     getConnection: ({ peerID, peerIP }: { peerID?: string, peerIP?: string }) => Promise<rtcConnection | null>
+    sendDMs: (peerIPs: string[], message: string) => void
     getAllConnections: () => Map<string, rtcConnection>
     // 状态查询方法
     isConnected: (peerID: string) => boolean
@@ -146,6 +147,14 @@ const useRTCStore = create<RTCStore>((set, get) => {
         getConnection: async ({ peerID, peerIP }: { peerID?: string, peerIP?: string }) => {
             const { manager } = get()
             return await manager.getConnection({ peerID, peerIP }) || null
+        },
+
+        sendDMs:(peerIPs: string[], message: string)=>{
+            const { manager } = get()
+            // 我们将批量发送的逻辑委托给manager
+            // manager将负责遍历IP列表，找到对应的connection并发送消息
+            // 注意：sendDirectMessageToPeers 是我们接下来需要在 rtcConnectionManager 中实现的方法
+            manager.sendDirectMessageToPeers(peerIPs, message)
         },
 
         getAllConnections: () => {

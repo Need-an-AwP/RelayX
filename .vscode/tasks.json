@@ -6,6 +6,73 @@
             "type": "shell",
             "command": "yarn build:go",
             "problemMatcher": []
+        },
+        {
+            "label": "Run A 5173",
+            "type": "shell",
+            "command": "npx",
+            "args": [
+                "concurrently",
+                "-k",
+                "vite --port 5173",
+                "cross-env DEV=true electron app/index.mjs --port=5173 --env=.env.node-A --config=user-config-A"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new"
+            },
+            "dependsOn": "Build Go"
+        },
+        {
+            "label": "Run B 5174",
+            "type": "shell",
+            "command": "npx",
+            "args": [
+                "concurrently",
+                "-k",
+                "vite --port 5174",
+                "cross-env DEV=true electron app/index.mjs --port=5174 --env=.env.node-B --config=user-config-B"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new"
+            },
+            "dependsOn": "Build Go"
+        },
+        {
+            "label": "Run A 5173 & B 5174",
+            "type": "shell",
+            "command": "npx",
+            "args": [
+                "concurrently",
+                "--kill-others-on-fail",
+                "--kill-others",
+                "--prefix-colors", "blue,green",
+                "--prefix", "[{name}]",
+                "--names", "NodeA,NodeB",
+                "\"npx concurrently -k \\\"vite --port 5173\\\" \\\"cross-env DEV=true electron app/index.mjs --port=5173 --env=.env.node-A --config=user-config-A\\\"\"",
+                "\"npx concurrently -k \\\"vite --port 5174\\\" \\\"cross-env DEV=true electron app/index.mjs --port=5174 --env=.env.node-B --config=user-config-B\\\"\""
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new"
+            },
+            "dependsOn": "Build Go",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
         }
     ]
 } 

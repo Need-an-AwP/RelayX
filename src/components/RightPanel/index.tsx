@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { usePeerStateStore } from '@/stores'
 import MessageInput from './MessageInput'
 import CardDisplay from './CardDisplay'
@@ -8,6 +8,7 @@ export default function RightPanel() {
     const { selfState } = usePeerStateStore((state) => state)
     const [isHovering, setIsHovering] = useState(false)
     const [isFullscreen, setIsFullscreen] = useState(false)
+    const [hasFocus, setHasFocus] = useState(false)
     const rightPanelRef = useRef<HTMLDivElement>(null)
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     
@@ -63,7 +64,7 @@ export default function RightPanel() {
                 }
             }}
             onMouseLeave={() => {
-                if (!isFullscreen) {
+                if (!isFullscreen && !hasFocus) {
                     setIsHovering(false)
                 }
             }}
@@ -82,7 +83,7 @@ export default function RightPanel() {
                 <div className={`absolute bottom-0 left-0 w-full z-50
                 ${isHovering ? 'opacity-100' : 'opacity-0 translate-y-full'}
                 transition-all duration-300 ease-in-out`}>
-                    <MessageInput />
+                    <MessageInput onFocusChange={setHasFocus} />
                 </div>
 
             </div>}

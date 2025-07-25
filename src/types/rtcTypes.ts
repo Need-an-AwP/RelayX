@@ -36,3 +36,20 @@ export type TransceiverInfo = {
 }
 
 export type TransceiverMetadata = Map<TransceiverLabel, TransceiverInfo>
+
+export type MessageType = 'ping' | 'pong' | 'dm'
+
+export type DirectMessage = {
+    type: MessageType
+    from: string
+    content: string
+    timestamp: number
+    messageId: string
+}
+
+import type { PeerState } from "@/stores/peerStateStore"
+
+export type PingMessage = {
+    type: MessageType
+    state: PeerState
+}

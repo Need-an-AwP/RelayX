@@ -6,13 +6,14 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { usePeerStateStore, useDesktopCapture } from "@/stores"
 import { LuScreenShare, LuScreenShareOff } from "react-icons/lu";
-
+import { useTailscaleStore } from "@/stores";
 import SourceSelector from "./SourceSelector"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 
 
 const ActionPanel = () => {
+    const { tailscaleStatus } = useTailscaleStore()
     const selfState = usePeerStateStore(state => state.selfState)
     const updateSelfState = usePeerStateStore(state => state.updateSelfState)
     const { isSelectingSource, setIsSelectingSource, requestSources, stopScreenShare } = useDesktopCapture()
@@ -34,8 +35,8 @@ const ActionPanel = () => {
     return (
         <TooltipProvider>
             <div className={`grid items-center space-x-2 transition-[grid-template-columns] duration-300 ease-in-out 
-                ${selfState.isInChat ? 
-                    selfState.isSharingScreen ?'grid-cols-[minmax(0,1fr)_minmax(0,1fr)]':'grid-cols-[minmax(0,1fr)_minmax(0,2fr)]'
+                ${selfState.isInChat ?
+                    selfState.isSharingScreen ? 'grid-cols-[minmax(0,1fr)_minmax(0,1fr)]' : 'grid-cols-[minmax(0,1fr)_minmax(0,2fr)]'
                     : 'grid-cols-[minmax(0,2fr)_minmax(0,0fr)]'}`}>
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -58,8 +59,11 @@ const ActionPanel = () => {
                                     }, 500)
                                 }
                             }}
+                            disabled={tailscaleStatus?.BackendState !== 'Running'}
                         >
-                            {isLoading ? <LoaderCircle className="h-5 w-5 animate-spin" /> : selfState.isInChat ? <LogOut className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}
+                            {tailscaleStatus?.BackendState !== 'Running' ? <><LoaderCircle className="h-5 w-5 animate-spin" />Waiting for tailscale backend</> :
+                            isLoading ? <LoaderCircle className="h-5 w-5 animate-spin" /> :
+                                selfState.isInChat ? <LogOut className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent>

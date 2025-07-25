@@ -2,7 +2,16 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Mic, MicOff, Headphones, HeadphoneOff, Video, Expand, Shrink, MessageCircle } from 'lucide-react'
 import { ImPhoneHangUp } from "react-icons/im";
-
+import {
+    Sheet,
+    SheetClose,
+    SheetContent,
+    SheetDescription,
+    SheetFooter,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from "@/components/ui/sheet"
 
 export default function ControlPanel({ switchFullScreen }: { switchFullScreen: any }) {
     const [isMicMuted, setIsMicMuted] = useState(false)
@@ -21,9 +30,29 @@ export default function ControlPanel({ switchFullScreen }: { switchFullScreen: a
             >
                 {isFullScreen ? <Shrink className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
             </Button>
-            <Button variant="ghost" className='cursor-pointer'>
-                <MessageCircle className="w-4 h-4" />
-            </Button>
+
+            <Sheet>
+                <SheetTrigger asChild>
+                    <Button variant="ghost" className='cursor-pointer'>
+                        <MessageCircle className="w-4 h-4" />
+                    </Button>
+                </SheetTrigger>
+                <SheetContent className='mt-[32px] flex justify-center'>
+                    <SheetHeader>
+                        <SheetTitle className="flex items-center gap-2">
+                            <MessageCircle className="w-8 h-8" />
+                            Chat history
+                        </SheetTitle>
+                        <SheetDescription>
+                            blablababla<br/>
+                            blablababla<br/>
+                            blablababla<br/>
+                            blablababla<br/>
+                        </SheetDescription>
+                    </SheetHeader>
+
+                </SheetContent>
+            </Sheet>
             <div className='flex flex-row gap-2 rounded-md bg-muted/40'>
                 <Button
                     variant="ghost"

@@ -1,10 +1,11 @@
-import { usePeerStateStore, useAudioProcessing, useRTCStore } from "@/stores"
-import type { PeerState, peerMap } from "@/stores"
+import { usePeerStateStore, useAudioProcessing, useRTCStore, useDesktopCapture } from "@/stores"
+import type { PeerState, peerMap, peerIP } from "@/stores"
+import type { TransceiverLabel } from "@/types"
 
 
 export default class MediaTrackManager {
     private static instance: MediaTrackManager;
-    private replacedTracks: Map<string, Set<string>> = new Map();
+    private replacedTracks: Map<peerIP, Set<TransceiverLabel>> = new Map();
 
     private constructor() {
         usePeerStateStore.subscribe((state, prevState) => {
@@ -98,6 +99,16 @@ export default class MediaTrackManager {
 
                     console.log('replace micphone Track for ' + peerIP + 'done')
                 }
+            } else {
+                // 退出语音聊天时移除麦克风轨道
+                if (peerReplacedTracks.has('micphone')) {
+                    const connection = await useRTCStore.getState().getConnection({ peerIP })
+                    if (connection) {
+                        connection.replaceTrack(null, 'micphone');
+                        peerReplacedTracks.delete('micphone');
+                        console.log('removed micphone Track for ' + peerIP + 'done')
+                    }
+                }
             }
 
             const shouldShareCaptureAudio = selfState.isInChat && selfState.isSharingAudio;
@@ -126,6 +137,56 @@ export default class MediaTrackManager {
                     peerReplacedTracks.add('capture_audio');
 
                     console.log('replace capture_audio Track for ' + peerIP + 'done')
+                }
+            } else {
+                // 停止应用音频捕获时移除音频轨道
+                if (peerReplacedTracks.has('capture_audio')) {
+                    const connection = await useRTCStore.getState().getConnection({ peerIP })
+                    if (connection) {
+                        connection.replaceTrack(null, 'capture_audio');
+                        peerReplacedTracks.delete('capture_audio');
+                        console.log('removed capture_audio Track for ' + peerIP + 'done')
+                    }
+                }
+            }
+
+            const shouldShareScreenVideo = selfState.isInChat && selfState.isSharingScreen && peerState.isInChat;
+            if (shouldShareScreenVideo) {
+                if (peerReplacedTracks.has('screen_share_video')) {
+                    console.log(`[MediaTrackManager] Screen share video track for ${peerIP} already replaced.`);
+                } else {
+                    const connection = await useRTCStore.getState().getConnection({ peerIP })
+                    if (!connection) {
+                        console.warn(`[MediaTrackManager] Wanted to send screen video to ${peerIP}, but no connection available.`);
+                        continue;
+                    }
+
+                    const { stream: screenStream } = useDesktopCapture.getState();
+                    if (!screenStream) {
+                        console.warn(`[MediaTrackManager] Wanted to send screen video to ${peerIP}, but no screen stream available.`);
+                        continue;
+                    }
+
+                    const videoTrack = screenStream.getVideoTracks()[0];
+                    if (!videoTrack) {
+                        console.warn(`[MediaTrackManager] Wanted to send screen video to ${peerIP}, but no video track available.`);
+                        continue;
+                    }
+
+                    connection.replaceTrack(videoTrack, 'screen_share_video');
+                    peerReplacedTracks.add('screen_share_video');
+
+                    console.log('replace screen_share_video Track for ' + peerIP + 'done')
+                }
+            } else {
+                // 停止屏幕共享时移除视频轨道
+                if (peerReplacedTracks.has('screen_share_video')) {
+                    const connection = await useRTCStore.getState().getConnection({ peerIP })
+                    if (connection) {
+                        connection.replaceTrack(null, 'screen_share_video');
+                        peerReplacedTracks.delete('screen_share_video');
+                        console.log('removed screen_share_video Track for ' + peerIP + 'done')
+                    }
                 }
             }
         }

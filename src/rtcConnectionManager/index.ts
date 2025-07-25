@@ -90,6 +90,24 @@ export default class rtcConnectionManager {
         return this.RTCconnections;
     }
 
+    public sendDirectMessageToPeers(peerIPs: string[], message: string): void {
+        for (const peerIP of peerIPs) {
+            const peerID = this.IPtoPeerID.get(peerIP);
+            if (!peerID) {
+                console.warn(`Cannot find peerID for IP: ${peerIP}, skipping message.`);
+                continue;
+            }
+
+            const connection = this.RTCconnections.get(peerID);
+            if (connection) {
+                // 注意：sendDirectMessage 是我们接下来需要在 rtcConnection 类中实现的方法
+                connection.sendDirectMessage(message);
+            } else {
+                console.warn(`No active connection found for peer: ${peerID} (${peerIP}), skipping message.`);
+            }
+        }
+    }
+
     // 设置连接状态监听器
     private setupConnectionStateListener(connection: rtcConnection, peerID: string) {
         // 设置状态变化回调

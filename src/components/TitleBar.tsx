@@ -4,6 +4,9 @@ import { VscLayoutSidebarLeft, VscLayoutSidebarLeftOff } from "react-icons/vsc";
 import { TbWindowMaximize, TbWindowMinimize } from "react-icons/tb";
 import { usePopover, usePanelStore } from '@/stores';
 import TailscaleStatusDisplay from './TailscaleStatusDisplay';
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import AppSettingPanel from './AppSettingPanel';
 
 const TitleBar = () => {
     const { toggle } = usePopover()
@@ -19,12 +22,26 @@ const TitleBar = () => {
                 bg-white/5 backdrop-blur-[2px]`}
         >
             <div className="flex items-center gap-2">
-                <div
-                    onClick={() => toggle('isAppSettingOpen')}
-                    className={buttonClassName}
-                >
-                    <Menu className={buttonIconClassName} />
-                </div>
+                <Sheet>
+                    <SheetTrigger>
+                        <div
+                            // onClick={() => toggle('isAppSettingOpen')}
+                            className={buttonClassName}
+                        >
+                            <Menu className={buttonIconClassName} />
+                        </div>
+                    </SheetTrigger>
+                    <SheetContent side='left' className='mt-[32px] h-[calc(100vh-32px)] @container !max-w-none w-[60vw]'>
+
+                        <SheetHeader>
+                            <SheetTitle>App Settings</SheetTitle>
+                            <SheetDescription></SheetDescription>
+                        </SheetHeader>
+
+                        <AppSettingPanel className='h-[calc(100vh-110px)]' />
+                    </SheetContent>
+                </Sheet>
+
             </div>
 
             {/* draggable area */}

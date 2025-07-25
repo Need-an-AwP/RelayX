@@ -13,12 +13,14 @@ import UserAudioSpectrum from '@/components/UserAudioSpectrum'
 const SettingPopover = () => {
     const isSettingPopoverOpen = usePopover(state => state.isSettingPopoverOpen);
     const toggle = usePopover(state => state.toggle);
-    const inputDevices = useAudioDeviceStore(state => state.inputDevices);
-    const outputDevices = useAudioDeviceStore(state => state.outputDevices);
-    const selectedInput = useAudioDeviceStore(state => state.selectedInput);
-    const selectedOutput = useAudioDeviceStore(state => state.selectedOutput);
-    const setSelectedInput = useAudioDeviceStore(state => state.setSelectedInput);
-    const setSelectedOutput = useAudioDeviceStore(state => state.setSelectedOutput);
+    const {
+        inputDevices,
+        outputDevices,
+        selectedInput,
+        selectedOutput,
+        setSelectedInput,
+        setSelectedOutput
+    } = useAudioDeviceStore()
     const { localFinalStream, analyser, isNoiseReductionEnabled, toggleNoiseReduction } = useAudioProcessing()
 
     const [isTesting, setIsTesting] = useState(false);
@@ -46,7 +48,7 @@ const SettingPopover = () => {
                     <h3 className='text-md font-bold'>Audio Device Settings</h3>
                     <TooltipProvider>
                         <Tooltip disableHoverableContent>
-                            <TooltipTrigger 
+                            <TooltipTrigger
                                 asChild
                                 onFocus={(e) => e.preventDefault()}
                             >

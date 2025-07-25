@@ -1,4 +1,5 @@
 import { usePeerStateStore } from "@/stores";
+import type { PingMessage } from "@/types";
 
 export default class StatusSender {
     private dc: RTCDataChannel;
@@ -30,14 +31,14 @@ export default class StatusSender {
     private sendStatus(): void {
         if (this.dc.readyState === 'open') {
             const selfState = usePeerStateStore.getState().selfState
-            const payload = {
+            const payload: PingMessage = {
                 type: 'ping',
                 state: selfState
             };
             // console.log('[StatusSender] sendStatus:', payload)
             this.dc.send(JSON.stringify(payload));
 
-            usePeerStateStore.getState().updatePeerState(this.peerIP, {
+            usePeerStateStore.getState().updatePeerLatency(this.peerIP, {
                 lastPingTime: Date.now()
             })
         } else {

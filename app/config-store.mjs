@@ -20,7 +20,7 @@ export function initConfigStore(configName) {
             },
             windowBounds: {
                 width: 1400,
-                height: 832
+                height: 800
             }
         }
     });

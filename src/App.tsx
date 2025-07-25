@@ -85,8 +85,6 @@ function App() {
                             onClick={() => closeAll()}
                         />
 
-                        <AppSettingPanel />
-
                         <ResizablePanelGroup direction="horizontal">
                             <ResizablePanel
                                 defaultSize={30}

@@ -12,6 +12,9 @@ export interface PeerState {
     isOutputMuted: boolean
     isSharingScreen: boolean
     isSharingAudio: boolean
+}
+
+export interface PeerLatency {
     latency: number
     lastPingTime: number
 }
@@ -24,15 +27,18 @@ export const PeerStateKeys = [
 export type peerIP = string;
 export type peerID = string;
 export type peerMap = Record<peerIP, PeerState>
+export type peerLatencyMap = Record<peerIP, PeerLatency>
 
 interface PeerStateStore {
     peers: peerMap
+    peerLatencies: peerLatencyMap
     selfState: PeerState
     initialized: boolean
     addPeer: (peerIP: peerIP) => void
     updatePeerState: (peerID: peerID, partialState: Partial<Omit<PeerState, 'peerID'>>) => void
-    setPeerState: (peerID: peerID, state: PeerState) => void
     getPeerState: (peerID: peerID) => PeerState | undefined
+    updatePeerLatency: (peerIP: peerIP, partialLatency: Partial<PeerLatency>) => void
+    getPeerLatency: (peerIP: peerIP) => PeerLatency | undefined
     initializeSelfState: () => Promise<void>
     updateSelfState: (partialState: Partial<PeerState>) => void
 }
@@ -46,6 +52,9 @@ const defaultPeerState: PeerState = {
     isOutputMuted: false,
     isSharingScreen: false,
     isSharingAudio: false,
+}
+
+const defaultPeerLatency: PeerLatency = {
     latency: -1,
     lastPingTime: 0,
 }
@@ -54,6 +63,7 @@ export const usePeerStateStore = create<PeerStateStore>()(
     subscribeWithSelector(
         immer((set, get) => ({
             peers: {},
+            peerLatencies: {},
             selfState: { ...defaultPeerState, isSelf: true },
             initialized: false,
 
@@ -97,6 +107,7 @@ export const usePeerStateStore = create<PeerStateStore>()(
             addPeer: (peerIP: string) => {
                 set((state) => {
                     state.peers[peerIP] = { ...defaultPeerState };
+                    state.peerLatencies[peerIP] = { ...defaultPeerLatency };
                 });
             },
 
@@ -110,14 +121,21 @@ export const usePeerStateStore = create<PeerStateStore>()(
                 });
             },
 
-            setPeerState: (peerIP: string, peerState: PeerState) => {
+            getPeerState: (peerIP: string) => {
+                return get().peers[peerIP];
+            },
+
+            updatePeerLatency: (peerIP: string, partialLatency: Partial<PeerLatency>) => {
                 set((state) => {
-                    state.peers[peerIP] = peerState;
+                    if (!state.peerLatencies[peerIP]) {
+                        state.peerLatencies[peerIP] = { ...defaultPeerLatency };
+                    }
+                    Object.assign(state.peerLatencies[peerIP], partialLatency);
                 });
             },
 
-            getPeerState: (peerIP: string) => {
-                return get().peers[peerIP];
+            getPeerLatency: (peerIP: string) => {
+                return get().peerLatencies[peerIP];
             },
 
             getSelfState: () => {

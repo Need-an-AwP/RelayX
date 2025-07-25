@@ -31,7 +31,7 @@ export default function RefreshTime() {
 
     return (
         <Card>
-            <CardHeader>
+            <CardHeader className="text-center">
                 <CardTitle>Peer Refresh Time</CardTitle>
             </CardHeader>
             <CardContent>
