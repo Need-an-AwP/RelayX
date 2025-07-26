@@ -1,4 +1,4 @@
-import { usePeerStateStore } from "@/stores";
+import { usePeerStateStore, usePeerLatencyStore } from "@/stores";
 import type { PingMessage } from "@/types";
 
 export default class StatusSender {
@@ -38,7 +38,7 @@ export default class StatusSender {
             // console.log('[StatusSender] sendStatus:', payload)
             this.dc.send(JSON.stringify(payload));
 
-            usePeerStateStore.getState().updatePeerLatency(this.peerIP, {
+            usePeerLatencyStore.getState().updateLatency(this.peerIP, {
                 lastPingTime: Date.now()
             })
         } else {

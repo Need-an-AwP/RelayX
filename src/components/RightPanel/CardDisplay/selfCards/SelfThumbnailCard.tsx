@@ -14,41 +14,27 @@ export default function SelfThumbnailCard({ className }: { className?: string })
     const [open, setOpen] = useState(false)
 
     return (
-        <DropdownMenu open={open} onOpenChange={setOpen}>
-            <DropdownMenuTrigger asChild>
-                <Card
-                    className={`relative h-full aspect-video select-none p-4 
+        <Card
+            className={`relative h-full aspect-video select-none p-4 
                         transition-all duration-300 flex justify-center items-center overflow-hidden
                         hover:border-primary hover:ring-1 
                         ${className}`}
-                >
-                    <div className="flex h-full justify-center items-center gap-4 aspect-square p-2 z-10">
-                        <Avatar className="flex-shrink-0 h-full w-full">
-                            <AvatarImage src={selfState.userAvatar} draggable={false}/>
-                            <AvatarFallback>
-                                <LoaderCircle className="w-4 h-4 animate-spin" />
-                            </AvatarFallback>
-                        </Avatar>
-                    </div>
+        >
+            <div className="flex h-full justify-center items-center gap-4 aspect-square p-2 z-10">
+                <Avatar className="flex-shrink-0 h-full w-full">
+                    <AvatarImage src={selfState.userAvatar} draggable={false} />
+                    <AvatarFallback>
+                        <LoaderCircle className="w-4 h-4 animate-spin" />
+                    </AvatarFallback>
+                </Avatar>
+            </div>
 
-                    <div className={`absolute top-0 left-0 w-full h-full z-20
+            <div className={`absolute top-0 left-0 w-full h-full z-20
                         flex justify-center items-center
                         bg-muted opacity-0
                         hover:opacity-60 transition-opacity duration-300`} >
-                        <ChevronDown className="w-4 h-4" />
-                    </div>
-                </Card>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-                <div className='flex flex-col gap-2'>
-                    <Button variant="outline" className='cursor-pointer'><RiVoiceprintLine className="w-4 h-4" />Switch to Voice Card</Button>
-                    <Button variant="outline" className='cursor-pointer'><BsPersonVideo3 className="w-4 h-4" />Switch to Video Card</Button>
-                </div>
-            </DropdownMenuContent>
-        </DropdownMenu>
-
-
-
-
+                <ChevronDown className="w-4 h-4" />
+            </div>
+        </Card>
     )
 }

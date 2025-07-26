@@ -1,5 +1,7 @@
-import { useTURNStore, useTailscaleStore, usePeerStateStore, useMediaStore, useMessageStore } from '@/stores'
-import type { PeerState } from '@/stores'
+import {
+    useTURNStore, useTailscaleStore, usePeerStateStore,
+    useMediaStore, useMessageStore, usePeerLatencyStore
+} from '@/stores'
 import type {
     RTCOfferMessage, RTCAnswerMessage, TransceiverMetadata, TransceiverLabel,
     TransceiverInfo, TrackType, DirectMessage, PingMessage, MessageType
@@ -434,9 +436,9 @@ export default class rtcConnection {
                         break;
                     case 'pong':
                         const now = Date.now()
-                        const lastPingTime = usePeerStateStore.getState().getPeerLatency(this.peerIP)?.lastPingTime || 0;
+                        const lastPingTime = usePeerLatencyStore.getState().getLatency(this.peerIP)?.lastPingTime || 0;
                         const latency = now - lastPingTime > 2000 ? 2000 : now - lastPingTime
-                        usePeerStateStore.getState().updatePeerLatency(this.peerIP, { latency })
+                        usePeerLatencyStore.getState().updateLatency(this.peerIP, { latency })
                         break;
                     case 'dm':
                         data as DirectMessage
@@ -470,6 +472,7 @@ export default class rtcConnection {
         this.clearReconnectTimer();
 
         if (this.statusSender) {
+            this.statusSender.stop();
             this.statusSender = null;
         }
     }

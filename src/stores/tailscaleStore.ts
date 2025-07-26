@@ -82,7 +82,11 @@ const initializeTailscaleListeners = () => {
             if (message.character === "NONE") return;
             // console.log("Received accessibility message:", message);
 
-            updateCharacter({ peerID: message.peerID, peerIP: message.peerIP, character: message.character });
+            updateCharacter({
+                peerID: message.peerID,
+                peerIP: message.peerIP,
+                character: message.character === "OFFER" ? "ANSWER" : "OFFER"
+            });
             const { manager, createConnection } = useRTCStore.getState();
             if (message.character === "OFFER") {
                 createConnection(message.peerID, message.peerIP, true); // isOffer = true

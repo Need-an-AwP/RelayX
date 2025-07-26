@@ -1,4 +1,4 @@
-import { usePeerStateStore, useOnlinePeersStore } from '@/stores';
+import { usePeerStateStore, usePeerLatencyStore, useOnlinePeersStore } from '@/stores';
 import { useEffect, useRef, memo, useMemo } from 'react';
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -23,8 +23,8 @@ const LatencyDisplay = memo(({ peerIP }: { peerIP: string }) => {
     const latencyRef = useRef<HTMLSpanElement>(null);
 
     useEffect(() => {
-        const unsubscribe = usePeerStateStore.subscribe(
-            (state) => state.peerLatencies[peerIP]?.latency,
+        const unsubscribe = usePeerLatencyStore.subscribe(
+            (state) => state.latencies[peerIP]?.latency,
             (latency) => {
                 if (latencyRef.current) {
                     latencyRef.current.textContent = (latency && latency > 0) ? `${latency} ms` : '-';
@@ -34,7 +34,7 @@ const LatencyDisplay = memo(({ peerIP }: { peerIP: string }) => {
         );
 
         // 初始化显示
-        const initialLatency = usePeerStateStore.getState().peerLatencies[peerIP]?.latency;
+        const initialLatency = usePeerLatencyStore.getState().latencies[peerIP]?.latency;
         if (latencyRef.current) {
             latencyRef.current.textContent = (initialLatency && initialLatency > 0) ? `${initialLatency} ms` : '-';
         }

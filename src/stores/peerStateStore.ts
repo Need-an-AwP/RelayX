@@ -1,3 +1,12 @@
+/*
+PeerStateStore is the core of many components
+using immer to update
+latency state is separated into another store to avoid immer's performance issue
+cause immer will create a new reference to the top
+which will cause rerender even if component only subscribe part of the state
+*/
+
+
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
@@ -27,18 +36,14 @@ export const PeerStateKeys = [
 export type peerIP = string;
 export type peerID = string;
 export type peerMap = Record<peerIP, PeerState>
-export type peerLatencyMap = Record<peerIP, PeerLatency>
 
 interface PeerStateStore {
     peers: peerMap
-    peerLatencies: peerLatencyMap
     selfState: PeerState
     initialized: boolean
     addPeer: (peerIP: peerIP) => void
     updatePeerState: (peerID: peerID, partialState: Partial<Omit<PeerState, 'peerID'>>) => void
     getPeerState: (peerID: peerID) => PeerState | undefined
-    updatePeerLatency: (peerIP: peerIP, partialLatency: Partial<PeerLatency>) => void
-    getPeerLatency: (peerIP: peerIP) => PeerLatency | undefined
     initializeSelfState: () => Promise<void>
     updateSelfState: (partialState: Partial<PeerState>) => void
 }
@@ -54,16 +59,10 @@ const defaultPeerState: PeerState = {
     isSharingAudio: false,
 }
 
-const defaultPeerLatency: PeerLatency = {
-    latency: -1,
-    lastPingTime: 0,
-}
-
 export const usePeerStateStore = create<PeerStateStore>()(
     subscribeWithSelector(
         immer((set, get) => ({
             peers: {},
-            peerLatencies: {},
             selfState: { ...defaultPeerState, isSelf: true },
             initialized: false,
 
@@ -89,13 +88,14 @@ export const usePeerStateStore = create<PeerStateStore>()(
 
             updateSelfState: (partialState: Partial<PeerState>) => {
                 try {
+                    // for status should be save to local storage
                     if (partialState.userName !== undefined) {
                         window.ipcBridge.setUserConfig('userName', partialState.userName);
                     }
                     if (partialState.userAvatar !== undefined) {
                         window.ipcBridge.setUserConfig('userAvatar', partialState.userAvatar);
                     }
-
+                    // for temporary state
                     set((state) => {
                         Object.assign(state.selfState, partialState);
                     });
@@ -107,7 +107,6 @@ export const usePeerStateStore = create<PeerStateStore>()(
             addPeer: (peerIP: string) => {
                 set((state) => {
                     state.peers[peerIP] = { ...defaultPeerState };
-                    state.peerLatencies[peerIP] = { ...defaultPeerLatency };
                 });
             },
 
@@ -125,25 +124,47 @@ export const usePeerStateStore = create<PeerStateStore>()(
                 return get().peers[peerIP];
             },
 
-            updatePeerLatency: (peerIP: string, partialLatency: Partial<PeerLatency>) => {
-                set((state) => {
-                    if (!state.peerLatencies[peerIP]) {
-                        state.peerLatencies[peerIP] = { ...defaultPeerLatency };
-                    }
-                    Object.assign(state.peerLatencies[peerIP], partialLatency);
-                });
-            },
-
-            getPeerLatency: (peerIP: string) => {
-                return get().peerLatencies[peerIP];
-            },
-
             getSelfState: () => {
                 return get().selfState;
             }
         }))
     )
 );
+
+
+interface PeerLatencyStore {
+    latencies: Record<peerIP, PeerLatency>
+    updateLatency: (peerIP: peerIP, partialLatency: Partial<PeerLatency>) => void
+    getLatency: (peerIP: peerIP) => PeerLatency | undefined
+}
+
+const defaultLatency: PeerLatency = {
+    latency: -1,
+    lastPingTime: 0,
+}
+
+export const usePeerLatencyStore = create<PeerLatencyStore>()(
+    subscribeWithSelector((set, get) => ({
+        latencies: {},
+
+        updateLatency: (peerIP: string, partialLatency: Partial<PeerLatency>) => {
+            set((state) => {
+                const currentLatency = state.latencies[peerIP] || { ...defaultLatency }
+                return {
+                    ...state,
+                    latencies: {
+                        ...state.latencies,
+                        [peerIP]: { ...currentLatency, ...partialLatency }
+                    }
+                }
+            })
+        },
+
+        getLatency: (peerIP: string) => {
+            return get().latencies[peerIP]
+        },
+    }))
+)
 
 // 自动初始化用户配置
 usePeerStateStore.getState().initializeSelfState();
