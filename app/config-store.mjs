@@ -7,7 +7,7 @@ const __dirname = dirname(__filename);
 
 export function initConfigStore(configName) {
     const store = new Store({
-        cwd: __dirname,
+        // 使用默认的用户数据目录，而不是应用程序目录
         name: configName,
         defaults: {
             userName: 'default user name',

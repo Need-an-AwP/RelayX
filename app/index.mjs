@@ -13,7 +13,7 @@ import dotenv from 'dotenv';
 
 import { join } from 'path';
 import { spawn } from 'child_process';
-const GOEXE = join(__dirname, 'turn-on-tailscale.exe');
+
 let pionProcess;
 let askTailscaleStatusIntervalId;
 let TURNinfo;
@@ -46,8 +46,22 @@ import { initConfigStore } from './config-store.mjs';
 const { store, userConfigKeys } = initConfigStore(configName);
 
 import { startCaptureProcessAudio } from './captureProcess.mjs';
-const captureProcessEXE = join(__dirname, 'process-audio-capture.exe');
+const captureProcessEXE = getExecutablePath('process-audio-capture.exe');
 
+
+function getExecutablePath(filename) {
+    if (isDev) {
+        return join(__dirname, filename);
+    } else {
+        const unpackedPath = join(__dirname, '..', '..','app.asar.unpacked', 'app', filename);
+        console.log('unpackedPath', unpackedPath);
+        const regularPath = join(__dirname, filename);
+        
+        return fs.existsSync(unpackedPath) ? unpackedPath : regularPath;
+    }
+}
+
+const GOEXE = getExecutablePath('turn-on-tailscale.exe');
 
 // Function to start and manage the Go backend process
 function startBackendProcess(window, envFilePath) {

@@ -2,18 +2,12 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Mic, MicOff, Headphones, HeadphoneOff, Video, Expand, Shrink, MessageCircle } from 'lucide-react'
 import { ImPhoneHangUp } from "react-icons/im";
-import {
-    Sheet,
-    SheetClose,
-    SheetContent,
-    SheetDescription,
-    SheetFooter,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from "@/components/ui/sheet"
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { usePeerStateStore } from "@/stores"
+
 
 export default function ControlPanel({ switchFullScreen }: { switchFullScreen: any }) {
+    const { updateSelfState } = usePeerStateStore()
     const [isMicMuted, setIsMicMuted] = useState(false)
     const [isHeadphoneMuted, setIsHeadphoneMuted] = useState(false)
     const [isFullScreen, setIsFullScreen] = useState(false)
@@ -44,10 +38,10 @@ export default function ControlPanel({ switchFullScreen }: { switchFullScreen: a
                             Chat history
                         </SheetTitle>
                         <SheetDescription>
-                            blablababla<br/>
-                            blablababla<br/>
-                            blablababla<br/>
-                            blablababla<br/>
+                            blablababla<br />
+                            blablababla<br />
+                            blablababla<br />
+                            blablababla<br />
                         </SheetDescription>
                     </SheetHeader>
 
@@ -72,7 +66,15 @@ export default function ControlPanel({ switchFullScreen }: { switchFullScreen: a
             <Button variant="ghost" className='cursor-pointer'>
                 <Video className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" className='cursor-pointer hover:!bg-red-500 bg-accent'>
+            <Button
+                variant="ghost"
+                className='cursor-pointer hover:!bg-red-500 bg-accent'
+                onClick={() => {
+                    updateSelfState({
+                        isInChat: false
+                    })
+                }}
+            >
                 <ImPhoneHangUp />
             </Button>
         </div>

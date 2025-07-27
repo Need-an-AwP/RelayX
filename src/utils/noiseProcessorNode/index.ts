@@ -1,8 +1,6 @@
-// 声明工厂函数的类型
-declare function initNoiseReduceProcessorNode(context: AudioContext): Promise<ScriptProcessorNode>;
-
-// 导入 JavaScript 模块
+// @ts-ignore - JavaScript 模块没有类型声明
 import noiseProcessorFactory from './noiseProcessorNode.js';
 
-// 导出带类型的工厂函数
-export default noiseProcessorFactory as typeof initNoiseReduceProcessorNode;
+const initNoiseReduceProcessorNode: (context: AudioContext) => Promise<ScriptProcessorNode> = noiseProcessorFactory;
+
+export default initNoiseReduceProcessorNode;

@@ -55,7 +55,7 @@ const useRTCStore = create<RTCStore>((set, get) => {
             }
             
             if (!targetPeerID) {
-                console.error(`Cannot find peerID for IP: ${message.From}`);
+                console.error(`Cannot find peerID for IP: ${message.From},peers:`, peers);
                 return;
             }
             

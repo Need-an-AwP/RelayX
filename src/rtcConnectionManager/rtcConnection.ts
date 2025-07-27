@@ -29,7 +29,9 @@ export default class rtcConnection {
     private stateChangeCallback?: StateChangeCallback;
     private lastState: RTCPeerConnectionState = 'new';
     private reconnectTimer?: NodeJS.Timeout;
-    private readonly RECONNECT_TIMEOUT = 10000;
+    private reconnectAttempts: number = 0;
+    private isReconnecting: boolean = false;
+    private readonly RECONNECT_TIMEOUT = 5000;
     private statusSender: StatusSender | null = null;
 
     constructor(peerID: string, peerIP: string, isOffer: boolean) {
@@ -63,6 +65,12 @@ export default class rtcConnection {
         return this.peerIP;
     }
 
+    public stopReconnection(): void {
+        if (this.reconnectTimer) {
+            this.clearReconnectTimer();
+            this.reconnectAttempts = 0;
+        }
+    }
 
     private clearReconnectTimer() {
         if (this.reconnectTimer) {
@@ -72,36 +80,35 @@ export default class rtcConnection {
     }
 
     private async handleReconnect() {
-        if (!this.pc) return;
+        if (!this.pc || this.isReconnecting) return;
 
-        // const currentState = this.pc.connectionState;
+        this.SDPsent = false;
+        this.isReconnecting = true;
+        this.reconnectAttempts++;
 
-        await this.init();
+        try {
+            await this.init();
+        } catch (error) {
+            console.error(`[${this.peerID}] Reconnection failed:`, error);
+        } finally {
+            this.isReconnecting = false;
+        }
     }
 
     private setOfferSideReconnectTimer() {
-        if (!this.isOffer) return;
+        if (!this.isOffer || this.reconnectTimer) return;
 
         this.reconnectTimer = setInterval(() => {
             if (!this.pc) return;
 
             const state = this.pc.connectionState;
-            console.log('setOfferSideReconnectTimer pc state:', state)
+            // "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new";
 
-            if (state === 'closed' || state === 'connected') {
-                this.lastState = state;
-                return;
-            }
-            if (state === this.lastState) {
-                if (state === 'failed' || state === 'disconnected') {
-                    // this.clearReconnectTimer();
-                    console.log('handleReconnect, reconnect timer cleared')
-                    // this.handleReconnect();
-                    // todo: clear this instance, let http accessibility handle it
+            if (state !== 'connected') {
+                if (state === this.lastState) {
+                    console.log(`[${this.peerIP}-${this.peerID}] current state: ${state}, reconnecting...`);
+                    this.handleReconnect();
                 }
-
-                console.log('Reconnecting...');
-                this.handleReconnect();
             }
 
             this.lastState = state;
@@ -121,7 +128,7 @@ export default class rtcConnection {
         const { getConfig } = useTURNStore.getState();
         try {
             this.TURNconfig = await getConfig();
-            console.log('TURN config:', this.TURNconfig)
+            // console.log('TURN config:', this.TURNconfig)
         } catch (error) {
             console.error('Failed to get TURN config:', error);
         }
@@ -175,12 +182,12 @@ export default class rtcConnection {
 
         pc.onicecandidate = (e) => {
             if (e.candidate) {
-                console.log('ICE Candidate collected:', {
-                    candidate: e.candidate.candidate,
-                    type: e.candidate.candidate.match(/typ (\w+)/)?.[1] || 'unknown',
-                    ip: e.candidate.candidate.match(/(\d+\.\d+\.\d+\.\d+)/)?.[1] || 'unknown',
-                    port: e.candidate.candidate.match(/(\d+\.\d+\.\d+\.\d+) (\d+)/)?.[2] || 'unknown'
-                });
+                // console.log('ICE Candidate collected:', {
+                //     candidate: e.candidate.candidate,
+                //     type: e.candidate.candidate.match(/typ (\w+)/)?.[1] || 'unknown',
+                //     ip: e.candidate.candidate.match(/(\d+\.\d+\.\d+\.\d+)/)?.[1] || 'unknown',
+                //     port: e.candidate.candidate.match(/(\d+\.\d+\.\d+\.\d+) (\d+)/)?.[2] || 'unknown'
+                // });
                 this.iceList.push(e.candidate);
 
                 this.attemptSendSDP(e.candidate, 'offer');
@@ -234,7 +241,7 @@ export default class rtcConnection {
         // console.log('offer init done and try send SDP, iceList:', this.iceList)
         this.attemptSendSDP(this.iceList[0], 'offer');
 
-        // this.setOfferSideReconnectTimer();
+        this.setOfferSideReconnectTimer();
     }
 
 
@@ -286,6 +293,13 @@ export default class rtcConnection {
             console.error('offer side is not allow to call handlrOffer');
             return;
         }
+
+        // reset connection when receiving new offer
+        if (this.pc) {
+            console.log(`[${this.peerID}] Received new offer, resetting existing connection (state: ${this.pc.connectionState})`);
+            await this.initAsAnswer();
+        }
+
         if (!this.pc) {
             console.error('pc is not initialized when handling offer');
             return;
@@ -393,7 +407,7 @@ export default class rtcConnection {
         dc.onopen = () => {
             console.log('Data channel opened');
 
-            // start status sender
+            // start status sender, it will stop automatically when data channel is closed
             this.statusSender = new StatusSender(dc, this.peerIP);
             this.statusSender.start();
 
@@ -403,6 +417,8 @@ export default class rtcConnection {
 
         dc.onclose = () => {
             console.log('Data channel closed');
+
+            usePeerStateStore.getState().removePeer(this.peerIP);
         }
 
         dc.onerror = (e) => {
@@ -469,6 +485,7 @@ export default class rtcConnection {
         }
         useMediaStore.getState().removePeerTracks(this.peerIP);
         this.iceList = [];
+        this.SDPsent = false;
         this.clearReconnectTimer();
 
         if (this.statusSender) {

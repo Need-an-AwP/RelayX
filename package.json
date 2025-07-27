@@ -19,8 +19,8 @@
     "add:shadcn": "npx shadcn@latest add button alert-dialog avatar button card context-menu dialog dropdown-menu input label popover progress resizable scroll-area select separator slider sonner switch tooltip"
   },
   "build": {
-    "appId": "com.xxx.app",
-    "productName": "xxx",
+    "appId": "com.relayx.turn-app",
+    "productName": "RelayX",
     "directories": {
       "output": "release",
       "app": "."
@@ -28,17 +28,24 @@
     "files": [
       "package.json",
       "dist/**/*",
-      "app/**/*"
+      "app/**/*",
+      "!app/user-config.json",
+      "!app/user-config-*.json",
+      "!**/*.map",
+      "!**/node_modules/**/*"
+    ],
+    "asarUnpack": [
+      "app/turn-on-tailscale.exe",
+      "app/process-audio-capture.exe"
     ],
     "win": {
       "target": [
         {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
+          "target": "dir",
+          "arch": ["x64"]
         }
-      ]
+      ],
+      "requestedExecutionLevel": "requireAdministrator"
     }
   },
   "dependencies": {

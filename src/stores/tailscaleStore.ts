@@ -79,15 +79,28 @@ const initializeTailscaleListeners = () => {
 
     window.ipcBridge.receive('accessibility', (message: AccessibilityIPCMessage) => {
         if (message.type === "accessibility") {
-            if (message.character === "NONE") return;
-            // console.log("Received accessibility message:", message);
-
             updateCharacter({
                 peerID: message.peerID,
                 peerIP: message.peerIP,
-                character: message.character === "OFFER" ? "ANSWER" : "OFFER"
+                character: message.character === "NONE" ? "NONE" : 
+                          (message.character === "OFFER" ? "ANSWER" : "OFFER")
             });
+
             const { manager, createConnection } = useRTCStore.getState();
+
+            if (message.character === "NONE") {
+                // 可访问性失败，停止相关连接的重连尝试
+                const connection = manager.RTCconnections.get(message.peerID);
+                if (connection) {
+                    console.log(`[${message.peerIP}-${message.peerID}] Accessibility is NONE, stopping reconnection`);
+                    connection.stopReconnection();
+                    manager.closeConnection(message.peerID);
+                }
+                return;
+            }
+
+            // console.log("Received accessibility message:", message);
+            
             if (message.character === "OFFER") {
                 createConnection(message.peerID, message.peerIP, true); // isOffer = true
             } else if (message.character === "ANSWER") {

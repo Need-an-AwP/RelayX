@@ -42,6 +42,7 @@ interface PeerStateStore {
     selfState: PeerState
     initialized: boolean
     addPeer: (peerIP: peerIP) => void
+    removePeer: (peerID: peerID) => void
     updatePeerState: (peerID: peerID, partialState: Partial<Omit<PeerState, 'peerID'>>) => void
     getPeerState: (peerID: peerID) => PeerState | undefined
     initializeSelfState: () => Promise<void>
@@ -107,6 +108,12 @@ export const usePeerStateStore = create<PeerStateStore>()(
             addPeer: (peerIP: string) => {
                 set((state) => {
                     state.peers[peerIP] = { ...defaultPeerState };
+                });
+            },
+
+            removePeer: (peerIP: string) => {
+                set((state) => {
+                    delete state.peers[peerIP];
                 });
             },
 

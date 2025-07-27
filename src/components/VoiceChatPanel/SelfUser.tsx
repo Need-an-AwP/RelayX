@@ -2,7 +2,8 @@ import { useEffect, useState, useId } from "react"
 import { usePeerStateStore, useAudioProcessing } from "@/stores"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { ChevronDown, ChevronUp, MicOff, HeadphoneOff, Music, Cast } from "lucide-react"
+import { ChevronUp, MicOff, HeadphoneOff, Music } from "lucide-react"
+import { CgScreen } from "react-icons/cg";
 import { animationLoopManager } from "@/utils/animationLoopManager"
 
 
@@ -57,15 +58,15 @@ const SelfUser = () => {
 
     return (
         <div
-            className={`rounded-md border-1 border-muted-foreground/30 hover:border-sky-300/100
-            transition-all duration-300
-            ${isExtended ? 'h-45' : 'h-14'}`}
+            className={`group rounded-md select-none border-1 
+            border-muted-foreground/30 hover:border-sky-300/100
+            transition-all duration-300 ${isExtended ? 'h-45' : 'h-14'}`}
         >
             <div
-                className={`flex flex-row justify-between items-center p-2 cursor-pointer`}
+                className={`relative flex flex-row justify-between items-center p-2 cursor-pointer mt-1`}
                 onClick={() => setIsExtended(!isExtended)}
             >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-3 min-w-0 max-w-[95%]">
                     <Avatar className={`flex-shrink-0 transition-all ${audioActive ? 'ring-2 ring-offset-2 ring-green-500 ring-offset-background' : ''}`}>
                         <AvatarImage src={selfState.userAvatar} draggable={false} />
                         <AvatarFallback>{getInitials(selfState.userName)}</AvatarFallback>
@@ -74,26 +75,16 @@ const SelfUser = () => {
                         {isReady ? selfState.userName : 'Loading...'}
                     </span>
                 </div>
-                <div className="flex items-center flex-shrink-0">
-                    {selfState.isInputMuted &&
-                        <Button variant="ghost" size="icon" disabled={true} >
-                            <MicOff className="w-4 h-4" />
-                        </Button>}
-                    {selfState.isOutputMuted &&
-                        <Button variant="ghost" size="icon" disabled={true} >
-                            <HeadphoneOff className="w-4 h-4" />
-                        </Button>}
-                    {selfState.isSharingAudio &&
-                        <Button variant="ghost" size="icon" disabled={true} >
-                            <Music className="w-4 h-4" />
-                        </Button>}
-                    {selfState.isSharingScreen &&
-                        <Button variant="ghost" size="icon" disabled={true} >
-                            <Cast className="w-4 h-4" />
-                        </Button>}
-                    <Button variant="ghost" size="icon" disabled={true} >
-                        {isExtended ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </Button>
+                <div className="flex items-center gap-2 mr-0.5 flex-shrink-0 text-muted-foreground
+                    group-hover:opacity-0 transition-opacity duration-300">
+                    {selfState.isInputMuted && <MicOff className="w-4 h-4" />}
+                    {selfState.isOutputMuted && <HeadphoneOff className="w-4 h-4" />}
+                    {selfState.isSharingAudio && <Music className="w-4 h-4" />}
+                    {selfState.isSharingScreen && <CgScreen className="w-4 h-4" />}
+                </div>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2
+                    opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <ChevronUp className={`w-5 h-5 ${!isExtended && 'rotate-180'} transition-transform duration-300`} />
                 </div>
             </div>
 

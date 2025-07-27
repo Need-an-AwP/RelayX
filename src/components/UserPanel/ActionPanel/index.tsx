@@ -18,13 +18,19 @@ const ActionPanel = () => {
     const updateSelfState = usePeerStateStore(state => state.updateSelfState)
     const { isSelectingSource, setIsSelectingSource, requestSources, stopScreenShare } = useDesktopCapture()
     const [isLoading, setIsLoading] = useState(false)
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
+    const handleStopScreenShare = () => {
+        setIsDropdownOpen(false)
+        stopScreenShare()
+        updateSelfState({
+            isSharingScreen: false
+        })
+    }
+    
     const handleScreenShareClick = () => {
         if (selfState.isSharingScreen) {
-            stopScreenShare()
-            updateSelfState({
-                isSharingScreen: false
-            })
+            setIsDropdownOpen(true)
         } else {
             setIsSelectingSource(true)
             requestSources()
@@ -62,8 +68,8 @@ const ActionPanel = () => {
                             disabled={tailscaleStatus?.BackendState !== 'Running'}
                         >
                             {tailscaleStatus?.BackendState !== 'Running' ? <><LoaderCircle className="h-5 w-5 animate-spin" />Waiting for tailscale backend</> :
-                            isLoading ? <LoaderCircle className="h-5 w-5 animate-spin" /> :
-                                selfState.isInChat ? <LogOut className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}
+                                isLoading ? <LoaderCircle className="h-5 w-5 animate-spin" /> :
+                                    selfState.isInChat ? <LogOut className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -71,40 +77,63 @@ const ActionPanel = () => {
                     </TooltipContent>
                 </Tooltip>
 
-                <AlertDialog open={isSelectingSource}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <AlertDialogTrigger asChild>
-                                <Button
-                                    onClick={handleScreenShareClick}
-                                    variant="outline"
-                                    className={`hover:!bg-neutral-500 cursor-pointer 
-                                        ${selfState.isSharingScreen ? 'hover:!bg-red-600' : ''}
+
+
+
+
+                <DropdownMenu
+                    open={isDropdownOpen}
+                    onOpenChange={(open) => {
+                        if (selfState.isSharingScreen) {
+                            setIsDropdownOpen(open)
+                        }
+                    }}
+                >
+                    <AlertDialog open={isSelectingSource}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            onClick={handleScreenShareClick}
+                                            variant="outline"
+                                            className={`hover:!bg-neutral-500 cursor-pointer 
+                                        ${selfState.isSharingScreen ? '!bg-green-800 hover:!bg-red-600/60' : ''}
                                         ${selfState.isInChat ? '' : 'hidden'}
                                         transition-all duration-300`}
-                                >
-                                    {selfState.isSharingScreen ? <LuScreenShareOff className="h-5 w-5" /> : <LuScreenShare className="h-5 w-5" />}
-                                </Button>
-                            </AlertDialogTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            {selfState.isSharingScreen ? <p>stop screen sharing</p> : <p>start screen sharing</p>}
-                        </TooltipContent>
-                    </Tooltip>
+                                        >
+                                            {selfState.isSharingScreen ? <LuScreenShareOff className="h-5 w-5" /> : <LuScreenShare className="h-5 w-5" />}
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                </AlertDialogTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                {selfState.isSharingScreen ? <p>stop screen sharing</p> : <p>start screen sharing</p>}
+                            </TooltipContent>
+                        </Tooltip>
 
-                    <AlertDialogContent className="w-[80vw] !max-w-none">
-                        <VisuallyHidden>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Select a screen to share</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    a selector for selecting a video source, including screen, window, and camera
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                        </VisuallyHidden>
-                        <SourceSelector />
-                    </AlertDialogContent>
-                </AlertDialog>
+                        <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()} className="w-[80vw] !max-w-none">
+                            <VisuallyHidden>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Select a screen to share</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        a selector for selecting a video source, including screen, window, and camera
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                            </VisuallyHidden>
+                            <SourceSelector />
+                        </AlertDialogContent>
+                    </AlertDialog>
+                    <DropdownMenuContent side="top" onCloseAutoFocus={(e) => e.preventDefault()}>
+                        <DropdownMenuItem onClick={handleStopScreenShare}>
+                            <LuScreenShareOff className="h-5 w-5" /> stop screen sharing
+                        </DropdownMenuItem>
+                        <DropdownMenuItem disabled={true}>
+                            <LuScreenShare className="h-5 w-5" /> change screen sharing source
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
 
+                </DropdownMenu>
 
 
             </div>

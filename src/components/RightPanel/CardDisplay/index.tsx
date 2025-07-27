@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { SelfCard, SelfThumbnailCard } from "./selfCards"
-import { ChevronUp, ChevronDown } from "lucide-react"
+import { ChevronUp } from "lucide-react"
 import { usePeerStateStore } from "@/stores"
 import { UserCard, UserThumbnailCard } from "./userCards"
 import ControlPanel from "./controlPanel"
@@ -52,30 +53,36 @@ export default function CardDisplay({ isHovering, switchFullScreen }: { isHoveri
                 </CardGrid>
 
                 {/* collapse button */}
-                <div
-                    className={`absolute top-0 left-1/2 -translate-x-1/2 z-20
-                    ${isHovering ? 'opacity-100' : 'opacity-0'}
-                    transition-opacity duration-300 ease-in-out
-                    `}
-                >
-                    <div className="bg-white/30 p-0.5 pt-0 rounded-b-full cursor-pointer"
-                        onClick={() => {
-                            setIsScrollingUp(!isScrollingUp)
-                        }}
-                    >
-                        {isScrollingUp ?
-                            <ChevronUp className="w-4 h-4" /> :
-                            <ChevronDown className="w-4 h-4" />
-                        }
-                    </div>
-                </div>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div
+                                className={`absolute top-0 left-1/2 -translate-x-1/2 z-20
+                                ${isHovering ? 'opacity-100' : 'opacity-0'}
+                                transition-opacity duration-300 ease-in-out`}
+                            >
+                                <div className="bg-white/30 p-0.5 pt-0 rounded-b-full cursor-pointer"
+                                    onClick={() => {
+                                        setIsScrollingUp(!isScrollingUp)
+                                    }}
+                                >
+                                    <ChevronUp className={`w-4 h-4 ${isScrollingUp && 'rotate-180'} transition-transform duration-300`} />
+                                </div>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                            {isScrollingUp ? 'expand member list' : 'collapse member list'}
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+
+
 
                 {/* control panel */}
                 <div
                     className={`absolute top-0 right-0 z-20
                     ${isHovering ? 'opacity-100' : 'opacity-0'}
-                    transition-opacity duration-300 ease-in-out
-                    `}
+                    transition-opacity duration-300 ease-in-out`}
                 >
                     <ControlPanel switchFullScreen={switchFullScreen} />
                 </div>
