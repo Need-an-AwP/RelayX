@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { LogIn, LogOut, PhoneOff, Airplay, LoaderCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger} from "@/components/ui/dialog"
 import { usePeerStateStore, useDesktopCapture } from "@/stores"
 import { LuScreenShare, LuScreenShareOff } from "react-icons/lu";
 import { useTailscaleStore } from "@/stores";
@@ -27,7 +27,7 @@ const ActionPanel = () => {
             isSharingScreen: false
         })
     }
-    
+
     const handleScreenShareClick = () => {
         if (selfState.isSharingScreen) {
             setIsDropdownOpen(true)
@@ -89,41 +89,46 @@ const ActionPanel = () => {
                         }
                     }}
                 >
-                    <AlertDialog open={isSelectingSource}>
+                    <Dialog open={isSelectingSource} onOpenChange={(open) => !open && setIsSelectingSource(false)}>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <AlertDialogTrigger asChild>
+                                <DialogTrigger asChild>
                                     <DropdownMenuTrigger asChild>
                                         <Button
                                             onClick={handleScreenShareClick}
                                             variant="outline"
                                             className={`hover:!bg-neutral-500 cursor-pointer 
-                                        ${selfState.isSharingScreen ? '!bg-green-800 hover:!bg-red-600/60' : ''}
-                                        ${selfState.isInChat ? '' : 'hidden'}
-                                        transition-all duration-300`}
+                                            ${selfState.isSharingScreen ? '!bg-green-800 hover:!bg-red-600/60' : ''}
+                                            ${selfState.isInChat ? '' : 'hidden'}
+                                            transition-all duration-300`}
                                         >
                                             {selfState.isSharingScreen ? <LuScreenShareOff className="h-5 w-5" /> : <LuScreenShare className="h-5 w-5" />}
                                         </Button>
                                     </DropdownMenuTrigger>
-                                </AlertDialogTrigger>
+                                </DialogTrigger>
                             </TooltipTrigger>
                             <TooltipContent>
                                 {selfState.isSharingScreen ? <p>stop screen sharing</p> : <p>start screen sharing</p>}
                             </TooltipContent>
                         </Tooltip>
 
-                        <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()} className="w-[80vw] !max-w-none">
+                        <DialogContent 
+                            onCloseAutoFocus={(e) => e.preventDefault()} 
+                            onOpenAutoFocus={(e) => e.preventDefault()}
+                            showCloseButton={false} 
+                            className="w-[80vw] !max-w-none"
+                        >
                             <VisuallyHidden>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Select a screen to share</AlertDialogTitle>
-                                    <AlertDialogDescription>
+                                <DialogHeader>
+                                    <DialogTitle>Select a screen to share</DialogTitle>
+                                    <DialogDescription>
                                         a selector for selecting a video source, including screen, window, and camera
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
+                                    </DialogDescription>
+                                </DialogHeader>
                             </VisuallyHidden>
                             <SourceSelector />
-                        </AlertDialogContent>
-                    </AlertDialog>
+                        </DialogContent>
+                    </Dialog>
                     <DropdownMenuContent side="top" onCloseAutoFocus={(e) => e.preventDefault()}>
                         <DropdownMenuItem onClick={handleStopScreenShare}>
                             <LuScreenShareOff className="h-5 w-5" /> stop screen sharing

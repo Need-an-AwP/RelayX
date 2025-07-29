@@ -29,5 +29,5 @@
       ]
     }
   },
-  "include": ["src", "app/preload.d.ts"]
+  "include": ["src", "app/preload/preload.d.ts"]
 }

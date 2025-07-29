@@ -45,7 +45,9 @@ contextBridge.exposeInMainWorld('ipcBridge', {
     setUserConfig: (config, value) => ipcRenderer.send('set-user-config', config, value),
 
     getEnvConfig: () => ipcRenderer.invoke('get-env-config'),
-    setEnvConfig: (config) => ipcRenderer.invoke('set-env-config', config)
+    setEnvConfig: (config) => ipcRenderer.send('set-env-config', config),
+
+    restartTurnOnTailscale: () => ipcRenderer.send('restart-turn-on-tailscale')
 });
 
 

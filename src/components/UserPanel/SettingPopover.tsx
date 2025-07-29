@@ -133,7 +133,12 @@ const SettingPopover = () => {
                                 RNN Noise Reduction
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                From <a href='https://jmvalin.ca/demo/rnnoise/' target='_blank' rel="noopener noreferrer" className="text-blue-500" onClick={(e) => {
+                                From <a 
+                                href='https://jmvalin.ca/demo/rnnoise/' 
+                                target='_blank' 
+                                rel="noopener noreferrer" 
+                                className="text-blue-500" 
+                                onClick={(e) => {
                                     e.preventDefault();
                                     window.ipcBridge.openURL('https://jmvalin.ca/demo/rnnoise/');
                                 }}>xiph.org RNNoise</a>

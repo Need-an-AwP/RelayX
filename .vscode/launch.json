@@ -35,7 +35,7 @@
                 "concurrently",
                 "-k",
                 "vite --port 5173",
-                "cross-env DEV=true electron app/index.mjs --port=5173 --env=.env.node-A --config=user-config-A"
+                "cross-env DEV=true electron app/index.mjs --port=5173"
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",

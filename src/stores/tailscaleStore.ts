@@ -50,12 +50,14 @@ const useOnlinePeersStore = create<OnlinePeersState>((set) => ({
 }));
 
 interface TailscaleState {
+    showWelcome: any;
     tailscaleStatus: Status | null;
     updateTailscaleStatus: (status: Status) => void;
 }
 
 const useTailscaleStore = create<TailscaleState>()(
     subscribeWithSelector((set) => ({
+        showWelcome: null,
         tailscaleStatus: null,
         updateTailscaleStatus: (status) => set({ tailscaleStatus: status }),
     }))
@@ -64,6 +66,11 @@ const useTailscaleStore = create<TailscaleState>()(
 const initializeTailscaleListeners = () => {
     const { updateOnlinePeers, updateCharacter } = useOnlinePeersStore.getState();
     const { updateTailscaleStatus } = useTailscaleStore.getState();
+
+    window.ipcBridge.receive('no-env-file', (message: any)=>{
+        console.log('no-env-file', message);
+        useTailscaleStore.setState({ showWelcome: true });
+    })
 
     window.ipcBridge.receive('tailscaleInfo', (message: { type: string, status: Status }) => {
         // console.log("Received tailscaleInfo:", message)

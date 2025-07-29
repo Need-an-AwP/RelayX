@@ -21,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { RotateCcw, Copy, EyeOff } from "lucide-react";
+import { RotateCcw, Copy, Check } from "lucide-react";
 import { Separator } from "@/components/ui/separator"
 import { useTailscaleStore } from "@/stores/tailscaleStore";
 
@@ -47,6 +47,15 @@ export default function TailscaleSettings() {
         };
     }, []);
 
+    const handleCopy = (e: React.MouseEvent<HTMLButtonElement>, content: string) => {
+        navigator.clipboard.writeText(content);
+        const target = e.currentTarget; // 保存引用
+        target.classList.add('copied');
+        setTimeout(() => {
+            target.classList.remove('copied');
+        }, 2000);
+    }
+
     return (
         <Card>
             <CardHeader className="text-center">
@@ -67,8 +76,16 @@ export default function TailscaleSettings() {
                         <Label className="whitespace-nowrap">Tailscale Key:</Label>
                         <div className="flex gap-2 w-[80%]">
                             <Input value={currentTsKey} className="!text-xs" onChange={(e) => setCurrentTsKey(e.target.value)} />
-                            <Button size="icon" variant="outline" className="cursor-pointer select-none">
-                                <Copy className="h-3 w-3" />
+                            <Button
+                                size="icon"
+                                variant="outline"
+                                className="cursor-pointer select-none group"
+                                onClick={(e) => {
+                                    handleCopy(e, currentTsKey);
+                                }}
+                            >
+                                <Copy className="h-3 w-3 group-[.copied]:hidden" />
+                                <Check className="h-3 w-3 hidden group-[.copied]:block text-green-500" />
                             </Button>
                         </div>
                     </div>
@@ -77,8 +94,16 @@ export default function TailscaleSettings() {
                         <Label className="whitespace-nowrap">Host name:</Label>
                         <div className="flex gap-2 w-[80%]">
                             <Input value={currentHostName} className="!text-xs" onChange={(e) => setCurrentHostName(e.target.value)} />
-                            <Button size="icon" variant="outline" className="cursor-pointer select-none">
-                                <Copy className="h-3 w-3" />
+                            <Button
+                                size="icon"
+                                variant="outline"
+                                className="cursor-pointer select-none group"
+                                onClick={(e) => {
+                                    handleCopy(e, currentHostName);
+                                }}
+                            >
+                                <Copy className="h-3 w-3 group-[.copied]:hidden" />
+                                <Check className="h-3 w-3 hidden group-[.copied]:block text-green-500" />
                             </Button>
                         </div>
                     </div>

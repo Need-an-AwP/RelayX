@@ -21,9 +21,8 @@ import UserPanel from '@/components/UserPanel'
 import VoiceChatPanel from '@/components/VoiceChatPanel'
 import MediaTrackManager from '@/MediaTrackManager'
 import AudioPlaybackController from '@/mediaController/AudioPlaybackController'
-import AppSettingPanel from '@/components/AppSettingPanel'
 import RightPanel from '@/components/RightPanel'
-
+import WelcomePanel from '@/components/welcomePanel'
 
 function App() {
     const initialized = useRef(false)
@@ -73,7 +72,7 @@ function App() {
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
             <div className="flex flex-col h-screen w-screen overflow-hidden">
                 <TitleBar />
-                
+                <WelcomePanel />
                 <div className="flex-1 overflow-hidden">
                     <div className="h-full w-full">
                         {/* Blur Overlay */}

@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
 import { spawn } from 'child_process'
 
-export function startCaptureProcessAudio(exePath, window) {
+export function startCpaProcess(exePath, window) {
     let isCapturing = false;
     const cpaProcess = spawn(exePath, { detached: false });
 

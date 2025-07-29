@@ -42,7 +42,9 @@
       "target": [
         {
           "target": "dir",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "requestedExecutionLevel": "requireAdministrator"
@@ -73,8 +75,10 @@
     "@tailwindcss/vite": "^4.1.7",
     "@types/lodash-es": "^4.17.12",
     "animejs": "^4.0.2",
+    "chalk": "^5.4.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "commander": "^14.0.0",
     "dotenv": "^17.0.1",
     "electron-store": "^10.0.1",
     "frimousse": "^0.2.0",

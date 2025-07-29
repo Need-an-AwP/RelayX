@@ -19,6 +19,8 @@ export interface IpcBridge {
 
     getEnvConfig: () => Promise<any>;
     setEnvConfig: (config: any) => Promise<any>;
+
+    restartTurnOnTailscale: () => void;
 }
 
 export interface Cpa {

@@ -26,7 +26,7 @@ export default function AppSettingPanel({ className }: { className?: string }) {
 
 
             {/* tailscale status fixed display */}
-            <div className="absolute bottom-0 left-0 w-full bg-cyan-600">
+            <div className="absolute bottom-0 left-0 w-full bg-teal-600/90">
                 <TailscaleStatusDisplay autoCollapse={false} />
             </div>
         </div>

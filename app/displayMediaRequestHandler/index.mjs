@@ -1,4 +1,4 @@
-import { desktopCapturer, session } from 'electron';
+import { desktopCapturer, session, ipcMain } from 'electron';
 
 async function getAvailableSources() {
     const thumbnailSizeNum = 600
@@ -51,6 +51,15 @@ function setDisplayMediaRequestHandler() {
         // is available, it will be used and the media request handler
         // will not be invoked.
     }, { useSystemPicker: false })
+
+    // destop capture
+    ipcMain.handle('get-screen-sources', async (e, d) => {
+        return await getAvailableSources();
+    })
+
+    ipcMain.on('set-screen-capture-id', (e, d) => {
+        setScreenCaptureId(d);
+    })
 }
 
 
