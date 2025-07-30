@@ -1,15 +1,14 @@
 import { useState } from "react"
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+  } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ListRestart } from "lucide-react";
 import {
@@ -36,27 +35,27 @@ export default function ConfigSettings() {
                         <Switch disabled={true} checked={isAutoConnect} onCheckedChange={setIsAutoConnect} />
                     </div>
 
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
+                    <Dialog>
+                        <DialogTrigger asChild>
                             <Button variant="destructive" className="w-full cursor-pointer select-none">
                                 <ListRestart className="h-3 w-3" />
                                 <span>Reset Config</span>
                             </Button>
-                        </AlertDialogTrigger>
+                        </DialogTrigger>
 
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Are you absolutely sure?</DialogTitle>
+                                <DialogDescription>
                                     This action cannot be undone. This will reset your config file to default.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction disabled={true}>Continue</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                                </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                                <DialogClose>Cancel</DialogClose>
+                                <Button disabled={true}>Continue</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
 
             </CardContent>

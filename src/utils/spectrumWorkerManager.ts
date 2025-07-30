@@ -21,8 +21,7 @@ class SpectrumWorkerManager {
         }
 
         // Load the worker from the public path.
-        // This is an absolute path from the server root.
-        this.worker = new Worker('/spectrumWorker.js');
+        this.worker = new Worker('spectrumWorker.js');
 
         this.worker.onmessage = (event: MessageEvent) => {
             if (event.data.type === 'ready') {

@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
 import {
     Card,
     CardContent,
@@ -109,50 +108,50 @@ export default function TailscaleSettings() {
                     </div>
 
 
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
+                    <Dialog>
+                        <DialogTrigger asChild>
                             <Button variant="outline" className="w-full cursor-pointer select-none">
                                 Confirm and Restart
                             </Button>
-                        </AlertDialogTrigger>
+                        </DialogTrigger>
 
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Confirmation</AlertDialogTitle>
-                                <AlertDialogDescription>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Confirmation</DialogTitle>
+                                <DialogDescription>
                                     These changes will take effect after the tailscale client restart.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction disabled={true}>Continue</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                                </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                                <DialogClose>Cancel</DialogClose>
+                                <Button disabled={true}>Continue</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
 
                     <Separator />
 
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
+                    <Dialog>
+                        <DialogTrigger asChild>
                             <Button variant="destructive" className="w-full cursor-pointer select-none">
                                 <RotateCcw className="h-3 w-3" />
                                 <span>Restart Tailscale embeded client forcely</span>
                             </Button>
-                        </AlertDialogTrigger>
+                        </DialogTrigger>
 
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Confirmation</AlertDialogTitle>
-                                <AlertDialogDescription>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Confirmation</DialogTitle>
+                                <DialogDescription>
                                     This will restart the tailscale embeded client forcely.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction disabled={true}>Continue</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                                </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                                <DialogClose>Cancel</DialogClose>
+                                <Button disabled={true}>Continue</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </CardContent>
         </Card>

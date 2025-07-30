@@ -3,7 +3,7 @@ import __dirname from './app-dir-name.mjs';
 import fs from 'fs';
 
 export const getExecutablePath = (filename) => {
-    if (global.isDev) {
+    if (process.env.DEV) {
         return join(__dirname, filename);
     } else {
         const unpackedPath = join(__dirname, '..', '..','app.asar.unpacked', 'app', filename);

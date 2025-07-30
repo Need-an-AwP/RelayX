@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Minus, X, Menu } from 'lucide-react';
 import { VscLayoutSidebarLeft, VscLayoutSidebarLeftOff } from "react-icons/vsc";
 import { TbWindowMaximize, TbWindowMinimize } from "react-icons/tb";
@@ -16,9 +17,9 @@ const TitleBar = () => {
     const buttonClassName = "h-[32px] w-10 hover:bg-muted flex items-center justify-center"
     const buttonIconClassName = "h-4 w-4 pointer-events-none text-white/50"
 
-    return (
+    const titleBarContent = (
         <div
-            className={`flex justify-between items-center z-55 h-[32px]
+            className={`fixed top-0 left-0 right-0 flex justify-between items-center z-999 h-[32px]
                 bg-white/5 backdrop-blur-[2px]`}
         >
             <div className="flex items-center gap-2">
@@ -91,6 +92,8 @@ const TitleBar = () => {
             </div>
         </div>
     );
+
+    return createPortal(titleBarContent, document.body);
 };
 
 export default TitleBar; 

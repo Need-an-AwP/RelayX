@@ -1,7 +1,7 @@
 import { envFilePath as argsEnvFilePath } from '../utils/args.mjs';
 import __dirname from '../utils/app-dir-name.mjs';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import chalk from 'chalk';
 import { ipcMain } from 'electron';
 
@@ -38,7 +38,7 @@ export const resolveEnvFilePath = (window) => {
         }
     }
 
-    const probEnvFilePath = join(__dirname, '.env');
+    const probEnvFilePath = join(process.env.DEV ? __dirname : dirname(dirname(__dirname)), '.env');
     if (existsSync(probEnvFilePath)) {
         if (validateEnvContent(probEnvFilePath)) {
             console.log(chalk.blue(`using .env file: ${probEnvFilePath}`));

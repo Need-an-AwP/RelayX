@@ -10,7 +10,6 @@ import { setupWindowActions } from './window/window-actions.mjs';
 import { setDisplayMediaRequestHandler } from './displayMediaRequestHandler/index.mjs';
 import { registerIpcHandler } from './ipc/registerIpcHandler.mjs';
 
-global.isDev = process.env.DEV != undefined;
 global.webrtcInternalsWindow = null;
 global.mainWindow = null;
 global.TURNinfo = null;

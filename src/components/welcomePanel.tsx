@@ -32,12 +32,9 @@ export default function WelcomePanel() {
         setNodeHostname(randomString);
     };
 
-    // if (showWelcome === null) {
-    //     return null;
-    // }
 
     return (
-        <AlertDialog open={true}>
+        <AlertDialog open={showWelcome}>
             <AlertDialogContent className="sm:max-w-4xl">
                 <AlertDialogHeader>
                     <AlertDialogTitle className="text-2xl font-bold">欢迎使用</AlertDialogTitle>

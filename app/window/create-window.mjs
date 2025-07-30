@@ -26,7 +26,7 @@ export const createWindow = (store) => {
 
     mainWindow = new BrowserWindow(windowOptions);
 
-    if (global.isDev) {
+    if (process.env.DEV) {
         mainWindow.loadURL(`http://localhost:${devServerPort}`);
         mainWindow.webContents.openDevTools({ mode: 'detach' });
     } else {
