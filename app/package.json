@@ -1,0 +1,15 @@
+{
+  "name": "relayx-electron-main",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "index.mjs",
+  "description": "RelayX Electron main process",
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "commander": "^14.0.0",
+    "dotenv": "^17.0.1",
+    "electron-log": "^5.4.2",
+    "electron-store": "^10.0.1",
+    "ps-list": "^8.1.1"
+  }
+}

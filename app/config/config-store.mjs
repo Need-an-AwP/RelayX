@@ -1,8 +1,7 @@
 import { ipcMain } from 'electron';
 import Store from 'electron-store';
 import chalk from 'chalk';
-import __dirname from '../utils/app-dir-name.mjs';
-import { join, dirname } from 'path';
+import { __dirname, exePath } from '../utils/app-dir-name.mjs';
 
 const defaultConfig = {
     userName: 'default user name',
@@ -22,7 +21,7 @@ const defaultConfig = {
 
 export function initConfigStore(configName) {
     const store = new Store({
-        cwd: process.env.DEV ? __dirname : dirname(dirname(__dirname)),// equals to process.resourcesPath but resourcepath has some problems
+        cwd: process.env.DEV ? __dirname : exePath,// in dev, the path is app/, in portable, the path is the exePath
         name: configName,
         defaults: defaultConfig
     });

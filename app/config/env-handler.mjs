@@ -1,15 +1,16 @@
 import { envFilePath as argsEnvFilePath } from '../utils/args.mjs';
-import __dirname from '../utils/app-dir-name.mjs';
+import { __dirname, exePath } from '../utils/app-dir-name.mjs';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { join, dirname } from 'path';
+import { join } from 'path';
 import chalk from 'chalk';
 import { ipcMain } from 'electron';
 
 const validateEnvContent = (filePath) => {
     try {
         const content = readFileSync(filePath, 'utf8');
-        const hasNodeHostname = /NODE_HOSTNAME\s*=\s*.+/.test(content);
-        const hasTailscaleAuthKey = /TAILSCALE_AUTH_KEY\s*=\s*.+/.test(content);
+        // 确保环境变量行不是注释且有非空值
+        const hasNodeHostname = /^[^#\n]*NODE_HOSTNAME\s*=\s*\S+/m.test(content);
+        const hasTailscaleAuthKey = /^[^#\n]*TAILSCALE_AUTH_KEY\s*=\s*\S+/m.test(content);
         
         if (!hasNodeHostname || !hasTailscaleAuthKey) {
             console.log(chalk.red(`env file missing required variables: ${!hasNodeHostname ? 'NODE_HOSTNAME ' : ''}${!hasTailscaleAuthKey ? 'TAILSCALE_AUTH_KEY' : ''}`));
@@ -38,7 +39,7 @@ export const resolveEnvFilePath = (window) => {
         }
     }
 
-    const probEnvFilePath = join(process.env.DEV ? __dirname : dirname(dirname(__dirname)), '.env');
+    const probEnvFilePath = join(process.env.DEV ? __dirname : exePath, '.env');// in dev, the path is app/, in portable, the path is the exePath
     if (existsSync(probEnvFilePath)) {
         if (validateEnvContent(probEnvFilePath)) {
             console.log(chalk.blue(`using .env file: ${probEnvFilePath}`));

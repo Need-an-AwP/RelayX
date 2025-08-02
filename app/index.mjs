@@ -21,7 +21,9 @@ global.quitTurnTsProcess = null;
 let quitCpaProcess;
 
 app.whenReady().then(() => {
-    installExtensions();
+    if (process.env.DEV) {
+        installExtensions();
+    }
 
     setDisplayMediaRequestHandler();
 

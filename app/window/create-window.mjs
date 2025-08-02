@@ -1,6 +1,6 @@
 import { join } from 'path';
 import { BrowserWindow } from 'electron';
-import __dirname from '../utils/app-dir-name.mjs';
+import { __dirname } from '../utils/app-dir-name.mjs';
 import { setWindowBound } from './window-bounds.mjs';
 import { devServerPort } from '../utils/args.mjs';
 

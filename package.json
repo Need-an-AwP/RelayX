@@ -26,13 +26,11 @@
       "app": "."
     },
     "files": [
-      "package.json",
-      "dist/**/*",
       "app/**/*",
-      "!app/user-config.json",
-      "!app/user-config-*.json",
-      "!**/*.map",
-      "!**/node_modules/**/*"
+      "dist/**/*",
+      "!user-config.json",
+      "!user-config-*.json",
+      "!**/*.map"
     ],
     "asarUnpack": [
       "app/turn-on-tailscale.exe",
@@ -40,14 +38,12 @@
     ],
     "win": {
       "target": [
-        {
-          "target": "dir",
-          "arch": [
-            "x64"
-          ]
-        }
+        "portable"
       ],
-      "requestedExecutionLevel": "requireAdministrator"
+      "compression": "maximum"
+    },
+    "portable": {
+      "artifactName": "RelayX-Portable-${version}.${ext}"
     }
   },
   "dependencies": {
@@ -80,6 +76,7 @@
     "clsx": "^2.1.1",
     "commander": "^14.0.0",
     "dotenv": "^17.0.1",
+    "electron-log": "^5.4.2",
     "electron-store": "^10.0.1",
     "frimousse": "^0.2.0",
     "immer": "^10.1.1",

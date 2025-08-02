@@ -2,9 +2,10 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = process.env.DEV ?
-    dirname(dirname(__filename)) :
-    dirname(dirname(__filename));
+export const __dirname = dirname(dirname(__filename));
 console.log('current __dirname:', __dirname);
 
-export default __dirname;
+export const exePath = 'PORTABLE_EXECUTABLE_DIR' in process.env
+    ? process.env.PORTABLE_EXECUTABLE_DIR
+    : dirname(process.argv[0]);
+console.log('current exePath:', exePath);
