@@ -7,7 +7,7 @@ import (
 
 func main() {
 	log.Println("Application started. Main goroutine is now idle (due to select{}).")
-	hostname, controlURL, authKey = InitConfig()
+	hostname, controlURL, authKey, dirPath = InitConfig()
 
 	mainCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()

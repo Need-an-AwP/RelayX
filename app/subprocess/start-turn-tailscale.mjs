@@ -1,14 +1,19 @@
 import { ipcMain } from 'electron';
 import { spawn } from 'child_process'
 import { resolveEnvFilePath } from '../config/env-handler.mjs';
+import { exePath } from '../utils/app-dir-name.mjs';
 import chalk from 'chalk';
+import { join } from 'path';
 
 let askTailscaleStatusIntervalId
 
-export const startTurnTailscaleProcess = (exePath, window) => {
+export const startTurnTailscaleProcess = (subExePath, window) => {
     const envFilePath = resolveEnvFilePath(window);
     console.log(chalk.green('env file path:'), envFilePath);
     const args = [];
+    if (!process.env.DEV){
+        args.push(`--dirpath=${join(exePath, 'tsNodeDir')}`);
+    }
     if (envFilePath) {
         args.push(`--env=${envFilePath}`);
     } else {
@@ -16,8 +21,8 @@ export const startTurnTailscaleProcess = (exePath, window) => {
         return () => { };
     }
     
-    console.log(chalk.blue('path of turn-on-tailscale.exe:'), exePath);
-    const turnTsProcess = spawn(exePath, args, { detached: false });
+    console.log(chalk.blue('path of turn-on-tailscale.exe:'), subExePath);
+    const turnTsProcess = spawn(subExePath, args, { detached: false });
 
     turnTsProcess.stdout.on('data', (data) => {
         const messages = data.toString().trim().split('\n');

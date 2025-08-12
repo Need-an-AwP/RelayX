@@ -122,7 +122,7 @@ func InitNode() {
 		Ephemeral: true, // ephemeral or not is depend on the authkey's properties
 		Hostname:  hostname,
 		AuthKey:   authKey,
-		Dir:       fmt.Sprintf("tsNodeDir/%s", hostname), // specify the directory for the node storage
+		Dir:       fmt.Sprintf("%s/%s", dirPath, hostname), // dirPath is tsNodeDir by default, specify the directory for the node storage
 		// ControlURL: controlURL,// using Tailscale's official control server
 		// Logf:       log.Printf,
 	}

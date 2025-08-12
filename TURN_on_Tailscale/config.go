@@ -8,16 +8,17 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// InitConfig initializes and returns configuration parameters: hostname, controlURL, and authKey.
+// InitConfig initializes and returns configuration parameters: hostname, controlURL, authKey, and dirPath.
 // The order of precedence for hostname and authKey is: command-line flag > environment variable.
 // The controlURL is sourced from an environment variable.
 // The .env file path can be specified via a command-line flag.
-func InitConfig() (string, string, string) {
+func InitConfig() (string, string, string, string) {
 	// Define command-line flags
 	cliHostnamePtr := flag.String("hostname", "", "Node hostname")
 	cliAuthKeyPtr := flag.String("authkey", "", "Tailscale auth key")
 	cliEnvFilePtr := flag.String("env", "", "Path to .env file (e.g., .env.dev)")
 	cliControlURLPtr := flag.String("controlurl", "", "Tailscale control server URL")
+	cliDirPathPtr := flag.String("dirpath", "", "Path to directory")
 	flag.Parse()
 
 	// Determine and load .env file
@@ -43,6 +44,7 @@ func InitConfig() (string, string, string) {
 	var finalHostname string
 	var finalAuthKey string
 	var finalControlURL string
+	var finalDirPath string
 
 	// 1. Determine Hostname
 	if *cliHostnamePtr != "" {
@@ -89,6 +91,15 @@ func InitConfig() (string, string, string) {
 		}
 	}
 
+	// 4. Determine Directory Path
+	if *cliDirPathPtr != "" {
+		finalDirPath = *cliDirPathPtr
+		log.Printf("Using directory path from --dirpath flag: %s", finalDirPath)
+	} else {
+		finalDirPath = "tsNodeDir" // 默认路径
+		log.Printf("Using default directory path: %s", finalDirPath)
+	}
+
 	// Validation
 	if finalHostname == "" {
 		panic("Error: Hostname is required but was not provided by --hostname flag or NODE_HOSTNAME environment variable. Quitting.")
@@ -96,7 +107,7 @@ func InitConfig() (string, string, string) {
 	if finalAuthKey == "" {
 		panic("Error: Auth key is required but was not provided by --authkey flag or TAILSCALE_AUTH_KEY environment variable. Quitting.")
 	}
-	log.Printf("Final Configuration: Hostname=%s, ControlURL=%s, AuthKey Provided=%t", finalHostname, finalControlURL, finalAuthKey != "")
+	log.Printf("Final Configuration: Hostname=%s, ControlURL=%s, DirPath=%s, AuthKey Provided=%t", finalHostname, finalControlURL, finalDirPath, finalAuthKey != "")
 
-	return finalHostname, finalControlURL, finalAuthKey
+	return finalHostname, finalControlURL, finalAuthKey, finalDirPath
 }

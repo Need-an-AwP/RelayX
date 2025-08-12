@@ -25,6 +25,7 @@ var (
 	authKey         string
 	hostname        string
 	controlURL      string
+	dirPath         string
 
 	nodeInfo    NodeInfo
 	localClient *local.Client
@@ -39,5 +40,3 @@ var (
 	rtcConnectionStatus = make(map[string]webrtc.PeerConnectionState)
 	rtcConnectionMutex  sync.RWMutex
 )
-
-
