@@ -1,5 +1,5 @@
 import { envFilePath as argsEnvFilePath } from '../utils/args.mjs';
-import { __dirname, exePath } from '../utils/app-dir-name.mjs';
+import { __dirname, exeDirPath } from '../utils/app-dir-name.mjs';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import chalk from 'chalk';
@@ -39,7 +39,7 @@ export const resolveEnvFilePath = (window) => {
         }
     }
 
-    const probEnvFilePath = join(process.env.DEV ? __dirname : exePath, '.env');// in dev, the path is app/, in portable, the path is the exePath
+    const probEnvFilePath = join(process.env.DEV ? __dirname : exeDirPath, '.env');// in dev, the path is app/, in portable, the path is the exePath
     if (existsSync(probEnvFilePath)) {
         if (validateEnvContent(probEnvFilePath)) {
             console.log(chalk.blue(`using .env file: ${probEnvFilePath}`));

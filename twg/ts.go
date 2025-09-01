@@ -3,15 +3,18 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
 	"net"
 	"net/http"
 	"os"
-	"tailscale.com/client/local"
-	"tailscale.com/tsnet"
 	"time"
+
+	"tailscale.com/client/local"
+	"tailscale.com/ipn"
+	"tailscale.com/tsnet"
 )
 
 func initNodeInfo(selfIP string, hostname string) {
@@ -52,22 +55,20 @@ func initTS(hostName string, authKey string, dirPath string) (*tsnet.Server, *lo
 		log.Fatal("Error getting local client, quitting...")
 	}
 
-	for {
-		st, err := lc.Status(context.Background())
-		if err != nil {
-			time.Sleep(100 * time.Millisecond)
-			continue
-		}
+	initComplete := make(chan struct {
+		srv          *tsnet.Server
+		lc           *local.Client
+		udpConn      net.PacketConn
+		rtcConn      net.PacketConn
+		httpListener net.Listener
+		httpClient   *http.Client
+	})
 
-		if st.BackendState == "Running" {
-			selfAddr := st.Self.TailscaleIPs[0].String()
-			initNodeInfo(selfAddr, hostname)
-			udpConn, rtcConn, httpListener, httpClient := initConns(srv, selfAddr)
-			return srv, lc, udpConn, rtcConn, httpListener, httpClient
-		}
+	// using native watching method instead of ticker polling
+	go startBackendStateMonitor(lc, srv, hostName, initComplete)
 
-		time.Sleep(100 * time.Millisecond)
-	}
+	result := <-initComplete
+	return result.srv, result.lc, result.udpConn, result.rtcConn, result.httpListener, result.httpClient
 }
 
 func initConns(server *tsnet.Server, selfIP string) (net.PacketConn, net.PacketConn, net.Listener, *http.Client) {
@@ -75,7 +76,7 @@ func initConns(server *tsnet.Server, selfIP string) (net.PacketConn, net.PacketC
 	if err != nil {
 		log.Panicf("Failed to create shared UDP connection: %v", err)
 	}
-	
+
 	rtcConn, err := server.ListenPacket("udp4", net.JoinHostPort(selfIP, "0"))
 	if err != nil {
 		log.Panicf("Error listening on %s:0: %v", selfIP, err)
@@ -86,8 +87,8 @@ func initConns(server *tsnet.Server, selfIP string) (net.PacketConn, net.PacketC
 		log.Panicf("Error listening on %s:%s: %v", selfIP, tcpPort, err)
 	}
 
-	// httpClient := server.HTTPClient()
-	httpClient := &http.Client{
+	// httpClient := server.HTTPClient()// tailscale's http client
+	httpClient := &http.Client{ // customized http client
 		Timeout: 5 * time.Second,
 		Transport: &http.Transport{
 			DialContext: server.Dial,
@@ -95,4 +96,112 @@ func initConns(server *tsnet.Server, selfIP string) (net.PacketConn, net.PacketC
 	}
 
 	return udpConn, rtcConn, httpListener, httpClient
+}
+
+func startBackendStateMonitor(
+	lc *local.Client,
+	srv *tsnet.Server,
+	hostname string,
+	initComplete chan struct {
+		srv          *tsnet.Server
+		lc           *local.Client
+		udpConn      net.PacketConn
+		rtcConn      net.PacketConn
+		httpListener net.Listener
+		httpClient   *http.Client
+	},
+) {
+	ctx := context.Background()
+	initialized := false
+
+	watcher, err := lc.WatchIPNBus(ctx, ipn.NotifyInitialState|ipn.NotifyInitialNetMap)
+	if err != nil {
+		log.Printf("Failed to watch IPN bus: %v", err)
+		return
+	}
+	defer watcher.Close()
+
+	log.Printf("Backend state monitor started using native IPN bus watcher")
+
+	for {
+		notify, err := watcher.Next()
+		if err != nil {
+			log.Printf("IPN bus watcher error: %v", err)
+			return
+		}
+
+		if notify.State != nil {
+			backendState := notify.State.String()
+
+			type jsonStruct struct {
+				Type         string `json:"type"`
+				BackendState string `json:"state"`
+				Timestamp    int64  `json:"timestamp"`
+			}
+
+			data := jsonStruct{
+				Type:         "tsBackendState",
+				BackendState: backendState,
+				Timestamp:    time.Now().UTC().Unix(),
+			}
+
+			jsonData, err := json.Marshal(data)
+			if err != nil {
+				log.Printf("Failed to marshal backend state data: %v", err)
+				continue
+			}
+
+			fmt.Println(string(jsonData))
+
+			if backendState == "Running" && !initialized {
+				go func() {
+					st, err := lc.Status(ctx) // get a full status of tailscale
+					if err != nil {
+						log.Printf("Failed to get status during initialization: %v", err)
+						return
+					}
+
+					if len(st.Self.TailscaleIPs) == 0 {
+						log.Printf("No Tailscale IPs available")
+						return
+					}
+
+					selfAddr := st.Self.TailscaleIPs[0].String()
+					initNodeInfo(selfAddr, hostname)
+					udpConn, rtcConn, httpListener, httpClient := initConns(srv, selfAddr)
+
+					// status stdout loop
+					ticker := time.NewTicker(1 * time.Second)
+					go func() {
+						defer ticker.Stop()
+						for range ticker.C {
+							st, err := lc.Status(ctx)
+							jsonData, err := json.Marshal(st)
+							if err != nil {
+								log.Printf("Error marshalling tailscale status to JSON: %v", err)
+							}
+							fmt.Printf("{\"type\":\"tsStatus\", \"status\":%s}\n", jsonData)
+						}
+					}()
+
+					initComplete <- struct {
+						srv          *tsnet.Server
+						lc           *local.Client
+						udpConn      net.PacketConn
+						rtcConn      net.PacketConn
+						httpListener net.Listener
+						httpClient   *http.Client
+					}{
+						srv:          srv,
+						lc:           lc,
+						udpConn:      udpConn,
+						rtcConn:      rtcConn,
+						httpListener: httpListener,
+						httpClient:   httpClient,
+					}
+				}()
+				initialized = true
+			}
+		}
+	}
 }

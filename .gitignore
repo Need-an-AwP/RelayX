@@ -27,6 +27,7 @@ dist-ssr
 #env files
 .env
 .env.node-A
+.env.nodeA
 .env.node-B
 .env.node-C
 

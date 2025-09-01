@@ -5,7 +5,7 @@ const __filename = fileURLToPath(import.meta.url);
 export const __dirname = dirname(dirname(__filename));
 console.log('current __dirname:', __dirname);
 
-export const exePath = 'PORTABLE_EXECUTABLE_DIR' in process.env
+export const exeDirPath = 'PORTABLE_EXECUTABLE_DIR' in process.env
     ? process.env.PORTABLE_EXECUTABLE_DIR
     : dirname(process.argv[0]);
-console.log('current exePath:', exePath);
+console.log('current exePath:', exeDirPath);

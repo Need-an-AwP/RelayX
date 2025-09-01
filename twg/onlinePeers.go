@@ -1,9 +1,9 @@
 package main
 
 import (
-	"maps"
 	"encoding/json"
-	_"fmt"
+	"fmt"
+	"maps"
 	"time"
 )
 
@@ -28,13 +28,20 @@ func stdoutOnlinePeersLoop() {
 		maps.Copy(peersCopy, onlinePeers)
 		onlinePeersMu.RUnlock()
 
-		jsonData, err := json.Marshal(peersCopy)
+		type jsonStruct struct {
+			Type  string                    `json:"type"`
+			Peers map[string]OnlinePeerData `json:"peers"`
+		}
+		data := jsonStruct{
+			Type:  "onlinePeers",
+			Peers: peersCopy,
+		}
+		jsonData, err := json.Marshal(data)
 		if err != nil {
 			continue
 		}
 
-		_ = jsonData
-		// fmt.Println(string(jsonData))
+		fmt.Println(string(jsonData))
 	}
 }
 

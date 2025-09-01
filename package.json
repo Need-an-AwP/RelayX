@@ -7,7 +7,7 @@
   "type": "module",
   "main": "app/index.mjs",
   "scripts": {
-    "downloadCPA": "yarn add download-cli -D && download https://github.com/Need-an-AwP/process-audio-capture-stdio/releases/download/v0.0.1/process-audio-capture.exe --out app/",
+    "downloadCPA": "yarn add download-cli -D && download https://github.com/Need-an-AwP/process-audio-capture-stdio/releases/download/v0.0.2/process-audio-capture.exe --out app/",
     "dev": "concurrently -k \"vite\" \"cross-env DEV=true electron app/index.mjs\"",
     "dev:build": "yarn build:go && yarn dev",
     "build:go": "go build -C twg -o ../app",

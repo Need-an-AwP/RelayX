@@ -6,12 +6,12 @@ import { setDisplayMediaRequestHandler } from './displayMediaRequestHandler/inde
 import { createMainWindow, createWebRTCInternalsWindow } from './window/create-window.mjs';
 import { setupWindowActions } from './window/window-actions.mjs';
 import { startCpaProcess } from './subprocess/cpa.mjs';
-
+import { startTwgProcess } from './subprocess/twg.mjs';
 
 
 const store = initConfigStore(configName);
 
-let quitCpa
+let quitCpa, quitTwg;
 
 app.whenReady().then(() => {
     // install react devtools
@@ -24,13 +24,18 @@ app.whenReady().then(() => {
 
     // create app window
     const mainWindow = createMainWindow(store);
+    
     setupWindowActions(mainWindow, store);
+
     mainWindow.on('ready-to-show', () => {
         mainWindow.show();
     });
 
-    app.on('activate', () => {
+    mainWindow.webContents.once('did-finish-load', () => {
+        // start capture process audio subprocess
         quitCpa = startCpaProcess(mainWindow);
+        // start core tailscale webrtc gateway subprocess
+        quitTwg = startTwgProcess(mainWindow);
     })
 })
 
@@ -38,8 +43,8 @@ app.on('will-quit', () => {
     if (quitCpa) {
         quitCpa();
     }
-    if (global.quitTurnTsProcess) {
-        global.quitTurnTsProcess();
+    if (quitTwg) {
+        quitTwg();
     }
 });
 
