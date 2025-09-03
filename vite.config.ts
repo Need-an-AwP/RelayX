@@ -25,7 +25,7 @@ export default defineConfig({
         "**/.vscode/**",
         "**/README.md",
         "**/tsNodeDir/**",
-        "**/pion-webrtc-ts/**",
+        "**/twg/**",
       ],
     },
   }

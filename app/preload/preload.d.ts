@@ -4,6 +4,7 @@ export interface IpcBridge {
     send: (channel: string, data?: any) => void;
     invoke: (channel: string, data?: any) => Promise<any>;
     copy: (text: string) => void;
+    openURL: (url: string) => void;
     minimizeWindow: () => void;
     maximizeWindow: () => void;
     closeWindow: () => void;

@@ -37,3 +37,6 @@ tsNodeDir
 # exe files
 process-audio-capture.exe
 tailscale-webrtc-gateway.exe
+
+# start with _
+_*

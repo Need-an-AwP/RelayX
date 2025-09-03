@@ -2,6 +2,19 @@ import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 import type { Status, PeerStatus } from '@/types'
 
+/**
+ * BackendState is an ipn.State string value:
+ * "NoState", "NeedsLogin", "NeedsMachineAuth", "Stopped",
+ * "Starting", "Running".
+ */
+type TsBackendState = 
+    | "NoState" 
+    | "NeedsLogin" 
+    | "NeedsMachineAuth" 
+    | "Stopped" 
+    | "Starting" 
+    | "Running"
+
 type onlinePeersNodeInfo = {
     hostname: string;
     random_id: number;
@@ -16,70 +29,44 @@ interface onlinePeers {
     }
 }
 
-interface OnlinePeersState {
-    peers: { [key: string]: string }// key is ipv4 peerIP, value is nodekey
-    updateOnlinePeers: (peerIPs: string[]) => void
-}
-
-const useOnlinePeersStore = create<OnlinePeersState>((set) => ({
-    peers: {},
-    updateOnlinePeers: (peerIPs) => {
-        const { tailscaleStatus } = useTailscaleStore.getState();
-
-        if (!tailscaleStatus?.Peer) {
-            console.warn('No Tailscale peer data available');
-            return;
-        }
-
-        const newPeers: { [key: string]: string } = {};
-
-        peerIPs.forEach(peerIP => {
-            Object.entries(tailscaleStatus.Peer).forEach(([nodekey, peerStatus]) => {
-                const peer = peerStatus as PeerStatus;
-                if (peer && peer.TailscaleIPs) {
-                    const hasMatchingIP = peer.TailscaleIPs.some((ip: string) => {
-                        return ip === peerIP
-                    });
-
-                    if (hasMatchingIP) {
-                        newPeers[peerIP] = nodekey;
-                    }
-                }
-            });
-        });
-
-        set({ peers: newPeers });
-    }
-}));
-
-
 interface backendState {
     type: string;
-    tsBackendState: string;
+    state: string;
     timestamp: number;
 }
 
 interface TailscaleState {
     showWelcome: boolean;
     tailscaleStatus: Status | null;
+    tsBackendState: TsBackendState | null;
     onlinePeers: onlinePeers | null;
     updateTailscaleStatus: (status: Status) => void;
     updateOnlinePeers: (peers: onlinePeers) => void;
+    setTsBackendState: (state: TsBackendState | null) => void;
 }
 
 const useTailscaleStore = create<TailscaleState>()(
     subscribeWithSelector((set) => ({
         showWelcome: false,
         tailscaleStatus: null,
+        tsBackendState: null,
         onlinePeers: null,
         updateTailscaleStatus: (status) => set({ tailscaleStatus: status }),
         updateOnlinePeers: (peers) => set({ onlinePeers: peers }),
+        setTsBackendState: (state) => set({ tsBackendState: state }),
     }))
 )
 
 
-const initializeTwgListeners = () => {
-    const { updateTailscaleStatus, updateOnlinePeers } = useTailscaleStore.getState();
+const initializeTwgListeners = async () => {
+    // try get tsBackendState first
+    // when refresh page the info will be lost
+    window.ipcBridge.invoke('getTsBackendState')
+        .then((state: string) => {
+            setTsBackendState(state as TsBackendState);
+        })
+
+    const { updateTailscaleStatus, updateOnlinePeers, setTsBackendState } = useTailscaleStore.getState();
 
     window.ipcBridge.receive('no-env-file', (message: any) => {
         console.log('no-env-file', message);
@@ -88,6 +75,7 @@ const initializeTwgListeners = () => {
 
     window.ipcBridge.receive('tsBackendState', (message: backendState) => {
         console.log('tsBackendState', message);
+        setTsBackendState(message.state as TsBackendState);
     })
 
     window.ipcBridge.receive('tsStatus', (message: { type: string, status: Status }) => {
@@ -99,6 +87,11 @@ const initializeTwgListeners = () => {
         console.log('onlinePeers', message);
         updateOnlinePeers(message.peers);
     })
+
+    window.ipcBridge.receive('dc', (message: any) => {
+        console.log('dc', message);
+    })
+
 }
 
-export { initializeTwgListeners, useTailscaleStore }
+export { initializeTwgListeners, useTailscaleStore, type backendState, type TsBackendState }

@@ -8,9 +8,9 @@
 		"output": "default"
 	},
 	"windowBounds": {
+		"x": -22,
+		"y": 140,
 		"width": 1400,
-		"height": 800,
-		"minWidth": 600,
-		"minHeight": 500
+		"height": 800
 	}
 }

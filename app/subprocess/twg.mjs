@@ -25,14 +25,30 @@ export const startTwgProcess = (window) => {
     console.log(chalk.blue('path of tailscale-webrtc-gateway.exe:'), exePath);
     const twgProcess = spawn(exePath, args, { detached: false });
 
+    // stdin
+    const stdinTypes = ['dc', 'userState']
+
+    stdinTypes.forEach(type => {
+        ipcMain.on(type, (event, message) => {
+            if (twgProcess && twgProcess.stdin) {
+                twgProcess.stdin.write(JSON.stringify({ type: type, message: message }) + '\n');//message is object
+            }
+        })
+    })
+
+
     let wsInfo = null;
     ipcMain.handle('getWsInfo', async () => {
         return wsInfo;
     });
-    // ipcMain.on('giveMeWsInfo', () => {
-    //     window.webContents.send('wsInfo', wsInfo);
-    // });
 
+    let tsBackendState = null;
+    ipcMain.handle('getTsBackendState', async () => {
+        return tsBackendState;
+    });
+
+
+    // stdout
     twgProcess.stdout.on('data', (data) => {
         const output = data.toString();
         try {
@@ -42,10 +58,13 @@ export const startTwgProcess = (window) => {
             if (type) {
                 switch (type) {
                     case "ws":
+                        console.log(chalk.green('Backend WS Info:'), jsonData);
+                        window.webContents.send('ws', jsonData);
                         wsInfo = jsonData;
                         break;
                     case "tsBackendState":// notified by watchipnbus
                         window.webContents.send('tsBackendState', jsonData);
+                        tsBackendState = jsonData.state;
                         break;
                     case "tsStatus":// response every 1 second
                         window.webContents.send('tsStatus', jsonData);
@@ -53,11 +72,13 @@ export const startTwgProcess = (window) => {
                     case "onlinePeers":
                         window.webContents.send('onlinePeers', jsonData);
                         break;
-
+                    case "dc":
+                        window.webContents.send('dc', jsonData);
+                        break;
                 }
             }
         } catch (e) {
-            console.log(chalk.green(`Backend STDOUT: ${output}`), chalk.red(`Error: ${e.message}`));
+            console.log(chalk.green(`Backend STDOUT: ${output}`));
         }
     });
 

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
-	"github.com/pion/rtcp"
+	// "github.com/pion/rtcp"
 	"github.com/pion/rtp/codecs"
 	"github.com/pion/webrtc/v4"
 	"log"
@@ -29,16 +29,20 @@ type RTCConnection struct {
 	peerIP            string
 	role              RTCRole
 	dc                *webrtc.DataChannel
+	pdc               *webrtc.DataChannel
 	candidatesMu      sync.RWMutex
 	pendingCandidates []*webrtc.ICECandidate
 	videoTrack        *webrtc.TrackLocalStaticSample
 	videoSender       *webrtc.RTPSender
 	CreatedAt         time.Time
-	LastActivity      time.Time
 	mu                sync.RWMutex
+	lastPingTime      time.Time
+	latency           time.Duration
+	pingMu            sync.RWMutex
 }
 
-type RTCManager struct { // rm
+// rm
+type RTCManager struct {
 	connections map[string]*RTCConnection // key is peer IP
 	api         *webrtc.API
 	client      *http.Client
@@ -115,14 +119,21 @@ func initWebRTC(conn net.PacketConn, httpClient *http.Client) {
 func (rm *RTCManager) managePeerConnections() {
 	ticker := time.NewTicker(broadcastInterval)
 	defer ticker.Stop()
+	pingTicker := time.NewTicker(3 * time.Second)
+	defer pingTicker.Stop()
 
-	for range ticker.C {
-		rm.syncWithOnlinePeers()
-		// rm.cleanupStaleConnections()
+	for {
+		select {
+		case <-ticker.C:
+			rm.createRTCtoOnlinePeers()
+			// rm.cleanupStaleConnections()
+		case <-pingTicker.C:
+			rm.sendPingsByPdc()
+		}
 	}
 }
 
-func (rm *RTCManager) syncWithOnlinePeers() {
+func (rm *RTCManager) createRTCtoOnlinePeers() {
 	onlinePeersMu.RLock()
 	currentPeers := make(map[string]OnlinePeerData)
 	maps.Copy(currentPeers, onlinePeers)
@@ -167,6 +178,7 @@ func (rm *RTCManager) createConnection(role RTCRole, peerIP string, sdpWithIce *
 	}
 
 	var dc *webrtc.DataChannel
+	var pdc *webrtc.DataChannel
 	if role == OFFER {
 		dc, err = pc.CreateDataChannel("data", nil)
 		if err != nil {
@@ -175,6 +187,14 @@ func (rm *RTCManager) createConnection(role RTCRole, peerIP string, sdpWithIce *
 			return
 		}
 		rm.setupDataChannelHandlers(dc)
+
+		pdc, err := pc.CreateDataChannel("ping", nil)
+		if err != nil {
+			log.Printf("[RTC] Failed to create ping data channel for %s: %v", peerIP, err)
+			pc.Close()
+			return
+		}
+		rm.setupPingDataChannel(pdc, peerIP)
 	}
 
 	connection := &RTCConnection{
@@ -182,9 +202,9 @@ func (rm *RTCManager) createConnection(role RTCRole, peerIP string, sdpWithIce *
 		peerIP:            peerIP,
 		role:              role,
 		dc:                dc, // nil at answer side
+		pdc:               pdc,
 		pendingCandidates: make([]*webrtc.ICECandidate, 0),
 		CreatedAt:         time.Now(),
-		LastActivity:      time.Now(),
 	}
 
 	// 设置事件处理器
@@ -349,23 +369,32 @@ func (rm *RTCManager) setupPcHandlers(pc *webrtc.PeerConnection, connection *RTC
 		connection.dc = dc
 		connection.mu.Unlock()
 
-		rm.setupDataChannelHandlers(dc)
+		if dc.Label() == "ping" {
+			rm.setupPingDataChannel(dc, connection.peerIP)
+		} else if dc.Label() == "data" {
+			rm.setupDataChannelHandlers(dc)
+		}
+
 	})
 }
 
 func (rm *RTCManager) setupDataChannelHandlers(dc *webrtc.DataChannel) {
 	dc.OnOpen(func() {
-		log.Printf("[RTC] Data channel %v opened", dc.Label())
+		log.Printf("[RTC datachannel] Data channel %v opened", dc.Label())
 	})
 
 	dc.OnClose(func() {
-		log.Printf("[RTC] Data channel %v closed", dc.Label())
+		log.Printf("[RTC datachannel] Data channel %v closed", dc.Label())
 	})
 
 	dc.OnMessage(func(msg webrtc.DataChannelMessage) {
-		log.Printf("[RTC] Message received on data channel %v: %s", dc.Label(), msg.Data)
+		log.Printf("[RTC datachannel] Message received on data channel %v: %s", dc.Label(), msg.Data)
+		if msg.IsString {
+			fmt.Printf("%s\n", msg.Data)
+		}
 	})
 }
+
 
 func (rm *RTCManager) addTracks(pc *webrtc.PeerConnection, connection *RTCConnection) error {
 	videoTrack, err := webrtc.NewTrackLocalStaticSample(
@@ -394,57 +423,39 @@ func (rm *RTCManager) addTracks(pc *webrtc.PeerConnection, connection *RTCConnec
 			if rtcpErr != nil {
 				return
 			}
+			_ = n
 
-			// Parse the RTCP packet
-			packets, err := rtcp.Unmarshal(rtcpBuf[:n])
-			if err != nil {
-				log.Printf("[RTCP] Failed to unmarshal RTCP packet: %v", err)
-				continue
-			}
+			// // Parse the RTCP packet
+			// packets, err := rtcp.Unmarshal(rtcpBuf[:n])
+			// if err != nil {
+			// 	log.Printf("[RTCP] Failed to unmarshal RTCP packet: %v", err)
+			// 	continue
+			// }
 
-			// Process each RTCP packet
-			for _, packet := range packets {
-				switch p := packet.(type) {
-				case *rtcp.ReceiverReport:
-					log.Printf("[RTCP] Receiver Report from SSRC %d with %d reports",
-						p.SSRC, len(p.Reports))
-					for _, report := range p.Reports {
-						log.Printf("[RTCP] Report: SSRC=%d, Fraction Lost=%d, Total Lost=%d, Jitter=%d, Delay=%d",
-							report.SSRC, report.FractionLost, report.TotalLost, report.Jitter, report.Delay)
-					}
-				case *rtcp.SenderReport:
-					log.Printf("[RTCP] Sender Report from SSRC %d, NTP %v, RTP %d, Packet Count %d, Octet Count %d",
-						p.SSRC, p.NTPTime, p.RTPTime, p.PacketCount, p.OctetCount)
-				case *rtcp.ExtendedReport:
-					log.Printf("[RTCP] Extended Report from SSRC %d with %d report blocks",
-						p.SenderSSRC, len(p.Reports))
-				case *rtcp.TransportLayerNack:
-					log.Printf("[RTCP] NACK from SSRC %d, Media SSRC %d with %d lost packets",
-						p.SenderSSRC, p.MediaSSRC, len(p.Nacks))
-				}
-			}
+			// // Process each RTCP packet
+			// for _, packet := range packets {
+			// 	switch p := packet.(type) {
+			// 	case *rtcp.ReceiverReport:
+			// 		log.Printf("[RTCP] Receiver Report from SSRC %d with %d reports",
+			// 			p.SSRC, len(p.Reports))
+			// 		for _, report := range p.Reports {
+			// 			log.Printf("[RTCP] Report: SSRC=%d, Fraction Lost=%d, Total Lost=%d, Jitter=%d, Delay=%d",
+			// 				report.SSRC, report.FractionLost, report.TotalLost, report.Jitter, report.Delay)
+			// 		}
+			// 	case *rtcp.SenderReport:
+			// 		log.Printf("[RTCP] Sender Report from SSRC %d, NTP %v, RTP %d, Packet Count %d, Octet Count %d",
+			// 			p.SSRC, p.NTPTime, p.RTPTime, p.PacketCount, p.OctetCount)
+			// 	case *rtcp.ExtendedReport:
+			// 		log.Printf("[RTCP] Extended Report from SSRC %d with %d report blocks",
+			// 			p.SenderSSRC, len(p.Reports))
+			// 	case *rtcp.TransportLayerNack:
+			// 		log.Printf("[RTCP] NACK from SSRC %d, Media SSRC %d with %d lost packets",
+			// 			p.SenderSSRC, p.MediaSSRC, len(p.Nacks))
+			// 	}
+			// }
 		}
 	}()
 
-	// go func() {
-	// 	for {
-	// 		const duration = time.Second / 30
-	// 		// 生成随机数据
-	// 		randomData := make([]byte, 1000)
-	// 		rand.Read(randomData)
-
-	// 		// 写入轨道
-	// 		err := videoTrack.WriteSample(media.Sample{
-	// 			Data:     randomData,
-	// 			Duration: duration,
-	// 		})
-	// 		if err != nil {
-	// 			fmt.Printf("Failed to write sample: %v\n", err)
-	// 		}
-
-	// 		time.Sleep(duration) // ~30fps
-	// 	}
-	// }()
 	return nil
 }
 

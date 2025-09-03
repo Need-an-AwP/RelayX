@@ -14,10 +14,11 @@ import (
 )
 
 var (
-	WsURL  string
-	wsConn *websocket.Conn
+	wsConn    *websocket.Conn
+	msgWsConn *websocket.Conn
 )
 
+// create local websocket server
 func initWsService() {
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
@@ -43,8 +44,35 @@ func initWsService() {
 			if mt == websocket.BinaryMessage {
 				handleVideoChunk(msg)
 			} else {
-				log.Printf("ws received message type is not binary")
+				log.Printf("media ws received message type is not binary")
 			}
+		}
+	})
+
+	// 添加 /msg 路由用于消息处理
+	http.HandleFunc("/msg", func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Printf("msg ws upgrade error: %v", err)
+			return
+		}
+		defer conn.Close()
+
+		msgWsConn = conn
+
+		for {
+			mt, msg, err := conn.ReadMessage()
+			if err != nil {
+				log.Printf("msg ws read error: %v", err)
+				return
+			}
+
+			if mt == websocket.TextMessage {
+				handleMessage(msg)
+			} else {
+				log.Printf("msg ws received message type is not text")
+			}
+
 		}
 	})
 
@@ -55,7 +83,6 @@ func initWsService() {
 	}
 
 	addr := ln.Addr().String()
-	WsURL = fmt.Sprintf("ws://%s", addr)
 
 	go func() {
 		if err := http.Serve(ln, nil); err != nil && err != http.ErrServerClosed {
@@ -66,7 +93,8 @@ func initWsService() {
 	// 输出为 JSON 格式，包含 type 和 address
 	info := map[string]string{
 		"type":    "ws",
-		"address": WsURL,
+		"mediaWs": fmt.Sprintf("ws://%s", addr),
+		"msgWs":   fmt.Sprintf("ws://%s/msg", addr),
 	}
 	if b, err := json.Marshal(info); err == nil {
 		fmt.Println(string(b))
@@ -95,6 +123,18 @@ func handleVideoChunk(data []byte) {
 			Duration: time.Second / 30,
 		})
 	}
+}
+
+func handleMessage(data []byte) {
+	log.Printf("Received text message: %s", string(data))
+
+	var jsonData interface{}
+	if err := json.Unmarshal(data, &jsonData); err != nil {
+		log.Printf("Failed to decode JSON: %v", err)
+	} else {
+		log.Printf("Successfully decoded JSON: %+v", jsonData)
+	}
+
 }
 
 func sendViaWS(data []byte) error {

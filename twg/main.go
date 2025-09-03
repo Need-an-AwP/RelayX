@@ -26,6 +26,8 @@ func main() {
 
 	go initWsService()
 
+	go handleStdInput()
+
 	<-sigChan
 
 	// clean
