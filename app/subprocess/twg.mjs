@@ -49,37 +49,48 @@ export const startTwgProcess = (window) => {
 
 
     // stdout
+    let outputBuffer = '';
     twgProcess.stdout.on('data', (data) => {
-        const output = data.toString();
-        try {
-            const jsonData = JSON.parse(output);
-            // console.log(chalk.green('Backend JSON:'), jsonData);
-            const type = jsonData.type
-            if (type) {
-                switch (type) {
-                    case "ws":
-                        console.log(chalk.green('Backend WS Info:'), jsonData);
-                        window.webContents.send('ws', jsonData);
-                        wsInfo = jsonData;
-                        break;
-                    case "tsBackendState":// notified by watchipnbus
-                        window.webContents.send('tsBackendState', jsonData);
-                        tsBackendState = jsonData.state;
-                        break;
-                    case "tsStatus":// response every 1 second
-                        window.webContents.send('tsStatus', jsonData);
-                        break;
-                    case "onlinePeers":
-                        window.webContents.send('onlinePeers', jsonData);
-                        break;
-                    case "dc":
-                        window.webContents.send('dc', jsonData);
-                        break;
+        outputBuffer += data.toString();
+        const lines = outputBuffer.split('\n');
+        outputBuffer = lines.pop() || ''; // 保留最后一行（可能不完整）
+
+        lines.forEach(line => {
+            const trimmedLine = line.trim();
+            if (!trimmedLine) return;
+
+            try {
+                const jsonData = JSON.parse(trimmedLine);
+                // console.log(chalk.green('Backend JSON:'), jsonData);
+                const type = jsonData.type
+                if (type) {
+                    switch (type) {
+                        case "ws":
+                            console.log(chalk.green('Backend WS Info:'), jsonData);
+                            window.webContents.send('ws', jsonData);
+                            wsInfo = jsonData;
+                            break;
+                        case "tsBackendState":// notified by watchipnbus
+                            window.webContents.send('tsBackendState', jsonData);
+                            tsBackendState = jsonData.state;
+                            break;
+                        case "tsStatus":// response every 1 second
+                            window.webContents.send('tsStatus', jsonData);
+                            break;
+                        case "onlinePeers":
+                            window.webContents.send('onlinePeers', jsonData);
+                            break;
+                        case "dc":
+                            window.webContents.send('dc', jsonData);
+                            break;
+                    }
                 }
+            } catch (e) {
+                console.log(chalk.yellow(`Failed to parse line: ${trimmedLine}`));
+                console.log(chalk.red('Parse Error:'), e.message);
             }
-        } catch (e) {
-            console.log(chalk.green(`Backend STDOUT: ${output}`));
-        }
+        });
+
     });
 
     twgProcess.stderr.on('data', (data) => {

@@ -22,6 +22,16 @@ type OnlinePeerData struct {
 	Timestamp int64    `json:"timestamp"`
 }
 
+type PeerState struct {
+	UserName        string `json:"userName"`
+	UserAvatar      string `json:"userAvatar"`
+	IsInChat        bool   `json:"isInChat"`
+	IsInputMuted    bool   `json:"isInputMuted"`
+	IsOutputMuted   bool   `json:"isOutputMuted"`
+	IsSharingScreen bool   `json:"isSharingScreen"`
+	IsSharingAudio  bool   `json:"isSharingAudio"`
+}
+
 var (
 	udpPort           = "8849"
 	tcpPort           = "8848"
@@ -35,4 +45,6 @@ var (
 	onlinePeers       map[string]OnlinePeerData // key is TailscaleIP
 	onlinePeersMu     sync.RWMutex
 	rtcManager        *RTCManager
+	mirrorState       PeerState
+	mirrorStateMu     sync.RWMutex
 )

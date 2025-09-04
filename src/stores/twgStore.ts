@@ -79,12 +79,12 @@ const initializeTwgListeners = async () => {
     })
 
     window.ipcBridge.receive('tsStatus', (message: { type: string, status: Status }) => {
-        console.log('tsStatus', message);
+        // console.log('tsStatus', message);
         updateTailscaleStatus(message.status);
     })
 
     window.ipcBridge.receive('onlinePeers', (message: { type: string, peers: onlinePeers }) => {
-        console.log('onlinePeers', message);
+        // console.log('onlinePeers', message);
         updateOnlinePeers(message.peers);
     })
 

@@ -66,12 +66,12 @@ export interface Status {
   /**
    * Peer is the state of each peer, keyed by each peer's current public key.
    */
-  Peer: { [key: any /* key.NodePublic */]: PeerStatus | undefined};
+  Peer: { [key: string /* key.NodePublic */]: PeerStatus | undefined};
   /**
    * User contains profile information about UserIDs referenced by
    * PeerStatus.UserID, PeerStatus.AltSharerUserID, etc.
    */
-  User: { [key: any /* tailcfg.UserID */]: any /* tailcfg.UserProfile */};
+  User: { [key: string /* tailcfg.UserID */]: any /* tailcfg.UserProfile */};
   /**
    * ClientVersion, when non-nil, contains information about the latest
    * version of the Tailscale client that's available. Depending on
@@ -257,18 +257,21 @@ export interface PeerStatus {
   /**
    * AllowedIPs are IP addresses allowed to route to this node.
    */
-  AllowedIPs?: any /* views.Slice */<any /* netip.Prefix */>;
+  // AllowedIPs?: any /* views.Slice */<any /* netip.Prefix */>;
+  AllowedIPs?: any[];
   /**
    * Tags are the list of ACL tags applied to this node.
    * See tailscale.com/tailcfg#Node.Tags for more information.
    */
-  Tags?: any /* views.Slice */<string>;
+  // Tags?: any /* views.Slice */<string>;
+  Tags?: string[];
   /**
    * PrimaryRoutes are the routes this node is currently the primary
    * subnet router for, as determined by the control plane. It does
    * not include the IPs in TailscaleIPs.
    */
-  PrimaryRoutes?: any /* views.Slice */<any /* netip.Prefix */>;
+  // PrimaryRoutes?: any /* views.Slice */<any /* netip.Prefix */>;
+  PrimaryRoutes?: any[];
   /**
    * Endpoints:
    */

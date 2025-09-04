@@ -1,15 +1,8 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
+import { useWsStore } from './wsStore'
+import type { PeerState } from '@/types'
 
-interface PeerState {
-    userName: string
-    userAvatar: string
-    isInChat: boolean
-    isInputMuted: boolean
-    isOutputMuted: boolean
-    isSharingScreen: boolean
-    isSharingAudio: boolean
-}
 
 const defaultPeerState: PeerState = {
     // storage state
@@ -26,11 +19,11 @@ const defaultPeerState: PeerState = {
 interface LocalUserStateStore {
     userState: PeerState
     initialized: boolean
-    initializeSelfState: () => Promise<void>
+    initializeSelfState: () => Promise<void>// the init method is called in userProfile component
     updateSelfState: (partialState: Partial<PeerState>) => void
 }
 
-export const useLocalUserStateStore = create<LocalUserStateStore>()(
+const useLocalUserStateStore = create<LocalUserStateStore>()(
     immer((set, get) => ({
         userState: defaultPeerState,
         initialized: false,
@@ -52,6 +45,8 @@ export const useLocalUserStateStore = create<LocalUserStateStore>()(
                     state.initialized = true;
                 });
             }
+
+            syncMirrorState(get().userState);
         },
         updateSelfState: (partialState: Partial<PeerState>) => {
             try {
@@ -66,9 +61,27 @@ export const useLocalUserStateStore = create<LocalUserStateStore>()(
                 set((state) => {
                     Object.assign(state.userState, partialState);
                 });
+
+                syncMirrorState(get().userState);
             } catch (error) {
                 console.error('Failed to update user config:', error);
             }
         },
     }))
 )
+
+const syncMirrorState = (userState: PeerState) => {
+    const { sendMsg } = useWsStore.getState();
+    if (!sendMsg) return;
+
+    sendMsg({ type: "mirrorLocalState", userState });
+}
+
+const broadcastLocalUserState = (userState: PeerState) => {
+    const { sendMsg } = useWsStore.getState();
+    if (!sendMsg) return;
+
+    sendMsg({ type: "userState", userState });
+}
+
+export { useLocalUserStateStore };
