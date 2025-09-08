@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { immer } from 'zustand/middleware/immer'
+import { subscribeWithSelector } from 'zustand/middleware'
 import { useWsStore } from './wsStore'
 import type { PeerState } from '@/types'
 
@@ -24,29 +24,28 @@ interface LocalUserStateStore {
 }
 
 const useLocalUserStateStore = create<LocalUserStateStore>()(
-    immer((set, get) => ({
+    subscribeWithSelector((set) => ({
         userState: defaultPeerState,
         initialized: false,
         initializeSelfState: async () => {
             try {
                 const userConfig = await window.ipcBridge.getUserConfig();
-                set((state) => {
-                    if (userConfig.userName !== undefined) {
-                        state.userState.userName = userConfig.userName;
-                    }
-                    if (userConfig.userAvatar !== undefined) {
-                        state.userState.userAvatar = userConfig.userAvatar;
-                    }
-                    state.initialized = true;
-                });
+                set((state) => ({
+                    ...state,
+                    userState: {
+                        ...state.userState,
+                        ...(userConfig.userName !== undefined && { userName: userConfig.userName }),
+                        ...(userConfig.userAvatar !== undefined && { userAvatar: userConfig.userAvatar }),
+                    },
+                    initialized: true,
+                }));
             } catch (error) {
                 console.error('Failed to load user config:', error);
-                set((state) => {
-                    state.initialized = true;
-                });
+                set((state) => ({
+                    ...state,
+                    initialized: true,
+                }));
             }
-
-            syncMirrorState(get().userState);
         },
         updateSelfState: (partialState: Partial<PeerState>) => {
             try {
@@ -58,11 +57,15 @@ const useLocalUserStateStore = create<LocalUserStateStore>()(
                     window.ipcBridge.setUserConfig('userAvatar', partialState.userAvatar);
                 }
                 // for all state
-                set((state) => {
-                    Object.assign(state.userState, partialState);
-                });
+                set((state) => ({
+                    ...state,
+                    userState: {
+                        ...state.userState,
+                        ...partialState,
+                    },
+                }));
 
-                syncMirrorState(get().userState);
+                syncMirrorState();
             } catch (error) {
                 console.error('Failed to update user config:', error);
             }
@@ -70,18 +73,15 @@ const useLocalUserStateStore = create<LocalUserStateStore>()(
     }))
 )
 
-const syncMirrorState = (userState: PeerState) => {
-    const { sendMsg } = useWsStore.getState();
-    if (!sendMsg) return;
+const syncMirrorState = () => {
+    const { userState } = useLocalUserStateStore.getState();
+    const { msgWs, sendMsg } = useWsStore.getState();
+    if (!sendMsg || msgWs?.readyState !== WebSocket.OPEN) {
+        console.warn('msgWs is not connected, cannot sync mirror state');
+        return;
+    }
 
     sendMsg({ type: "mirrorLocalState", userState });
 }
 
-const broadcastLocalUserState = (userState: PeerState) => {
-    const { sendMsg } = useWsStore.getState();
-    if (!sendMsg) return;
-
-    sendMsg({ type: "userState", userState });
-}
-
-export { useLocalUserStateStore };
+export { useLocalUserStateStore, syncMirrorState };

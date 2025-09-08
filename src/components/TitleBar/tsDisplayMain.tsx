@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useTailscaleStore, type backendState } from '@/stores';
+import { useTailscaleStore } from '@/stores';
 import { LoaderCircle, CircleCheckBig } from "lucide-react";
 
 export default function TsDisplayMain() {

@@ -66,7 +66,7 @@ export const startTwgProcess = (window) => {
                 if (type) {
                     switch (type) {
                         case "ws":
-                            console.log(chalk.green('Backend WS Info:'), jsonData);
+                            // console.log(chalk.green('Backend WS Info:'), jsonData);
                             window.webContents.send('ws', jsonData);
                             wsInfo = jsonData;
                             break;
@@ -76,12 +76,6 @@ export const startTwgProcess = (window) => {
                             break;
                         case "tsStatus":// response every 1 second
                             window.webContents.send('tsStatus', jsonData);
-                            break;
-                        case "onlinePeers":
-                            window.webContents.send('onlinePeers', jsonData);
-                            break;
-                        case "dc":
-                            window.webContents.send('dc', jsonData);
                             break;
                     }
                 }

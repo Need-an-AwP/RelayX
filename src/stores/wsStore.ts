@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { useRemoteUsersStore } from './remoteUsersStateStore';
-import { PeerStateSchema } from '@/types';
+import { syncMirrorState } from './localUserStateStore';
+import { PeerStateSchema, TrackID, type TrackIDType } from '@/types';
+import { OutputTrackManager } from '@/MediaTrackManager';
 
 interface wsStateStore {
     mediaWs: WebSocket | null;
@@ -54,12 +56,57 @@ const createWs = (mediaWsAddr: string, msgWsAddr: string) => {
     const mediaWs = new WebSocket(mediaWsAddr);
     const msgWs = new WebSocket(msgWsAddr);
 
+    // mediaWs handlers
     mediaWs.onopen = () => {
         console.log('[ws] Media WebSocket connected:', mediaWsAddr);
     }
+    mediaWs.onclose = () => {
+        console.log('[ws] Media WebSocket disconnected');
+    }
 
+    mediaWs.onmessage = async (event: MessageEvent) => {
+        const data = event.data;
+        if (!(data instanceof Blob)) return;
+
+        try {
+            const arrayBuffer = await data.arrayBuffer();
+            const buffer = new Uint8Array(arrayBuffer);
+
+            if (buffer.length === 0) return;
+
+            const trackID = buffer[0];
+
+            // 根据轨道ID处理不同类型的媒体数据
+            switch (trackID) {
+                case TrackID.MICROPHONE_AUDIO:
+                    await handleAudioData(trackID, buffer);
+                    break;
+                case TrackID.CPA_AUDIO:
+                    await handleAudioData(trackID, buffer);
+                    break;
+                case TrackID.SCREEN_SHARE_VIDEO:
+                    // TODO: 处理视频数据
+                    console.log('[ws] Received screen share video data');
+                    break;
+                default:
+                    console.warn(`[ws] Unknown track ID: ${trackID}`);
+                    break;
+            }
+        } catch (error) {
+            console.error('[ws] Error processing media message:', error);
+        }
+    }
+
+    // messageWs handlers
     msgWs.onopen = () => {
         console.log('[ws] Message WebSocket connected:', msgWsAddr);
+
+        // initial mirror state in subprocess
+        syncMirrorState();
+    }
+
+    msgWs.onclose = () => {
+        console.log('[ws] Message WebSocket disconnected');
     }
 
     msgWs.onmessage = (event) => {
@@ -76,6 +123,10 @@ const handleWsMessage = (event: MessageEvent) => {
         const msg = JSON.parse(event.data);
         if (!msg.type) return
         switch (msg.type) {
+            case 'onlinePeers':
+                console.log('[ws] onlinePeers', msg);
+                break;
+
             case 'userState':
                 if (!msg.from || !msg.userState || typeof msg.from !== 'string') {
                     console.error('[ws] missing "userState" or "from" field:', msg);
@@ -86,12 +137,45 @@ const handleWsMessage = (event: MessageEvent) => {
                     useRemoteUsersStore.getState().updatePeerState(msg.from, msg.userState);
                 }
                 break;
+
             case "rtc_status":
-                console.log('rtc_status', msg);
+                // console.log('rtc_status', msg);
+                break;
+            default:
+                console.warn('[ws] Unknown message type:', msg);
                 break;
         }
     } catch (err) {
         console.error('[ws] Failed to parse message:', err);
+    }
+}
+
+const handleAudioData = async (trackID: TrackIDType, buffer: Uint8Array) => {
+    const headerSize = 1 + 4; // TrackID (1 byte) + peerIP (4 bytes)
+    if (buffer.length <= headerSize) {
+        console.warn(`[Audio] Invalid audio data size for track ${trackID}: ${buffer.length}`);
+        return;
+    }
+
+    const peerIPBytes = buffer.slice(1, 5);
+    const peerIP = `${peerIPBytes[0]}.${peerIPBytes[1]}.${peerIPBytes[2]}.${peerIPBytes[3]}`;
+    const opusData = buffer.slice(headerSize);
+
+    try {
+        const chunk = new EncodedAudioChunk({
+            type: 'key', // Opus 通常都是 key frames
+            data: opusData,
+            timestamp: performance.now() * 1000, // 使用当前时间戳，单位为微秒
+        });
+
+        console.log(`[Audio] Created chunk for track ${trackID} from ${peerIP}, size: ${opusData.length} bytes`);
+
+        // 使用 OutputTrackManager 处理音频数据
+        const outputManager = OutputTrackManager.getInstance();
+        outputManager.processAudioChunk(peerIP, trackID, chunk);
+
+    } catch (error) {
+        console.error(`[Audio] Failed to create EncodedAudioChunk for track ${trackID} from ${peerIP}:`, error);
     }
 }
 

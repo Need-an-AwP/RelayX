@@ -7,12 +7,12 @@ import type { Status, PeerStatus } from '@/types'
  * "NoState", "NeedsLogin", "NeedsMachineAuth", "Stopped",
  * "Starting", "Running".
  */
-type TsBackendState = 
-    | "NoState" 
-    | "NeedsLogin" 
-    | "NeedsMachineAuth" 
-    | "Stopped" 
-    | "Starting" 
+type TsBackendState =
+    | "NoState"
+    | "NeedsLogin"
+    | "NeedsMachineAuth"
+    | "Stopped"
+    | "Starting"
     | "Running"
 
 type onlinePeersNodeInfo = {
@@ -50,7 +50,7 @@ const useTailscaleStore = create<TailscaleState>()(
         showWelcome: false,
         tailscaleStatus: null,
         tsBackendState: null,
-        onlinePeers: null,
+        onlinePeers: null,// udp broadcasted online clients
         updateTailscaleStatus: (status) => set({ tailscaleStatus: status }),
         updateOnlinePeers: (peers) => set({ onlinePeers: peers }),
         setTsBackendState: (state) => set({ tsBackendState: state }),
@@ -66,7 +66,7 @@ const initializeTwgListeners = async () => {
             setTsBackendState(state as TsBackendState);
         })
 
-    const { updateTailscaleStatus, updateOnlinePeers, setTsBackendState } = useTailscaleStore.getState();
+    const { updateTailscaleStatus, setTsBackendState } = useTailscaleStore.getState();
 
     window.ipcBridge.receive('no-env-file', (message: any) => {
         console.log('no-env-file', message);
@@ -81,15 +81,6 @@ const initializeTwgListeners = async () => {
     window.ipcBridge.receive('tsStatus', (message: { type: string, status: Status }) => {
         // console.log('tsStatus', message);
         updateTailscaleStatus(message.status);
-    })
-
-    window.ipcBridge.receive('onlinePeers', (message: { type: string, peers: onlinePeers }) => {
-        // console.log('onlinePeers', message);
-        updateOnlinePeers(message.peers);
-    })
-
-    window.ipcBridge.receive('dc', (message: any) => {
-        console.log('dc', message);
     })
 
 }

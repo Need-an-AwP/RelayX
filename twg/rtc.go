@@ -2,13 +2,9 @@ package main
 
 import (
 	"bytes"
-	// "crypto/rand"
 	"encoding/json"
 	"fmt"
 
-	"github.com/gorilla/websocket"
-
-	// "github.com/pion/rtcp"
 	"log"
 	"maps"
 	"net"
@@ -16,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pion/rtp/codecs"
 	"github.com/pion/webrtc/v4"
 )
 
@@ -35,8 +30,8 @@ type RTCConnection struct {
 	pdc               *webrtc.DataChannel
 	candidatesMu      sync.RWMutex
 	pendingCandidates []*webrtc.ICECandidate
-	videoTrack        *webrtc.TrackLocalStaticSample
-	videoSender       *webrtc.RTPSender
+	tracks            map[string]*webrtc.TrackLocalStaticSample // key is track.ID
+	senders           map[string]*webrtc.RTPSender              // key is track.ID
 	CreatedAt         time.Time
 	mu                sync.RWMutex
 	lastPingTime      time.Time
@@ -207,6 +202,8 @@ func (rm *RTCManager) createConnection(role RTCRole, peerIP string, sdpWithIce *
 		dc:                dc, // nil at answer side
 		pdc:               pdc,
 		pendingCandidates: make([]*webrtc.ICECandidate, 0),
+		tracks:            make(map[string]*webrtc.TrackLocalStaticSample),
+		senders:           make(map[string]*webrtc.RTPSender),
 		CreatedAt:         time.Now(),
 	}
 
@@ -327,7 +324,7 @@ func (rm *RTCManager) setupPcHandlers(pc *webrtc.PeerConnection, connection *RTC
 	pc.OnTrack(func(track *webrtc.TrackRemote, receiver *webrtc.RTPReceiver) {
 		log.Printf("[RTC onTrack] received track: streamID:%s, ID:%s", track.StreamID(), track.ID())
 
-		handleTrack(track)
+		handleTrack(track, connection.peerIP)
 	})
 
 	pc.OnICECandidate(func(candidate *webrtc.ICECandidate) {
@@ -380,185 +377,3 @@ func (rm *RTCManager) setupPcHandlers(pc *webrtc.PeerConnection, connection *RTC
 
 	})
 }
-
-func (rm *RTCManager) setupDataChannelHandlers(dc *webrtc.DataChannel, peerIP string) {
-	dc.OnOpen(func() {
-		log.Printf("[RTC datachannel] Data channel %v opened", dc.Label())
-		// send userState asap
-		mirrorStateMu.RLock()
-		userStateMsg := map[string]interface{}{
-			"type":      "userState",
-			"userState": mirrorState,
-		}
-		mirrorStateMu.RUnlock()
-
-		if jsonData, err := json.Marshal(userStateMsg); err == nil {
-			dc.SendText(string(jsonData))
-			log.Printf("[RTC datachannel] Sent initial userState to %s", peerIP)
-		} else {
-			log.Printf("[RTC datachannel] Failed to marshal userState: %v", err)
-		}
-	})
-
-	dc.OnClose(func() {
-		log.Printf("[RTC datachannel] Data channel %v closed", dc.Label())
-	})
-
-	dc.OnMessage(func(msg webrtc.DataChannelMessage) {
-		log.Printf("[RTC datachannel] Message received on data channel %v: %s", dc.Label(), msg.Data)
-		if msg.IsString {
-			var jsonData interface{}
-			if err := json.Unmarshal(msg.Data, &jsonData); err != nil {
-				log.Printf("Failed to decode JSON: %v", err)
-			} else {
-				msgType := jsonData.(map[string]interface{})["type"]
-				switch msgType {
-
-				case "userState":
-					jsonData.(map[string]interface{})["from"] = peerIP
-					modifiedData, err := json.Marshal(jsonData)
-					if err != nil {
-						log.Printf("Failed to marshal modified JSON: %v", err)
-						return
-					}
-					log.Printf("receiving userState via dc: %v", jsonData)
-					msgWsConn.WriteMessage(websocket.TextMessage, modifiedData)
-				}
-			}
-		}
-	})
-}
-
-func (rm *RTCManager) broadcastUserState() {
-	mirrorStateMu.RLock()
-	userStateMsg := map[string]interface{}{
-		"type":      "userState",
-		"userState": mirrorState,
-	}
-	mirrorStateMu.RUnlock()
-
-	if jsonData, err := json.Marshal(userStateMsg); err == nil {
-		rm.mu.RLock()
-		defer rm.mu.RUnlock()
-
-		for _, connection := range rm.connections {
-			if connection.dc != nil && connection.dc.ReadyState() == webrtc.DataChannelStateOpen {
-				go func(dc *webrtc.DataChannel, peerIP string) {
-					if err := dc.SendText(string(jsonData)); err != nil {
-						log.Printf("[RTC] Failed to broadcast userState to %s: %v", peerIP, err)
-					}
-				}(connection.dc, connection.peerIP)
-			}
-		}
-	}
-}
-
-func (rm *RTCManager) addTracks(pc *webrtc.PeerConnection, connection *RTCConnection) error {
-	videoTrack, err := webrtc.NewTrackLocalStaticSample(
-		webrtc.RTPCodecCapability{MimeType: "video/vp8"},
-		"camera-video",
-		"camera",
-	)
-	if err != nil {
-		log.Printf("[RTC] Failed to create video track: %v", err)
-		return err
-	}
-
-	videoSender, err := pc.AddTrack(videoTrack)
-	if err != nil {
-		log.Printf("[RTC] Failed to add video track: %v", err)
-		return err
-	}
-	connection.videoTrack = videoTrack
-	connection.videoSender = videoSender
-
-	////////////////
-	go func() {
-		rtcpBuf := make([]byte, 1500)
-		for {
-			n, _, rtcpErr := videoSender.Read(rtcpBuf)
-			if rtcpErr != nil {
-				return
-			}
-			_ = n
-
-			// // Parse the RTCP packet
-			// packets, err := rtcp.Unmarshal(rtcpBuf[:n])
-			// if err != nil {
-			// 	log.Printf("[RTCP] Failed to unmarshal RTCP packet: %v", err)
-			// 	continue
-			// }
-
-			// // Process each RTCP packet
-			// for _, packet := range packets {
-			// 	switch p := packet.(type) {
-			// 	case *rtcp.ReceiverReport:
-			// 		log.Printf("[RTCP] Receiver Report from SSRC %d with %d reports",
-			// 			p.SSRC, len(p.Reports))
-			// 		for _, report := range p.Reports {
-			// 			log.Printf("[RTCP] Report: SSRC=%d, Fraction Lost=%d, Total Lost=%d, Jitter=%d, Delay=%d",
-			// 				report.SSRC, report.FractionLost, report.TotalLost, report.Jitter, report.Delay)
-			// 		}
-			// 	case *rtcp.SenderReport:
-			// 		log.Printf("[RTCP] Sender Report from SSRC %d, NTP %v, RTP %d, Packet Count %d, Octet Count %d",
-			// 			p.SSRC, p.NTPTime, p.RTPTime, p.PacketCount, p.OctetCount)
-			// 	case *rtcp.ExtendedReport:
-			// 		log.Printf("[RTCP] Extended Report from SSRC %d with %d report blocks",
-			// 			p.SenderSSRC, len(p.Reports))
-			// 	case *rtcp.TransportLayerNack:
-			// 		log.Printf("[RTCP] NACK from SSRC %d, Media SSRC %d with %d lost packets",
-			// 			p.SenderSSRC, p.MediaSSRC, len(p.Nacks))
-			// 	}
-			// }
-		}
-	}()
-
-	return nil
-}
-
-func handleTrack(track *webrtc.TrackRemote) {
-	if track.Kind() != webrtc.RTPCodecTypeVideo {
-		return
-	}
-	codecName := track.Codec().MimeType
-	log.Printf("Track has started, codec: %s", codecName)
-	//  if strings.EqualFold(codecName, webrtc.MimeTypeVP8) {
-	// 	fmt.Errorf("codec unsupported: %s", codecName)
-	//  }
-
-	depacketizer := &codecs.VP8Packet{}
-	var frameBuffer []byte
-	var lastTimestamp uint32 = 0
-
-	go func() {
-		for {
-			rtpPacket, _, readErr := track.ReadRTP()
-			if readErr != nil {
-				log.Printf("RTP read error: %v", readErr)
-				return
-			}
-
-			// 检查是否是新帧的开始
-			if rtpPacket.Timestamp != lastTimestamp && len(frameBuffer) > 0 {
-				// 发送完整的前一帧
-				if wsConn != nil {
-					// log.Printf("Sending complete frame: %d bytes", len(frameBuffer))
-					wsConn.WriteMessage(websocket.BinaryMessage, frameBuffer)
-				}
-				frameBuffer = frameBuffer[:0] // 清空缓冲区
-			}
-			lastTimestamp = rtpPacket.Timestamp
-
-			// 解包RTP载荷
-			frameData, err := depacketizer.Unmarshal(rtpPacket.Payload)
-			if err != nil {
-				continue
-			}
-
-			// 将数据添加到帧缓冲区
-			frameBuffer = append(frameBuffer, frameData...)
-		}
-	}()
-}
-
-// not using transceivers to presave track

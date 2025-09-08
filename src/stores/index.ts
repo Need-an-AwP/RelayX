@@ -17,3 +17,5 @@ export * from './screenShareStore'
 // export * from './messageStore'
 
 export * from './localUserStateStore'
+
+export * from './remoteUsersStateStore'

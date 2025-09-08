@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"maps"
 	"time"
 )
@@ -14,11 +14,11 @@ func initOnlinePeers() {
 	onlinePeers = make(map[string]OnlinePeerData)
 	onlinePeersMu.Unlock()
 
-	go stdoutOnlinePeersLoop()
+	go reportOnlinePeersLoop()
 	go cleanupExpiredPeersLoop()
 }
 
-func stdoutOnlinePeersLoop() {
+func reportOnlinePeersLoop() {
 	ticker := time.NewTicker(broadcastInterval) // use the same interval as broadcast
 	defer ticker.Stop()
 
@@ -38,10 +38,16 @@ func stdoutOnlinePeersLoop() {
 		}
 		jsonData, err := json.Marshal(data)
 		if err != nil {
+			log.Printf("Failed to marshal online peers data: %v", err)
 			continue
 		}
 
-		fmt.Println(string(jsonData))
+		// 使用包装方法发送消息
+		err = sendMsgWs(jsonData)
+		if err != nil {
+			// 错误已经在 sendMsgWs 中处理和记录了
+			continue
+		}
 	}
 }
 

@@ -1,12 +1,13 @@
 package main
 
 import (
-	// "encoding/binary"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -15,8 +16,10 @@ import (
 )
 
 var (
-	wsConn    *websocket.Conn
-	msgWsConn *websocket.Conn
+	wsConn      *websocket.Conn
+	wsConnMu    sync.Mutex
+	msgWsConn   *websocket.Conn
+	msgWsConnMu sync.Mutex
 )
 
 // create local websocket server
@@ -31,9 +34,19 @@ func initWsService() {
 			log.Printf("ws upgrade error: %v", err)
 			return
 		}
-		defer conn.Close()
+		defer func() {
+			conn.Close()
+			// 连接关闭时清理全局变量
+			wsConnMu.Lock()
+			if wsConn == conn {
+				wsConn = nil
+			}
+			wsConnMu.Unlock()
+		}()
 
+		wsConnMu.Lock()
 		wsConn = conn
+		wsConnMu.Unlock()
 
 		for {
 			mt, msg, err := conn.ReadMessage()
@@ -43,7 +56,7 @@ func initWsService() {
 			}
 
 			if mt == websocket.BinaryMessage {
-				handleVideoChunk(msg)
+				go handleMediaChunk(msg)
 			} else {
 				log.Printf("media ws received message type is not binary")
 			}
@@ -57,9 +70,19 @@ func initWsService() {
 			log.Printf("msg ws upgrade error: %v", err)
 			return
 		}
-		defer conn.Close()
+		defer func() {
+			conn.Close()
+			// 连接关闭时清理全局变量
+			msgWsConnMu.Lock()
+			if msgWsConn == conn {
+				msgWsConn = nil
+			}
+			msgWsConnMu.Unlock()
+		}()
 
+		msgWsConnMu.Lock()
 		msgWsConn = conn
+		msgWsConnMu.Unlock()
 
 		for {
 			mt, msg, err := conn.ReadMessage()
@@ -106,31 +129,33 @@ func initWsService() {
 	go rtcStatusReporter()
 }
 
-func handleVideoChunk(data []byte) {
-	if len(data) < 16 {
+func handleMediaChunk(data []byte) {
+	if len(data) < 9 {
 		log.Printf("Invalid packet size: %d", len(data))
 		return
 	}
-	// timestamp := binary.LittleEndian.Uint64(data[0:8]) // 前8字节是时间戳
-	// duration := binary.LittleEndian.Uint64(data[8:16]) // 接下来8字节是持续时间
-	// log.Printf("Received video chunk: timestamp=%d, duration=%d", timestamp, duration)
+	trackID := data[0]
+	var duration time.Duration
+	if trackID == SCREEN_SHARE_VIDEO {
+		duration = time.Second / 30
+	} else {
+		duration = time.Duration(binary.LittleEndian.Uint64(data[1:9]))
+	}
+	mediaData := data[9:]
 
-	// 剩余的都是视频数据
-	videoData := data[16:]
+	// log.Printf("Received video chunk: trackID=%d, duration=%d", trackID, duration)
 
 	for _, connection := range rtcManager.connections {
-		videoTrack := connection.videoTrack
+		track := connection.tracks[trackMap[trackID].id]
 
-		videoTrack.WriteSample(media.Sample{
-			Data:     videoData,
-			Duration: time.Second / 30,
+		track.WriteSample(media.Sample{
+			Data:     mediaData,
+			Duration: duration,
 		})
 	}
 }
 
 func handleMessage(data []byte) {
-	log.Printf("Received text message: %s", string(data))
-
 	var jsonData interface{}
 	if err := json.Unmarshal(data, &jsonData); err != nil {
 		log.Printf("Failed to decode JSON: %v", err)
@@ -148,57 +173,27 @@ func handleMessage(data []byte) {
 				}
 			}
 		case "mirrorLocalState":
-			if peerStateData, ok := jsonData.(map[string]interface{})["peerState"]; ok {
+			if userStateData, ok := jsonData.(map[string]interface{})["userState"]; ok {
+				// 将 userStateData 重新编组为 JSON，然后解组到 PeerState 结构体
+				userStateJSON, err := json.Marshal(userStateData)
+				if err != nil {
+					log.Printf("Failed to marshal userState: %v", err)
+					break
+				}
+
+				var newState PeerState
+				if err := json.Unmarshal(userStateJSON, &newState); err != nil {
+					log.Printf("Failed to unmarshal userState to PeerState: %v", err)
+					break
+				}
+
 				mirrorStateMu.Lock()
-
-				// 更新 mirrorState 的各个字段
-				if userName, exists := peerStateData.(map[string]interface{})["userName"]; exists {
-					if str, ok := userName.(string); ok {
-						mirrorState.UserName = str
-					}
-				}
-
-				if userAvatar, exists := peerStateData.(map[string]interface{})["userAvatar"]; exists {
-					if str, ok := userAvatar.(string); ok {
-						mirrorState.UserAvatar = str
-					}
-				}
-
-				if isInChat, exists := peerStateData.(map[string]interface{})["isInChat"]; exists {
-					if b, ok := isInChat.(bool); ok {
-						mirrorState.IsInChat = b
-					}
-				}
-
-				if isInputMuted, exists := peerStateData.(map[string]interface{})["isInputMuted"]; exists {
-					if b, ok := isInputMuted.(bool); ok {
-						mirrorState.IsInputMuted = b
-					}
-				}
-
-				if isOutputMuted, exists := peerStateData.(map[string]interface{})["isOutputMuted"]; exists {
-					if b, ok := isOutputMuted.(bool); ok {
-						mirrorState.IsOutputMuted = b
-					}
-				}
-
-				if isSharingScreen, exists := peerStateData.(map[string]interface{})["isSharingScreen"]; exists {
-					if b, ok := isSharingScreen.(bool); ok {
-						mirrorState.IsSharingScreen = b
-					}
-				}
-
-				if isSharingAudio, exists := peerStateData.(map[string]interface{})["isSharingAudio"]; exists {
-					if b, ok := isSharingAudio.(bool); ok {
-						mirrorState.IsSharingAudio = b
-					}
-				}
-
+				mirrorState = newState
 				mirrorStateMu.Unlock()
 
-				log.Printf("Updated mirrorState: %+v", mirrorState)
+				log.Printf("[userState] Updated mirrorState: %+v", mirrorState)
 			} else {
-				log.Printf("mirrorLocalState message does not contain peerState field")
+				log.Printf("[userState] mirrorLocalState message does not contain userState field")
 			}
 
 			if rtcManager != nil {
@@ -212,7 +207,41 @@ func handleMessage(data []byte) {
 
 }
 
-func sendViaWS(data []byte) error {
+// sendMsgWs 安全地通过 msgWsConn 发送文本消息
+func sendMsgWs(data []byte) error {
+	msgWsConnMu.Lock()
+	defer msgWsConnMu.Unlock()
+
+	if msgWsConn == nil {
+		return fmt.Errorf("msgWsConn is not connected")
+	}
+
+	err := msgWsConn.WriteMessage(websocket.TextMessage, data)
+	if err != nil {
+		log.Printf("Failed to send message via msgWsConn: %v", err)
+		msgWsConn = nil
+		return err
+	}
+
+	return nil
+}
+
+// sendMediaWs 安全地通过 wsConn 发送二进制消息
+func sendMediaWs(data []byte) error {
+	wsConnMu.Lock()
+	defer wsConnMu.Unlock()
+
+	if wsConn == nil {
+		return fmt.Errorf("wsConn is not connected")
+	}
+
+	err := wsConn.WriteMessage(websocket.BinaryMessage, data)
+	if err != nil {
+		log.Printf("Failed to send media data via wsConn: %v", err)
+		wsConn = nil
+		return err
+	}
+
 	return nil
 }
 
@@ -302,21 +331,19 @@ func rtcStatusReporter() {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		if msgWsConn != nil {
-			status := getRTCManagerStatus()
+		status := getRTCManagerStatus()
 
-			jsonData, err := json.Marshal(status)
-			if err != nil {
-				log.Printf("Failed to marshal RTC status: %v", err)
-				continue
-			}
+		jsonData, err := json.Marshal(status)
+		if err != nil {
+			log.Printf("Failed to marshal RTC status: %v", err)
+			continue
+		}
 
-			err = msgWsConn.WriteMessage(websocket.TextMessage, jsonData)
-			if err != nil {
-				// 连接可能已断开，清空msgWsConn
-				log.Printf("Failed to send RTC status via msgWsConn: %v", err)
-				msgWsConn = nil
-			}
+		// 使用包装方法发送消息
+		err = sendMsgWs(jsonData)
+		if err != nil {
+			// 错误已经在 sendMsgWs 中处理和记录了
+			continue
 		}
 	}
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import './App.css'
 import {
     initializeTwgListeners,
     initialAudioDevices,
@@ -16,7 +17,9 @@ import type { ImperativePanelHandle } from "react-resizable-panels"
 import { ThemeProvider } from '@/components/theme-provider'
 import TitleBar from '@/components/TitleBar'
 import UserPanel from '@/components/UserPanel'
-import './App.css'
+import OnlinePeersDisplay from '@/components/OnlinePeersDisplay'
+import { initInputTrackManager, initOutputTrackManager } from '@/MediaTrackManager'
+
 
 function App() {
     const initialized = useRef(false)
@@ -47,6 +50,10 @@ function App() {
         // audio process
         initialAudioDevices()
         initializeAudioProcessing()
+
+        // init track managers
+        initInputTrackManager()
+        initOutputTrackManager()
 
         setRef(leftSideBarRef, 30)
     }, [])
@@ -79,7 +86,7 @@ function App() {
                                 <div className="flex flex-col h-full justify-start">
                                     <ResizablePanelGroup direction="vertical">
                                         <ResizablePanel defaultSize={30} collapsible={true}>
-                                            {/* <OnlinePeersDisplay /> */}
+                                            <OnlinePeersDisplay />
                                         </ResizablePanel>
                                         <ResizableHandle />
                                         <ResizablePanel>
