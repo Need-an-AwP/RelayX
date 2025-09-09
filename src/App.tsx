@@ -19,6 +19,7 @@ import TitleBar from '@/components/TitleBar'
 import UserPanel from '@/components/UserPanel'
 import OnlinePeersDisplay from '@/components/OnlinePeersDisplay'
 import { initInputTrackManager, initOutputTrackManager } from '@/MediaTrackManager'
+import { initAudioContextManager } from '@/AudioManager'
 
 
 function App() {
@@ -54,6 +55,9 @@ function App() {
         // init track managers
         initInputTrackManager()
         initOutputTrackManager()
+
+        // init global audio context
+        initAudioContextManager()
 
         setRef(leftSideBarRef, 30)
     }, [])

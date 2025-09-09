@@ -1,47 +1,22 @@
 import type { TrackIDType } from '@/types';
+import { AudioContextManager } from '@/AudioManager/AudioContextManager';
 
 interface AudioDecoderInstance {
     decoder: AudioDecoder;
     generator: MediaStreamTrackGenerator<AudioData>;
     track: MediaStreamTrack;
-    gainNode: GainNode;
-    analyserNode: AnalyserNode;
-    mediaStreamSource: MediaStreamAudioSourceNode;
     writer: WritableStreamDefaultWriter<AudioData>;
 }
 
 class OutputTrackManager {
     private static instance: OutputTrackManager | null = null;
     private decoders = new Map<string, AudioDecoderInstance>();
-    private audioContext: AudioContext;
-    private audioElement: HTMLAudioElement;
-    private mixerNode: GainNode;
-    private destinationStream: MediaStream;
+    private audioContextManager: AudioContextManager;
 
     private constructor() {
-        // 创建 AudioContext
-        this.audioContext = new AudioContext();
-        
-        // 创建主混音器节点
-        this.mixerNode = this.audioContext.createGain();
-        this.mixerNode.gain.value = 1.0;
-        
-        // 创建音频元素
-        this.audioElement = document.createElement('audio');
-        this.audioElement.autoplay = true;
-        this.audioElement.controls = false;
-        this.audioElement.style.display = 'none'; // 隐藏音频元素
-        document.body.appendChild(this.audioElement);
-        
-        // 创建目标流
-        const destination = this.audioContext.createMediaStreamDestination();
-        this.mixerNode.connect(destination);
-        this.destinationStream = destination.stream;
-        
-        // 将流连接到音频元素
-        this.audioElement.srcObject = this.destinationStream;
-        
-        console.log('[OutputTrackManager] Initialized with AudioContext and AudioElement');
+        // 获取 AudioContextManager 实例
+        this.audioContextManager = AudioContextManager.getInstance();
+        console.log('[OutputTrackManager] Initialized with AudioContextManager integration');
     }
 
     public static getInstance(): OutputTrackManager {
@@ -76,26 +51,6 @@ class OutputTrackManager {
             // 为这个实例创建专用的 writer
             const writer = generator.writable.getWriter();
 
-            // 创建专属的音频节点
-            const gainNode = this.audioContext.createGain();
-            const analyserNode = this.audioContext.createAnalyser();
-            
-            // 配置 analyser
-            analyserNode.fftSize = 256;
-            analyserNode.smoothingTimeConstant = 0.8;
-            
-            // 设置初始音量
-            gainNode.gain.value = 1.0;
-
-            // 从轨道创建 MediaStream 并连接到 AudioContext
-            const mediaStream = new MediaStream([track]);
-            const mediaStreamSource = this.audioContext.createMediaStreamSource(mediaStream);
-            
-            // 连接音频节点链：source -> gain -> analyser -> mixer
-            mediaStreamSource.connect(gainNode);
-            gainNode.connect(analyserNode);
-            analyserNode.connect(this.mixerNode);
-
             // 创建音频解码器
             const decoder = new AudioDecoder({
                 output: (audioData: AudioData) => {
@@ -121,14 +76,19 @@ class OutputTrackManager {
                 decoder,
                 generator,
                 track,
-                gainNode,
-                analyserNode,
-                mediaStreamSource,
                 writer
             };
 
             this.decoders.set(key, decoderInstance);
-            console.log(`[OutputTrackManager] Created new decoder for ${peerIP}-${trackID} with audio processing chain`);
+            
+            // 使用 AudioContextManager 创建音频节点
+            const success = this.audioContextManager.createTrackAudioNodes(peerIP, trackID.toString(), track);
+            
+            if (success) {
+                console.log(`[OutputTrackManager] Created decoder and audio nodes for ${peerIP}-${trackID}`);
+            } else {
+                console.warn(`[OutputTrackManager] Failed to create audio nodes for ${peerIP}-${trackID}`);
+            }
 
             return decoderInstance;
         } catch (error) {
@@ -170,84 +130,6 @@ class OutputTrackManager {
         return decoderInstance?.track || null;
     }
 
-    /**
-     * 设置特定轨道的音量
-     * @param peerIP peer IP 地址
-     * @param trackID 轨道 ID
-     * @param volume 音量值 (0.0 - 1.0)
-     */
-    public setTrackVolume(peerIP: string, trackID: TrackIDType, volume: number): void {
-        const key = this.generateDecoderKey(peerIP, trackID);
-        const decoderInstance = this.decoders.get(key);
-        if (decoderInstance) {
-            decoderInstance.gainNode.gain.value = Math.max(0, Math.min(1, volume));
-            console.log(`[OutputTrackManager] Set volume for ${peerIP}-${trackID} to ${volume}`);
-        }
-    }
-
-    /**
-     * 获取特定轨道的音频分析数据
-     * @param peerIP peer IP 地址
-     * @param trackID 轨道 ID
-     * @returns 频谱数据数组或 null
-     */
-    public getTrackAnalyserData(peerIP: string, trackID: TrackIDType): Uint8Array | null {
-        const key = this.generateDecoderKey(peerIP, trackID);
-        const decoderInstance = this.decoders.get(key);
-        if (decoderInstance) {
-            const dataArray = new Uint8Array(decoderInstance.analyserNode.frequencyBinCount);
-            decoderInstance.analyserNode.getByteFrequencyData(dataArray);
-            return dataArray;
-        }
-        return null;
-    }
-
-    /**
-     * 获取特定轨道的音量级别
-     * @param peerIP peer IP 地址
-     * @param trackID 轨道 ID
-     * @returns 音量级别 (0-255) 或 null
-     */
-    public getTrackVolumeLevel(peerIP: string, trackID: TrackIDType): number | null {
-        const key = this.generateDecoderKey(peerIP, trackID);
-        const decoderInstance = this.decoders.get(key);
-        if (decoderInstance) {
-            const dataArray = new Uint8Array(decoderInstance.analyserNode.frequencyBinCount);
-            decoderInstance.analyserNode.getByteFrequencyData(dataArray);
-            
-            // 计算平均音量级别
-            let sum = 0;
-            for (let i = 0; i < dataArray.length; i++) {
-                sum += dataArray[i];
-            }
-            return Math.floor(sum / dataArray.length);
-        }
-        return null;
-    }
-
-    /**
-     * 设置主音量
-     * @param volume 音量值 (0.0 - 1.0)
-     */
-    public setMasterVolume(volume: number): void {
-        this.mixerNode.gain.value = Math.max(0, Math.min(1, volume));
-        console.log(`[OutputTrackManager] Set master volume to ${volume}`);
-    }
-
-    /**
-     * 静音/取消静音特定轨道
-     * @param peerIP peer IP 地址
-     * @param trackID 轨道 ID
-     * @param muted 是否静音
-     */
-    public muteTrack(peerIP: string, trackID: TrackIDType, muted: boolean): void {
-        const key = this.generateDecoderKey(peerIP, trackID);
-        const decoderInstance = this.decoders.get(key);
-        if (decoderInstance) {
-            decoderInstance.gainNode.gain.value = muted ? 0 : 1;
-            console.log(`[OutputTrackManager] ${muted ? 'Muted' : 'Unmuted'} track ${peerIP}-${trackID}`);
-        }
-    }
 
     /**
      * 获取特定 peer 的所有音频轨道
@@ -280,11 +162,6 @@ class OutputTrackManager {
                 decoderInstance.writer.close().catch(err => {
                     console.warn(`[OutputTrackManager] Error closing writer for ${peerIP}-${trackID}:`, err);
                 });
-                
-                // 断开音频节点连接
-                decoderInstance.mediaStreamSource.disconnect();
-                decoderInstance.gainNode.disconnect();
-                decoderInstance.analyserNode.disconnect();
                 
                 // 关闭解码器和生成器
                 decoderInstance.decoder.close();
@@ -328,11 +205,6 @@ class OutputTrackManager {
                     console.warn(`[OutputTrackManager] Error closing writer for ${key}:`, err);
                 });
                 
-                // 断开音频节点连接
-                instance.mediaStreamSource.disconnect();
-                instance.gainNode.disconnect();
-                instance.analyserNode.disconnect();
-                
                 // 关闭解码器和生成器
                 instance.decoder.close();
                 instance.generator.stop();
@@ -342,19 +214,10 @@ class OutputTrackManager {
         }
         this.decoders.clear();
         
-        // 清理音频元素
-        if (this.audioElement) {
-            this.audioElement.pause();
-            this.audioElement.srcObject = null;
-            document.body.removeChild(this.audioElement);
-        }
+        // 清理所有音频节点通过 AudioContextManager
+        // AudioContextManager 管理自己的清理，我们不直接清理它
         
-        // 关闭 AudioContext
-        if (this.audioContext && this.audioContext.state !== 'closed') {
-            this.audioContext.close();
-        }
-        
-        console.log('[OutputTrackManager] All decoders and audio resources cleaned up');
+        console.log('[OutputTrackManager] All decoders cleaned up');
     }
 
     /**

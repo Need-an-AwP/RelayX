@@ -10,6 +10,8 @@ export * from './audioDeviceStore'
 
 export * from './audioProcessingStore'
 
+export * from './audioStore'
+
 // export * from './mediaStore'
 
 export * from './screenShareStore'
