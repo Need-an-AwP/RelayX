@@ -44,8 +44,7 @@ class InputTrackManager {
                 return peersStates;
             },
             (current, previous) => {
-                console.log('[MediaTrackManager] Remote users state changed:', { previous, current });
-                // TODO: 这里需要触发媒体轨道更新逻辑
+                // console.log('[MediaTrackManager] Remote users state changed:', { previous, current });
             }
         );
     }

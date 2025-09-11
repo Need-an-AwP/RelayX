@@ -17,9 +17,7 @@ const AudioCaptureSettings = () => {
 
     const addonStream = useAudioProcessing(state => state.localAddonStream);
 
-
-    const isAudioCapturePopoverOpen = usePopover(state => state.isAudioCapturePopoverOpen);
-    const toggle = usePopover(state => state.toggle);
+    const { activePopover, togglePopover } = usePopover();
 
     const { updateSelfState } = useLocalUserStateStore()
 
@@ -36,7 +34,7 @@ const AudioCaptureSettings = () => {
 
     const handleStopCapture = () => {
         stopCapture()
-        toggle('isAudioCapturePopoverOpen');
+        togglePopover('audioCapture');
         updateSelfState({
             isSharingAudio: false
         })
@@ -53,18 +51,18 @@ const AudioCaptureSettings = () => {
     }, [addonStream, isCapturing]);
     */
     useEffect(() => {
-        if (!isAudioCapturePopoverOpen) return;
+        if (activePopover !== 'audioCapture') return;
         getAudioSessions();
 
-    }, [isAudioCapturePopoverOpen])
+    }, [activePopover])
 
     return (
-        <Popover open={isAudioCapturePopoverOpen} onOpenChange={() => toggle('isAudioCapturePopoverOpen')}>
+        <Popover open={activePopover === 'audioCapture'} onOpenChange={() => togglePopover('audioCapture')}>
             <PopoverTrigger asChild>
                 <Button
                     size="icon"
-                    variant="ghost"
-                    className={`${isAudioCapturePopoverOpen && 'z-50'} ${isCapturing && 'bg-green-800'} cursor-pointer`}
+                    variant={`${activePopover === 'audioCapture' ? 'outline' : 'ghost'}`}
+                    className={`${activePopover === 'audioCapture' && 'z-50'} ${isCapturing && 'bg-green-800'} cursor-pointer`}
                 >
                     <Music className="h-4 w-4" />
                 </Button>

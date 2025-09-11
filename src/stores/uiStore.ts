@@ -2,35 +2,40 @@ import { create } from 'zustand'
 import type { ImperativePanelHandle } from 'react-resizable-panels'
 import type { RefObject } from 'react'
 
+type PopoverId =
+    | 'network'
+    | 'setting'
+    | 'appSetting'
+    | 'audioCapture'
+    | 'user'
+    | 'tsLoading'
+    | null;
+
 interface PopoverState {
-    isNetworkPopoverOpen: boolean
-    isSettingPopoverOpen: boolean
-    isAppSettingOpen: boolean
-    isAudioCapturePopoverOpen: boolean
-    isUserPopoverOpen: boolean
+    activePopover: PopoverId;
 
     closeAll: () => void
-    toggle: (popover: keyof Omit<PopoverState, 'closeAll' | 'toggle'>) => void
+    togglePopover: (popoverId: NonNullable<PopoverId>) => void;
     // onClick={() => toggle('isNetworkPopoverOpen')}
 }
 
-export const usePopover = create<PopoverState>((set) => ({
-    isNetworkPopoverOpen: false,
-    isSettingPopoverOpen: false,
-    isAppSettingOpen: false,
-    isAudioCapturePopoverOpen: false,
-    isUserPopoverOpen: false,
+export const usePopover = create<PopoverState>((set, get) => ({
+    activePopover: null,
 
-    closeAll: () => set({
-        isNetworkPopoverOpen: false,
-        isSettingPopoverOpen: false,
-        isAppSettingOpen: false,
-        isAudioCapturePopoverOpen: false,
-        isUserPopoverOpen: false,
-    }),
-    toggle: (popover) => set((state) => ({
-        [popover]: !state[popover]
-    }))
+    closeAll: () => set({ activePopover: null }),
+    togglePopover: (popoverId) => set((state) => 
+        state.activePopover === popoverId 
+        ? { activePopover: null } 
+        : { activePopover: popoverId }
+        // if (state.activePopover === popoverId) {
+        //     setTimeout(() => {
+        //         set({ activePopover: null })
+        //     }, 300);
+        //     return state; // Return current state to avoid undefined return
+        // } else {
+        //     return { activePopover: popoverId }
+        // }
+    )
 }))
 
 

@@ -18,24 +18,21 @@ import { ThemeProvider } from '@/components/theme-provider'
 import TitleBar from '@/components/TitleBar'
 import UserPanel from '@/components/UserPanel'
 import OnlinePeersDisplay from '@/components/OnlinePeersDisplay'
+import VoiceChatPanel from '@/components/VoiceChatPanel'
+// import RightPanel from '@/components/RightPanel'
+// import RTCConnectionDisplay from '@/components/RTCConnectionDisplay'
+// import WelcomePanel from '@/components/WelcomePanel'
 import { initInputTrackManager, initOutputTrackManager } from '@/MediaTrackManager'
 import { initAudioContextManager } from '@/AudioManager'
+import TsLoading from './components/TsLoading'
 
 
 function App() {
     const initialized = useRef(false)
     const rightSideBarRef = useRef<ImperativePanelHandle>(null);
     const leftSideBarRef = useRef<ImperativePanelHandle>(null);
-    const {
-        isNetworkPopoverOpen,
-        isSettingPopoverOpen,
-        isAppSettingOpen,
-        isAudioCapturePopoverOpen,
-        isUserPopoverOpen,
-        closeAll
-    } = usePopover()
+    const { activePopover, closeAll } = usePopover()
     const { setRef } = usePanelStore((state) => state)
-    const isAnyPopoverOpen = isNetworkPopoverOpen || isSettingPopoverOpen || isAppSettingOpen || isAudioCapturePopoverOpen || isUserPopoverOpen
 
 
     useEffect(() => {
@@ -67,17 +64,21 @@ function App() {
             <div className="flex flex-col h-screen w-screen overflow-hidden">
                 <TitleBar />
                 {/* <WelcomePanel /> */}
-                {/* 为标题栏预留32px高度 */}
+                {/* presave 32px height for title bar */}
                 <div className="flex-1 overflow-hidden mt-[32px]">
                     <div className="h-full w-full">
                         {/* Blur Overlay */}
                         <div
-                            className={`
-                                fixed top-[32px] left-0 right-0 bottom-0 bg-black/10 backdrop-blur-sm z-40 transition-opacity duration-300
-                                ${isAnyPopoverOpen ? "opacity-100" : "opacity-0 pointer-events-none"}
-                            `}
-                            onClick={() => closeAll()}
+                            className={`fixed top-[32px] left-0 right-0 bottom-0 bg-black/10 backdrop-blur-sm z-40 
+                                transition-opacity duration-300
+                                ${activePopover ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                            onClick={() => {
+                                if (activePopover === 'tsLoading') return;
+                                closeAll()
+                            }}
                         />
+
+                        <TsLoading />
 
                         <ResizablePanelGroup direction="horizontal">
                             <ResizablePanel
@@ -94,7 +95,7 @@ function App() {
                                         </ResizablePanel>
                                         <ResizableHandle />
                                         <ResizablePanel>
-                                            {/* <VoiceChatPanel /> */}
+                                            <VoiceChatPanel />
                                         </ResizablePanel>
                                     </ResizablePanelGroup>
 

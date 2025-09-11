@@ -11,8 +11,7 @@ import UserAudioSpectrum from '@/components/UserAudioSpectrum'
 
 
 const SettingPopover = () => {
-    const isSettingPopoverOpen = usePopover(state => state.isSettingPopoverOpen);
-    const toggle = usePopover(state => state.toggle);
+    const { activePopover, togglePopover } = usePopover();
     const {
         inputDevices,
         outputDevices,
@@ -29,9 +28,10 @@ const SettingPopover = () => {
 
     return (
         <Popover
-            open={isSettingPopoverOpen}
+            open={activePopover === 'setting'}
             onOpenChange={() => {
-                toggle('isSettingPopoverOpen')
+                togglePopover('setting')
+
                 setIsTesting(false)
                 if (audioPlaybackRef.current) {
                     audioPlaybackRef.current.pause()
@@ -39,7 +39,11 @@ const SettingPopover = () => {
             }}
         >
             <PopoverTrigger asChild>
-                <Button size="icon" variant="ghost" className={isSettingPopoverOpen ? 'z-50 cursor-pointer' : 'cursor-pointer'}>
+                <Button
+                    size="icon"
+                    variant={`${activePopover === 'setting' ? 'outline' : 'ghost'}`}
+                    className={`${activePopover === 'setting' && 'z-50'} cursor-pointer`}
+                >
                     <Settings className="h-4 w-4" />
                 </Button>
             </PopoverTrigger>
@@ -133,15 +137,15 @@ const SettingPopover = () => {
                                 RNN Noise Reduction
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                From <a 
-                                href='https://jmvalin.ca/demo/rnnoise/' 
-                                target='_blank' 
-                                rel="noopener noreferrer" 
-                                className="text-blue-500" 
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    window.ipcBridge.openURL('https://jmvalin.ca/demo/rnnoise/');
-                                }}>xiph.org RNNoise</a>
+                                From <a
+                                    href='https://jmvalin.ca/demo/rnnoise/'
+                                    target='_blank'
+                                    rel="noopener noreferrer"
+                                    className="text-blue-500"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        window.ipcBridge.openURL('https://jmvalin.ca/demo/rnnoise/');
+                                    }}>xiph.org RNNoise</a>
                             </p>
 
                         </div>

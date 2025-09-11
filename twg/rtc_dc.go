@@ -3,30 +3,50 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/pion/webrtc/v4"
 )
 
+func sendState(dc *webrtc.DataChannel, peerIP string) {
+	mirrorStateMu.RLock()
+	userStateMsg := map[string]interface{}{
+		"type":      "userState",
+		"userState": mirrorState,
+	}
+	mirrorStateMu.RUnlock()
+
+	if jsonData, err := json.Marshal(userStateMsg); err == nil {
+		if err := dc.SendText(string(jsonData)); err != nil {
+			log.Printf("[RTC datachannel] Failed to send initial userState to %s: %v", peerIP, err)
+		}
+	} else {
+		log.Printf("[RTC datachannel] Failed to marshal userState: %v", err)
+	}
+}
+
 func (rm *RTCManager) setupDataChannelHandlers(dc *webrtc.DataChannel, peerIP string) {
+	var ticker *time.Ticker
+
 	dc.OnOpen(func() {
 		log.Printf("[RTC datachannel] Data channel %v opened", dc.Label())
 		// send userState asap
-		mirrorStateMu.RLock()
-		userStateMsg := map[string]interface{}{
-			"type":      "userState",
-			"userState": mirrorState,
-		}
-		mirrorStateMu.RUnlock()
+		sendState(dc, peerIP)
 
-		if jsonData, err := json.Marshal(userStateMsg); err == nil {
-			dc.SendText(string(jsonData))
-			// log.Printf("[RTC datachannel] Sent initial userState to %s, content: %v", peerIP, userStateMsg)
-		} else {
-			log.Printf("[RTC datachannel] Failed to marshal userState: %v", err)
-		}
+		// a backup method
+		ticker = time.NewTicker(5 * time.Second)
+		go func() {
+			for range ticker.C {
+				// log.Printf("[RTC test dc] ticker method dc id: %d", *dc.ID())
+				sendState(dc, peerIP)
+			}
+		}()
 	})
 
 	dc.OnClose(func() {
+		if ticker != nil {
+			ticker.Stop()
+		}
 		log.Printf("[RTC datachannel] Data channel %v closed", dc.Label())
 	})
 
@@ -60,26 +80,31 @@ func (rm *RTCManager) setupDataChannelHandlers(dc *webrtc.DataChannel, peerIP st
 	})
 }
 
-func (rm *RTCManager) broadcastUserState() {
-	mirrorStateMu.RLock()
+func (rm *RTCManager) broadcastUserState(latestMirrorState PeerState) {
 	userStateMsg := map[string]interface{}{
 		"type":      "userState",
-		"userState": mirrorState,
+		"userState": latestMirrorState,
 	}
-	mirrorStateMu.RUnlock()
 
 	if jsonData, err := json.Marshal(userStateMsg); err == nil {
 		rm.mu.RLock()
 		defer rm.mu.RUnlock()
 
 		for _, connection := range rm.connections {
-			if connection.dc != nil && connection.dc.ReadyState() == webrtc.DataChannelStateOpen {
-				go func(dc *webrtc.DataChannel, peerIP string) {
-					if err := dc.SendText(string(jsonData)); err != nil {
-						log.Printf("[RTC] Failed to broadcast userState to %s: %v", peerIP, err)
-					}
-				}(connection.dc, connection.peerIP)
+			connection.mu.RLock()
+
+			dc := connection.dc
+			peerIP := connection.peerIP
+			if dc != nil && dc.ReadyState() == webrtc.DataChannelStateOpen {
+				if err := dc.SendText(string(jsonData)); err != nil {
+					log.Printf("[RTC] Failed to broadcast userState to %s: %v", peerIP, err)
+				}
+				log.Printf("[RTC broadcastUserState] broadcasted userState to %s, by dc id: %d", peerIP, *dc.ID())
+			}else {
+				log.Printf("[RTC broadcastUserState] broadcast failed to %s", peerIP)
 			}
+
+			connection.mu.RUnlock()
 		}
 	}
 }

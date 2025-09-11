@@ -174,7 +174,6 @@ func handleMessage(data []byte) {
 			}
 		case "mirrorLocalState":
 			if userStateData, ok := jsonData.(map[string]interface{})["userState"]; ok {
-				// 将 userStateData 重新编组为 JSON，然后解组到 PeerState 结构体
 				userStateJSON, err := json.Marshal(userStateData)
 				if err != nil {
 					log.Printf("Failed to marshal userState: %v", err)
@@ -191,13 +190,13 @@ func handleMessage(data []byte) {
 				mirrorState = newState
 				mirrorStateMu.Unlock()
 
-				log.Printf("[userState] Updated mirrorState: %+v", mirrorState)
+				if rtcManager != nil {
+					go rtcManager.broadcastUserState(newState)
+				}
+
+				// log.Printf("[userState] Updated mirrorState: %+v", mirrorState)
 			} else {
 				log.Printf("[userState] mirrorLocalState message does not contain userState field")
-			}
-
-			if rtcManager != nil {
-				rtcManager.broadcastUserState()
 			}
 		default:
 			log.Printf("Unknown message type: %v", msgType)

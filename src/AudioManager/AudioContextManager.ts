@@ -7,8 +7,8 @@ class AudioContextManager {
     private static instance: AudioContextManager | null = null;
     private audioContext: AudioContext;
     private mainNodes: MainAudioNodes;
-    private peerManager: PeerNodeManager;
-    private trackManager: TrackNodeManager;
+    public peerManager: PeerNodeManager;
+    public trackManager: TrackNodeManager;
     private elementManager: AudioElementManager;
     private isInitialized: boolean = false;
 
@@ -56,6 +56,10 @@ class AudioContextManager {
 
     public setMainOutputVolume(volume: number): void {
         this.mainNodes.setMainOutputVolume(volume);
+    }
+    
+    public setMainOutputMuted(muted: boolean): void {
+        this.mainNodes.setMainOutputMuted(muted);
     }
 
     public setTrackVolume(peerIP: string, trackID: string, volume: number): void {

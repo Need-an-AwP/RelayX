@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Minus, X, Menu } from 'lucide-react';
 import { VscLayoutSidebarLeft, VscLayoutSidebarLeftOff } from "react-icons/vsc";
 import { TbWindowMaximize, TbWindowMinimize } from "react-icons/tb";
-import { usePopover, usePanelStore } from '@/stores';
+import {  usePanelStore } from '@/stores';
 import TailscaleStatusDisplay from '../TailscaleStatusDisplay';
 import TsDisplayMain from './tsDisplayMain'
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -11,7 +11,6 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import AppSettingPanel from '@/components/AppSettingPanel';
 
 const TitleBar = () => {
-    const { toggle } = usePopover()
     const { isSideBarCollapsed, toggleSideBar } = usePanelStore((state) => state)
     const [isMaximized, setIsMaximized] = useState<boolean>(false);
 
@@ -23,7 +22,7 @@ const TitleBar = () => {
             className={`fixed top-0 left-0 right-0 flex justify-between items-center z-999 h-[32px]
                 bg-white/5 backdrop-blur-[2px]`}
         >
-            <TsDisplayMain />
+            {/* <TsDisplayMain /> */}
             
             <div className="flex items-center gap-2">
                 <Sheet>

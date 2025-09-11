@@ -3,21 +3,27 @@ import { AudioContextManager } from "@/AudioManager/AudioContextManager";
 import { useLocalUserStateStore } from "./localUserStateStore";
 
 interface AudioStore {
-    // 主音量状态
+    /**
+     * User's audio active threshold
+     * @description A number between 0 - 255, representing the audio level above which the audio is considered "active".
+     */
+    audioActiveThreshold: number;
+    // main volume states
     mainVolume: number;
     mainMuted: boolean;
-    volumeBeforeMute: number; // 静音前的音量值
+    volumeBeforeMute: number;
 
-    // 主音量控制方法
     setMainVolume: (volume: number) => void;
     setMainMuted: (muted: boolean) => void;
-    toggleMute: () => void; // 切换静音状态的便捷方法
+    toggleMute: () => void;
 
-    // 获取音频上下文信息
     getAudioContextInfo: () => any;
+
+    setAudioActiveThreshold?: (threshold: number) => void;
 }
 
 const useAudioStore = create<AudioStore>((set, get) => ({
+    audioActiveThreshold: 5,
     // 初始状态
     mainVolume: 1.0,
     mainMuted: false,
@@ -103,6 +109,12 @@ const useAudioStore = create<AudioStore>((set, get) => ({
             console.error('[AudioStore] Failed to get audio context info:', error);
             return null;
         }
+    },
+
+    setAudioActiveThreshold: (threshold: number) => {
+        if (threshold < 0) threshold = 0;
+        if (threshold > 255) threshold = 255;
+        set({ audioActiveThreshold: threshold });
     }
 }));
 

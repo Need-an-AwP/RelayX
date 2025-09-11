@@ -15,15 +15,22 @@ export class AudioAnalyser {
         return dataArray;
     }
     
+    /**
+     * Get a simple average volume level number from the analyser node
+     * @param analyserNode 
+     * @returns number between 0 - 255
+     */
     static getVolumeLevel(analyserNode: AnalyserNode): number {
         const dataArray = this.getFrequencyData(analyserNode);
-        let sum = 0;
-        for (let i = 0; i < dataArray.length; i++) {
-            sum += dataArray[i];
-        }
-        return Math.floor(sum / dataArray.length);
+        const average = dataArray.reduce((acc, val) => acc + val, 0) / dataArray.length
+        return average;
     }
     
+    /**
+     * Get the RMS (Root Mean Square) level from the analyser node
+     * @param analyserNode 
+     * @returns number between 0 - 1
+     */
     static getRMSLevel(analyserNode: AnalyserNode): number {
         // RMS (Root Mean Square) 音量计算
         const dataArray = new Uint8Array(analyserNode.frequencyBinCount);

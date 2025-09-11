@@ -14,7 +14,7 @@ export default function OnlinePeersDisplay() {
     } else if (Object.keys(tailscaleStatus.Peer).length === 0) {
         return (
             <div className="p-2 h-full flex items-center justify-center gap-2">
-                <p className="text-sm text-muted-foreground">🤔  There is no machine in this tsnet</p>
+                <p className="text-sm text-muted-foreground">🤔 There is no machine in this tsnet</p>
             </div>
         );
     } else {

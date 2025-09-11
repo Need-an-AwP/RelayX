@@ -14,8 +14,7 @@ import { LoaderCircle, X } from "lucide-react";
 const UserProfile = () => {
     const { userState, updateSelfState, initialized, initializeSelfState } = useLocalUserStateStore()
     const [isReady, setIsReady] = useState(initialized)
-    const isUserPopoverOpen = usePopover(state => state.isUserPopoverOpen);
-    const toggle = usePopover(state => state.toggle);
+    const { activePopover, togglePopover } = usePopover();
     const [localUserName, setLocalUserName] = useState(userState.userName)
     const [localAvatar, setLocalAvatar] = useState(userState.userAvatar)
 
@@ -28,11 +27,11 @@ const UserProfile = () => {
     }, [initialized, initializeSelfState])
 
     useEffect(() => {
-        if (isUserPopoverOpen) {
+        if (activePopover === 'user') {
             setLocalUserName(userState.userName)
             setLocalAvatar(userState.userAvatar)
         }
-    }, [isUserPopoverOpen, userState.userName, userState.userAvatar])
+    }, [activePopover, userState.userName, userState.userAvatar])
 
     const handlePopoverOpenChange = (open: boolean) => {
         if (!open) {
@@ -43,7 +42,7 @@ const UserProfile = () => {
                 updateSelfState({ userName: finalUserName, userAvatar: finalAvatar })
             }
         }
-        toggle('isUserPopoverOpen')
+        togglePopover('user')
     }
 
     // 检查是否有有效的更改
@@ -57,7 +56,7 @@ const UserProfile = () => {
     const discardChanges = () => {
         setLocalUserName(userState.userName)
         setLocalAvatar(userState.userAvatar)
-        toggle('isUserPopoverOpen')
+        togglePopover('user')
     }
 
     // 获取用户名首字母作为头像备用显示
@@ -67,23 +66,24 @@ const UserProfile = () => {
 
     return (
         <Popover
-            open={isUserPopoverOpen}
+            open={activePopover === 'user'}
             onOpenChange={handlePopoverOpenChange}
         >
             <PopoverTrigger asChild>
-                <div className="flex items-center gap-4 cursor-pointer select-none hover:bg-secondary/60 rounded-md p-2">
-                    <Avatar className="flex-shrink-0">
+                <div className={`flex items-center gap-4 cursor-pointer select-none hover:bg-secondary/60 rounded-md p-2`}>
+                    <Avatar className={`flex-shrink-0 ${activePopover === 'user' && 'z-50'}`}>
                         <AvatarImage src={userState.userAvatar} draggable={false} />
                         <AvatarFallback>
                             <LoaderCircle className="w-4 h-4 animate-spin" />
                         </AvatarFallback>
                     </Avatar>
                     <div className="flex w-full">
-                        <span className="text-sm text-left line-clamp-2 break-all">
+                        <span className={`text-sm text-left line-clamp-2 break-all ${activePopover === 'user' && 'z-50'}`}>
                             {isReady ? userState.userName : 'Loading...'}
                         </span>
                     </div>
                 </div>
+
             </PopoverTrigger>
             <PopoverContent
                 align="start"

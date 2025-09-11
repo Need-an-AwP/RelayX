@@ -16,6 +16,23 @@ export class MainAudioNodes {
         // Connect nodes: Gain -> Analyser -> Destination
         this.mainGainNode.connect(this.mainAnalyserNode);
         this.mainAnalyserNode.connect(this.mainDestination);
+
+        // this.playRandomNoise(); // random noise for testing
+    }
+
+    private playRandomNoise(): void {
+        const bufferSize = this.audioContext.sampleRate * 1; // 1秒噪声
+        const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            const random = Math.random() * 2 - 1; // 随机值 -1 到 1
+            data[i] = random * 0.5; // 降低音量以防过大
+        }
+        const source = this.audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true; // 循环播放
+        source.connect(this.mainGainNode);
+        source.start();
     }
 
     /**
@@ -81,11 +98,11 @@ export class MainAudioNodes {
         if (this.mainGainNode) {
             this.mainGainNode.disconnect();
         }
-        
+
         if (this.mainAnalyserNode) {
             this.mainAnalyserNode.disconnect();
         }
-        
+
         if (this.mainDestination) {
             this.mainDestination.disconnect();
         }

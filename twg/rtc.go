@@ -211,7 +211,6 @@ func (rm *RTCManager) createConnection(role RTCRole, peerIP string, sdpWithIce *
 	// rm.setupConnectionHandlers(connection)
 
 	rm.mu.Lock()
-	rm.connections[peerIP] = connection
 	defer rm.mu.Unlock()
 
 	rm.addTracks(pc, connection)
@@ -221,9 +220,6 @@ func (rm *RTCManager) createConnection(role RTCRole, peerIP string, sdpWithIce *
 	var sdp webrtc.SessionDescription
 	switch role {
 	case OFFER:
-
-		// rm.addTransceivers(pc, connection)
-
 		sdp, err = pc.CreateOffer(nil)
 		if err != nil {
 			log.Printf("[RTC] Failed to create offer for %s: %v", peerIP, err)
@@ -257,6 +253,9 @@ func (rm *RTCManager) createConnection(role RTCRole, peerIP string, sdpWithIce *
 			return
 		}
 	}
+
+	// Store the connection
+	rm.connections[peerIP] = connection
 
 	// ⭐
 	gatherComplete := webrtc.GatheringCompletePromise(pc)
@@ -365,15 +364,19 @@ func (rm *RTCManager) setupPcHandlers(pc *webrtc.PeerConnection, connection *RTC
 
 	// for answer side only
 	pc.OnDataChannel(func(dc *webrtc.DataChannel) {
-		connection.mu.Lock()
-		connection.dc = dc
-		connection.mu.Unlock()
-
-		if dc.Label() == "ping" {
-			rm.setupPingDataChannel(dc, connection.peerIP)
-		} else if dc.Label() == "data" {
-			rm.setupDataChannelHandlers(dc, connection.peerIP)
+		if connection.role == OFFER {
+			return
 		}
 
+		connection.mu.Lock()
+		// Assign to correct field based on label
+		if dc.Label() == "ping" {
+			connection.pdc = dc
+			rm.setupPingDataChannel(dc, connection.peerIP)
+		} else if dc.Label() == "data" {
+			connection.dc = dc
+			rm.setupDataChannelHandlers(dc, connection.peerIP)
+		}
+		connection.mu.Unlock()
 	})
 }
