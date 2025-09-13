@@ -15,6 +15,7 @@ const UserProfile = () => {
     const { userState, updateSelfState, initialized, initializeSelfState } = useLocalUserStateStore()
     const [isReady, setIsReady] = useState(initialized)
     const { activePopover, togglePopover } = usePopover();
+    const isUserPopoverOpen = activePopover === 'user'
     const [localUserName, setLocalUserName] = useState(userState.userName)
     const [localAvatar, setLocalAvatar] = useState(userState.userAvatar)
 
@@ -27,11 +28,11 @@ const UserProfile = () => {
     }, [initialized, initializeSelfState])
 
     useEffect(() => {
-        if (activePopover === 'user') {
+        if (isUserPopoverOpen) {
             setLocalUserName(userState.userName)
             setLocalAvatar(userState.userAvatar)
         }
-    }, [activePopover, userState.userName, userState.userAvatar])
+    }, [isUserPopoverOpen, userState.userName, userState.userAvatar])
 
     const handlePopoverOpenChange = (open: boolean) => {
         if (!open) {
@@ -64,26 +65,34 @@ const UserProfile = () => {
         return name ? name.charAt(0).toUpperCase() : 'U'
     }
 
+    // every component have z-50 when activePopover is null
+    // but when other popover is active, only that popover have z-50
+    // this ensures the activated popover is always on top of the blur overlay
+    const shouldShowAboveOverlay = `${!activePopover || isUserPopoverOpen && 'z-50'}`
+
     return (
         <Popover
-            open={activePopover === 'user'}
+            open={isUserPopoverOpen}
             onOpenChange={handlePopoverOpenChange}
         >
             <PopoverTrigger asChild>
-                <div className={`flex items-center gap-4 cursor-pointer select-none hover:bg-secondary/60 rounded-md p-2`}>
-                    <Avatar className={`flex-shrink-0 ${activePopover === 'user' && 'z-50'}`}>
-                        <AvatarImage src={userState.userAvatar} draggable={false} />
-                        <AvatarFallback>
-                            <LoaderCircle className="w-4 h-4 animate-spin" />
-                        </AvatarFallback>
-                    </Avatar>
-                    <div className="flex w-full">
-                        <span className={`text-sm text-left line-clamp-2 break-all ${activePopover === 'user' && 'z-50'}`}>
-                            {isReady ? userState.userName : 'Loading...'}
-                        </span>
+                <div className="flex">
+                    <div className={`flex items-center gap-4 cursor-pointer select-none hover:bg-secondary/60 rounded-md p-2 
+                    ${shouldShowAboveOverlay} 
+                    ${isUserPopoverOpen && 'bg-secondary/80 ring ring-white/20'}`}>
+                        <Avatar className={`flex-shrink-0 `}>
+                            <AvatarImage src={isReady ? userState.userAvatar : ''} draggable={false} />
+                            <AvatarFallback>
+                                <LoaderCircle className="w-4 h-4 animate-spin" />
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className={`flex w-full `}>
+                            <span className={`text-sm text-left line-clamp-2 break-all`}>
+                                {isReady ? userState.userName : 'Loading...'}
+                            </span>
+                        </div>
                     </div>
                 </div>
-
             </PopoverTrigger>
             <PopoverContent
                 align="start"

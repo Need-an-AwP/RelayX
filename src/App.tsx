@@ -6,7 +6,7 @@ import {
     initializeAudioProcessing,
     initializeWsListener,
     usePopover,
-    usePanelStore
+    usePanelStore,
 } from '@/stores'
 import {
     ResizableHandle,
@@ -31,7 +31,7 @@ function App() {
     const initialized = useRef(false)
     const rightSideBarRef = useRef<ImperativePanelHandle>(null);
     const leftSideBarRef = useRef<ImperativePanelHandle>(null);
-    const { activePopover, closeAll } = usePopover()
+    const { activePopover,  closeAll } = usePopover()
     const { setRef } = usePanelStore((state) => state)
 
 
@@ -67,7 +67,6 @@ function App() {
                 {/* presave 32px height for title bar */}
                 <div className="flex-1 overflow-hidden mt-[32px]">
                     <div className="h-full w-full">
-                        {/* Blur Overlay */}
                         <div
                             className={`fixed top-[32px] left-0 right-0 bottom-0 bg-black/10 backdrop-blur-sm z-40 
                                 transition-opacity duration-300

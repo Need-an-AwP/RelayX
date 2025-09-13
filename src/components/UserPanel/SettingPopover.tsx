@@ -12,6 +12,7 @@ import UserAudioSpectrum from '@/components/UserAudioSpectrum'
 
 const SettingPopover = () => {
     const { activePopover, togglePopover } = usePopover();
+    const isSettingOpen = activePopover === 'setting';
     const {
         inputDevices,
         outputDevices,
@@ -24,11 +25,11 @@ const SettingPopover = () => {
 
     const [isTesting, setIsTesting] = useState(false);
     const audioPlaybackRef = useRef<HTMLAudioElement>(null);
-
+    const shouldShowAboveOverlay = `${!activePopover || isSettingOpen && 'z-50'}`;
 
     return (
         <Popover
-            open={activePopover === 'setting'}
+            open={isSettingOpen}
             onOpenChange={() => {
                 togglePopover('setting')
 
@@ -41,8 +42,8 @@ const SettingPopover = () => {
             <PopoverTrigger asChild>
                 <Button
                     size="icon"
-                    variant={`${activePopover === 'setting' ? 'outline' : 'ghost'}`}
-                    className={`${activePopover === 'setting' && 'z-50'} cursor-pointer`}
+                    variant={`${isSettingOpen ? 'outline' : 'ghost'}`}
+                    className={`${shouldShowAboveOverlay} cursor-pointer`}
                 >
                     <Settings className="h-4 w-4" />
                 </Button>

@@ -16,26 +16,19 @@ interface PopoverState {
 
     closeAll: () => void
     togglePopover: (popoverId: NonNullable<PopoverId>) => void;
-    // onClick={() => toggle('isNetworkPopoverOpen')}
+    setActivatePopover: (popoverId: PopoverId) => void;
 }
 
 export const usePopover = create<PopoverState>((set, get) => ({
     activePopover: null,
 
     closeAll: () => set({ activePopover: null }),
-    togglePopover: (popoverId) => set((state) => 
-        state.activePopover === popoverId 
-        ? { activePopover: null } 
-        : { activePopover: popoverId }
-        // if (state.activePopover === popoverId) {
-        //     setTimeout(() => {
-        //         set({ activePopover: null })
-        //     }, 300);
-        //     return state; // Return current state to avoid undefined return
-        // } else {
-        //     return { activePopover: popoverId }
-        // }
-    )
+    togglePopover: (popoverId) => set((state) =>
+        state.activePopover === popoverId
+            ? { activePopover: null }
+            : { activePopover: popoverId }
+    ),
+    setActivatePopover: (popoverId) => set({ activePopover: popoverId }),
 }))
 
 

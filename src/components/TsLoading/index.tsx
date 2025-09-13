@@ -4,15 +4,14 @@ import { LoaderCircle, CircleCheckBig } from "lucide-react";
 
 
 export default function TsLoading() {
-    const { activePopover, togglePopover } = usePopover();
+    const { setActivatePopover } = usePopover();
     const { tailscaleStatus, tsBackendState } = useTailscaleStore();
     const [isVisible, setIsVisible] = useState(true);
     const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 
-
     useEffect(() => {
-        togglePopover('tsLoading');
+        setActivatePopover('tsLoading');
 
         if (hideTimerRef.current) {
             clearTimeout(hideTimerRef.current);
@@ -25,7 +24,7 @@ export default function TsLoading() {
             } else {
                 hideTimerRef.current = setTimeout(() => {
                     setIsVisible(false);
-                    togglePopover('tsLoading');
+                    setActivatePopover(null);
                 }, 1000);
             }
         } else {
@@ -64,7 +63,7 @@ export default function TsLoading() {
         <div className={`fixed left-0 top-[50%] translate-x-full -translate-y-1/2 z-50
         w-1/3 rounded-xl bg-neutral-800 border-0 border-muted-foreground
         transition-all duration-300 text-xs select-none
-        ${isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        ${isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none -z-10'}`}>
             <div className="flex items-center justify-center gap-4 px-2 py-8">
                 {tsBackendState === 'Running' ?
                     <CircleCheckBig className={`${getStatusColor(tsBackendState)} w-8 h-8`} /> :
