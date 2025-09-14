@@ -1,4 +1,5 @@
 import { AudioAnalyser } from "../utils/AudioAnalyser";
+import { useLocalUserStateStore } from "@/stores";
 
 export class MainAudioNodes {
     private audioContext: AudioContext;
@@ -13,8 +14,18 @@ export class MainAudioNodes {
         this.mainAnalyserNode = AudioAnalyser.createAnalyserNode(this.audioContext);
         this.mainGainNode.gain.value = 1.0;
 
-        // Connect nodes: Gain -> Analyser -> Destination
-        this.mainGainNode.connect(this.mainAnalyserNode);
+        // play global audio only when local user is in chat
+        useLocalUserStateStore.subscribe(
+            (state) => state.userState.isInChat,
+            (isInChat, prevIsInChat) => {
+                if (isInChat && !prevIsInChat) {
+                    this.mainGainNode.connect(this.mainAnalyserNode);
+                } else if (!isInChat && prevIsInChat) {
+                    this.mainGainNode.disconnect(this.mainAnalyserNode);
+                }
+            }
+        )
+        
         this.mainAnalyserNode.connect(this.mainDestination);
 
         // this.playRandomNoise(); // random noise for testing

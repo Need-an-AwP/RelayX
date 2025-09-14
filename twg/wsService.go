@@ -22,6 +22,13 @@ var (
 	msgWsConnMu sync.Mutex
 )
 
+type wsManager struct {
+	medConn     *websocket.Conn
+	medConnMu   sync.Mutex
+	msgWsConn   *websocket.Conn
+	msgWsConnMu sync.Mutex
+}
+
 // create local websocket server
 func initWsService() {
 	upgrader := websocket.Upgrader{
@@ -145,8 +152,13 @@ func handleMediaChunk(data []byte) {
 
 	// log.Printf("Received video chunk: trackID=%d, duration=%d", trackID, duration)
 
+	// write sample to every connection
 	for _, connection := range rtcManager.connections {
-		track := connection.tracks[trackMap[trackID].id]
+		track, exist := connection.tracks[trackMap[trackID].id]
+		if !exist {
+			log.Printf("Track not found: %d", trackID)
+			continue
+		}
 
 		track.WriteSample(media.Sample{
 			Data:     mediaData,

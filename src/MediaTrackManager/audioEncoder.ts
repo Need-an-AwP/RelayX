@@ -1,4 +1,4 @@
-import { TrackID } from "@/types"
+import { TrackID, type TrackIDType } from "@/types"
 
 const ProcessorState = {
     IDLE: 'idle',
@@ -10,12 +10,14 @@ const ProcessorState = {
 
 type ProcessorStateType = typeof ProcessorState[keyof typeof ProcessorState];
 
-export default class MicrophoneAudioProcessor {
+export default class InputAudioProcessor {
+    private trackID: TrackIDType;
     private ws: WebSocket;
     private encoder: AudioEncoder | null = null;
     private state: ProcessorStateType = ProcessorState.IDLE;
 
-    constructor(ws: WebSocket, audioTrack: MediaStreamAudioTrack) {
+    constructor(trackID: TrackIDType, ws: WebSocket, audioTrack: MediaStreamAudioTrack) {
+        this.trackID = trackID;
         this.ws = ws;
         this.encodeFromAudioTrack(audioTrack);
     }
@@ -92,7 +94,7 @@ export default class MicrophoneAudioProcessor {
         const view = new DataView(packet);
 
         let offset = 0;
-        view.setUint8(offset, TrackID.MICROPHONE_AUDIO); // 轨道ID
+        view.setUint8(offset, this.trackID); // 轨道ID
         offset += 1;
 
         const duration = chunk.duration || 0;

@@ -51,7 +51,7 @@ func (rm *RTCManager) setupDataChannelHandlers(dc *webrtc.DataChannel, peerIP st
 	})
 
 	dc.OnMessage(func(msg webrtc.DataChannelMessage) {
-		log.Printf("[RTC datachannel] Message received on data channel %v: %s", dc.Label(), msg.Data)
+		// log.Printf("[RTC datachannel] Message received on data channel %v: %s", dc.Label(), msg.Data)
 		if msg.IsString {
 			var jsonData interface{}
 			if err := json.Unmarshal(msg.Data, &jsonData); err != nil {
@@ -67,9 +67,7 @@ func (rm *RTCManager) setupDataChannelHandlers(dc *webrtc.DataChannel, peerIP st
 						log.Printf("Failed to marshal modified JSON: %v", err)
 						return
 					}
-					log.Printf("receiving userState via dc: %v", jsonData)
 
-					// 使用包装方法发送消息
 					err = sendMsgWs(modifiedData)
 					if err != nil {
 						// 错误已经在 sendMsgWs 中处理和记录了

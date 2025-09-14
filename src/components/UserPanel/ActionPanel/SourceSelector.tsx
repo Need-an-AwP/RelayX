@@ -13,7 +13,7 @@ export default function SourceSelector() {
         stream,
         setStream,
         setIsSelectingSource
-    } = useDesktopCapture((state) => state)
+    } = useDesktopCapture()
     const updateSelfState = useLocalUserStateStore(state => state.updateSelfState)
     const [selectedCategory, setSelectedCategory] = useState<string>('screen')
 
@@ -120,9 +120,13 @@ export default function SourceSelector() {
                                     <div
                                         key={source.id}
                                         onClick={() => startCapture(source.id)}
-                                        className="group cursor-pointer border rounded-lg p-2 hover:bg-accent transition-colors
-                                            w-60 xl:w-80"
+                                        className="group cursor-pointer border rounded-lg p-2 hover:bg-accent transition-colors"
                                     >
+                                        {/* 
+                                        won't set a specific width or scale number here to control thumbnail display
+                                        the img will display original picture from electron's desktopCapturer
+                                        set thumbnailSizeNum in displayMediaRequestHandler to control the size of the thumbnail
+                                        */}
                                         <div className="mb-2 overflow-hidden rounded-md">
                                             <img
                                                 src={source.thumbnail}

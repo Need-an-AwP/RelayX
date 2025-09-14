@@ -65,6 +65,7 @@ class OutputTrackManager {
                 }
             });
 
+            // extend ws info header to include sample rate and channels if needed
             // 配置解码器 (Opus)
             decoder.configure({
                 codec: 'opus',

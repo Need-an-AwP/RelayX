@@ -12,6 +12,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pion/interceptor"
+	"github.com/pion/interceptor/pkg/cc"
+	"github.com/pion/interceptor/pkg/gcc"
 	"github.com/pion/webrtc/v4"
 )
 
@@ -41,10 +44,14 @@ type RTCConnection struct {
 
 // rm
 type RTCManager struct {
-	connections map[string]*RTCConnection // key is peer IP
-	api         *webrtc.API
-	client      *http.Client
-	mu          sync.RWMutex
+	connections       map[string]*RTCConnection // key is peer IP
+	estimators        map[string]cc.BandwidthEstimator
+	estimatorsMu      sync.RWMutex
+	api               *webrtc.API
+	client            *http.Client
+	mu                sync.RWMutex
+	pendingEstimators []cc.BandwidthEstimator // 待分配的估计器队列
+	estimatorQueue    sync.Mutex
 }
 
 type SDPWithICE struct {
@@ -96,17 +103,69 @@ func (rm *RTCManager) sendViaTS(
 	// log.Printf("[RTC] HTTP response status: %s", resp.Status)
 }
 
+func (rm *RTCManager) assignEstimatorToPeer(peerIP string) {
+	rm.estimatorQueue.Lock()
+	defer rm.estimatorQueue.Unlock()
+
+	if len(rm.pendingEstimators) > 0 {
+		// FIFO: 分配第一个可用的估计器
+		estimator := rm.pendingEstimators[0]
+		rm.pendingEstimators = rm.pendingEstimators[1:]
+
+		rm.estimatorsMu.Lock()
+		rm.estimators[peerIP] = estimator
+		rm.estimatorsMu.Unlock()
+
+		log.Printf("[RTC] Assigned bandwidth estimator to peer %s", peerIP)
+	}
+}
+
 func initWebRTC(conn net.PacketConn, httpClient *http.Client) {
+	// setup BandwidthEstimator
+	var lowBitrate int = 100_000 // 100kbps
+	interceptorRegistry := &interceptor.Registry{}
+	mediaEngine := &webrtc.MediaEngine{}
+	if err := mediaEngine.RegisterDefaultCodecs(); err != nil {
+		panic(err)
+	}
+	congestionController, err := cc.NewInterceptor(func() (cc.BandwidthEstimator, error) {
+		return gcc.NewSendSideBWE(gcc.SendSideBWEInitialBitrate(lowBitrate))
+	})
+	if err != nil {
+		panic(err)
+	}
+	congestionController.OnNewPeerConnection(func(id string, estimator cc.BandwidthEstimator) {
+		if rtcManager != nil {
+			rtcManager.estimatorQueue.Lock()
+			rtcManager.pendingEstimators = append(rtcManager.pendingEstimators, estimator)
+			rtcManager.estimatorQueue.Unlock()
+		}
+	})
+	interceptorRegistry.Add(congestionController)
+	if err = webrtc.ConfigureTWCCHeaderExtensionSender(mediaEngine, interceptorRegistry); err != nil {
+		panic(err)
+	}
+	if err = webrtc.RegisterDefaultInterceptors(mediaEngine, interceptorRegistry); err != nil {
+		panic(err)
+	}
+
+	// setup settingengine
 	settingEngine := webrtc.SettingEngine{}
 	settingEngine.SetNetworkTypes([]webrtc.NetworkType{webrtc.NetworkTypeUDP4}) // only use tailscale's conn
 	settingEngine.SetICEUDPMux(webrtc.NewICEUDPMux(nil, conn))                  // only collect udp4 ice
 
-	api := webrtc.NewAPI(webrtc.WithSettingEngine(settingEngine))
+	api := webrtc.NewAPI(
+		webrtc.WithSettingEngine(settingEngine),
+		webrtc.WithMediaEngine(mediaEngine),
+		webrtc.WithInterceptorRegistry(interceptorRegistry),
+	)
 
 	rtcManager = &RTCManager{
-		connections: make(map[string]*RTCConnection),
-		api:         api,
-		client:      httpClient,
+		connections:       make(map[string]*RTCConnection),
+		estimators:        make(map[string]cc.BandwidthEstimator),
+		pendingEstimators: make([]cc.BandwidthEstimator, 0),
+		api:               api,
+		client:            httpClient,
 	}
 
 	go rtcManager.managePeerConnections()
@@ -125,6 +184,7 @@ func (rm *RTCManager) managePeerConnections() {
 		case <-ticker.C:
 			rm.createRTCtoOnlinePeers()
 			// rm.cleanupStaleConnections()
+			go rm.reportBandwidthEstimates()
 		case <-pingTicker.C:
 			rm.sendPingsByPdc()
 		}
@@ -174,6 +234,8 @@ func (rm *RTCManager) createConnection(role RTCRole, peerIP string, sdpWithIce *
 		log.Printf("[RTC] Failed to create peer connection for %s: %v", peerIP, err)
 		return
 	}
+
+	rm.assignEstimatorToPeer(peerIP)
 
 	var dc *webrtc.DataChannel
 	var pdc *webrtc.DataChannel
@@ -323,6 +385,7 @@ func (rm *RTCManager) setupPcHandlers(pc *webrtc.PeerConnection, connection *RTC
 	pc.OnTrack(func(track *webrtc.TrackRemote, receiver *webrtc.RTPReceiver) {
 		log.Printf("[RTC onTrack] received track: streamID:%s, ID:%s", track.StreamID(), track.ID())
 
+		go handleRTCP("receiver:"+track.ID(), receiver)
 		handleTrack(track, connection.peerIP)
 	})
 
@@ -349,7 +412,7 @@ func (rm *RTCManager) setupPcHandlers(pc *webrtc.PeerConnection, connection *RTC
 			Peer:  connection.peerIP,
 		}
 		jsonData, _ := json.Marshal(stateData)
-		fmt.Println(string(jsonData))
+		sendMsgWs(jsonData)
 
 		// if state == webrtc.PeerConnectionStateConnected {
 		// 	for _, transceiver := range pc.GetTransceivers() {

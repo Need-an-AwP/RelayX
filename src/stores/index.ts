@@ -16,7 +16,7 @@ export * from './audioStore'
 
 export * from './screenShareStore'
 
-// export * from './messageStore'
+export * from './messageStore'
 
 export * from './localUserStateStore'
 

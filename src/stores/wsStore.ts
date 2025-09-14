@@ -141,6 +141,21 @@ const handleWsMessage = (event: MessageEvent) => {
             case "rtc_status":
                 // console.log('rtc_status', msg);
                 break;
+            case "connection_state":
+                console.log('connection_state', msg);
+                if (msg.state === 'disconnected' || msg.state === 'failed' || msg.state === 'closed') {
+                    if (msg.peerIP && typeof msg.peerIP === 'string') {
+                        const remoteUsersStore = useRemoteUsersStore.getState();
+                        if (remoteUsersStore.peers[msg.peerIP]) {
+                            console.log(`[ws] Removing peer ${msg.peerIP} due to connection state: ${msg.state}`);
+                            remoteUsersStore.removePeer(msg.peerIP);
+                        }
+                    }
+                }
+                break;
+            case "BER":
+                console.log('BER', msg);
+                break;
             default:
                 console.warn('[ws] Unknown message type:', msg);
                 break;
@@ -163,13 +178,14 @@ const handleAudioData = async (trackID: TrackIDType, buffer: Uint8Array) => {
 
     try {
         const chunk = new EncodedAudioChunk({
-            type: 'key', // Opus 通常都是 key frames
+            type: 'key', // all key frame for opus chunk
             data: opusData,
             timestamp: performance.now() * 1000, // 使用当前时间戳，单位为微秒
         });
 
-        console.log(`[Audio] Created chunk for track ${trackID} from ${peerIP}, size: ${opusData.length} bytes`);
-
+        if (trackID === TrackID.CPA_AUDIO) {
+            // console.log(`[Audio] Created chunk for track ${trackID} from ${peerIP}, size: ${opusData.length} bytes`);
+        }
         // 使用 OutputTrackManager 处理音频数据
         const outputManager = OutputTrackManager.getInstance();
         outputManager.processAudioChunk(peerIP, trackID, chunk);

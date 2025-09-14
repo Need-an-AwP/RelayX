@@ -41,7 +41,7 @@ const PeersView = () => {
                 <ContextMenuTrigger>
                     <ScrollArea className="h-full w-full">
                         {/* local user and machine */}
-                        {localPeer && (displayOption === "all" || displayOption === "users") && (
+                        {localPeer && (
                             <PeerItem 
                                 key="local-self" 
                                 peerStatus={localPeer} 

@@ -1,9 +1,11 @@
 import { useLocalUserStateStore, useRemoteUsersStore, useAudioProcessing, useWsStore } from "@/stores"
-import MicrophoneAudioProcessor from "./audioEncoder"
+import InputAudioProcessor from "./audioEncoder"
+import {TrackID} from "@/types"
 
 class InputTrackManager {
     private static instance: InputTrackManager | null = null;
-    private microphoneProcessor: MicrophoneAudioProcessor | null = null;
+    private microphoneProcessor: InputAudioProcessor | null = null;
+    private cpaProcessor: InputAudioProcessor | null = null;
 
     private constructor() {
         // only subscribe core state changes
@@ -15,19 +17,37 @@ class InputTrackManager {
             }),
             (current, previous) => {
                 console.log('[MediaTrackManager] Local user state changed:', { previous, current });
+                const enteredChat = current.isInChat && !previous.isInChat;
+                const leftChat = !current.isInChat && previous.isInChat;
+
+
+                 if (enteredChat) {
+                    this.startTransMicAudio();
+                    // 如果在进入前本地已勾选共享状态（例如持久化恢复），补启动
+                    if (current.isSharingAudio) this.startTransCpaAudio();
+                    // if (current.isSharingScreen) this.startScreenShare();
+                }
+
+                if (leftChat) {
+                    // close all when leaving chat
+                    this.stopTransMicAudio();
+                    this.stopTransCpaAudio();
+                    // this.stopScreenShare();
+                    return;
+                }
 
                 if (current.isInChat) {
-                    this.startTransmittingMicrophoneAudio();
-
-                    if (current.isSharingAudio) {
-                        // TODO: Start transmitting capture audio
+                    if (current.isSharingAudio && !previous.isSharingAudio) {
+                        this.startTransCpaAudio();
+                    } else if (!current.isSharingAudio && previous.isSharingAudio) {
+                        this.stopTransCpaAudio();
                     }
 
-                    if (current.isSharingScreen) {
-                        // TODO: Start transmitting screen share
+                    if (current.isSharingScreen && !previous.isSharingScreen) {
+                        // this.startScreenShare();
+                    } else if (!current.isSharingScreen && previous.isSharingScreen) {
+                        // this.stopScreenShare();
                     }
-                } else {
-                    this.stopTransmittingMicrophoneAudio();
                 }
             }
         );
@@ -49,7 +69,7 @@ class InputTrackManager {
         );
     }
 
-    private async startTransmittingMicrophoneAudio(): Promise<void> {
+    private async startTransMicAudio(): Promise<void> {
         // Avoid duplicate initialization
         if (this.microphoneProcessor?.isActive()) {
             console.log('[MediaTrackManager] Microphone transmission already active');
@@ -75,7 +95,7 @@ class InputTrackManager {
         }
 
         try {
-            this.microphoneProcessor = new MicrophoneAudioProcessor(mediaWs, microphoneTrack);
+            this.microphoneProcessor = new InputAudioProcessor(TrackID.MICROPHONE_AUDIO, mediaWs, microphoneTrack);
             console.log('[MediaTrackManager] Started transmitting microphone audio');
 
         } catch (error) {
@@ -84,11 +104,53 @@ class InputTrackManager {
         }
     }
 
-    private async stopTransmittingMicrophoneAudio(): Promise<void> {
+    private async startTransCpaAudio(): Promise<void> {
+        if (this.cpaProcessor?.isActive()) {
+            console.log('[MediaTrackManager] CPA audio transmission already active');
+            return;
+        }
+
+        const { localAddonStream } = useAudioProcessing.getState();
+        if (!localAddonStream) {
+            console.warn('[MediaTrackManager] No local addon stream available for CPA audio.');
+            return;
+        }
+
+        const cpaTrack = localAddonStream.getAudioTracks()[0];
+        if (!cpaTrack) {
+            console.warn('[MediaTrackManager] No CPA track available.');
+            return;
+        }
+
+        const { mediaWs } = useWsStore.getState();
+        if (!mediaWs) {
+            console.warn('[MediaTrackManager] No media WebSocket available.');
+            return;
+        }
+
+        try {
+            this.cpaProcessor = new InputAudioProcessor(TrackID.CPA_AUDIO, mediaWs, cpaTrack);
+            console.log('[MediaTrackManager] Started transmitting CPA audio');
+
+        } catch (error) {
+            console.error('[MediaTrackManager] Failed to start CPA transmission:', error);
+            this.cpaProcessor = null;
+        }
+    }
+
+    private async stopTransMicAudio(): Promise<void> {
         if (this.microphoneProcessor) {
             this.microphoneProcessor.stop();
             this.microphoneProcessor = null;
             console.log('[MediaTrackManager] Stopped transmitting microphone audio');
+        }
+    }
+
+    private async stopTransCpaAudio(): Promise<void> {
+        if (this.cpaProcessor) {
+            this.cpaProcessor.stop();
+            this.cpaProcessor = null;
+            console.log('[MediaTrackManager] Stopped transmitting CPA audio');
         }
     }
 

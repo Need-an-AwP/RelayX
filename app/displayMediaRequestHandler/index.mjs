@@ -1,7 +1,7 @@
 import { desktopCapturer, session, ipcMain } from 'electron';
 
 async function getAvailableSources() {
-    const thumbnailSizeNum = 600
+    const thumbnailSizeNum = 400
     const sources = await desktopCapturer.getSources({
         types: ['screen', 'window'],
         thumbnailSize: { width: thumbnailSizeNum, height: thumbnailSizeNum },

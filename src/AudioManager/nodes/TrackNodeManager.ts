@@ -38,7 +38,7 @@ export class TrackNodeManager {
                 this.trackNodes[peerIP] = {};
             }
             this.trackNodes[peerIP][trackID] = { sourceNode, gainNode };
-
+            console.log(`[TrackNodeManager] Created track nodes for ${peerIP}-${trackID}`);
             return true;
         } catch (error) {
             console.error(`Failed to create track nodes for ${peerIP}-${trackID}:`, error);

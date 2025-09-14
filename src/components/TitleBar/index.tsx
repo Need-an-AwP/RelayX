@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Minus, X, Menu } from 'lucide-react';
+import { SlidersHorizontalIcon, SlidersIcon } from "@phosphor-icons/react";
 import { VscLayoutSidebarLeft, VscLayoutSidebarLeftOff } from "react-icons/vsc";
 import { TbWindowMaximize, TbWindowMinimize } from "react-icons/tb";
-import {  usePanelStore } from '@/stores';
+import { usePanelStore } from '@/stores';
 import TailscaleStatusDisplay from '../TailscaleStatusDisplay';
-import TsDisplayMain from './tsDisplayMain'
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import AppSettingPanel from '@/components/AppSettingPanel';
+
 
 const TitleBar = () => {
     const { isSideBarCollapsed, toggleSideBar } = usePanelStore((state) => state)
@@ -18,20 +19,16 @@ const TitleBar = () => {
     const buttonIconClassName = "h-4 w-4 pointer-events-none text-white/50"
 
     const titleBarContent = (
-        <div
-            className={`fixed top-0 left-0 right-0 flex justify-between items-center z-999 h-[32px]
-                bg-white/5 backdrop-blur-[2px]`}
-        >
-            {/* <TsDisplayMain /> */}
-            
+        <div className={`fixed top-0 left-0 right-0 flex justify-between items-center 
+                z-999 h-[32px] bg-white/5 //backdrop-blur-[2px]`}>
             <div className="flex items-center gap-2">
                 <Sheet>
                     <SheetTrigger>
                         <div
                             // onClick={() => toggle('isAppSettingOpen')}
-                            className={buttonClassName}
+                            className={`${buttonClassName} cursor-pointer`}
                         >
-                            <Menu className={buttonIconClassName} />
+                            <SlidersHorizontalIcon weight="bold" className={`${buttonIconClassName} w-5 h-5`} />
                         </div>
                     </SheetTrigger>
                     <SheetContent side='left' className='mt-[32px] h-[calc(100vh-32px)] @container !max-w-none w-[60vw]'>
