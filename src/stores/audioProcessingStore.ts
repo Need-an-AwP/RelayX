@@ -116,11 +116,11 @@ const useAudioProcessing = create<AudioProcessingState>((set, get) => ({
         /*separate micphone stream and addon stream*/
         if (isEnabled) {
             gainNode.connect(processorNode)
-            processorNode.connect(destinationNode)
             processorNode.connect(analyser)
+            analyser.connect(destinationNode)
         } else {
-            gainNode.connect(destinationNode)
             gainNode.connect(analyser)
+            analyser.connect(destinationNode)
         }
         console.log('noise reduction:', isEnabled);
 
@@ -217,7 +217,7 @@ const initializeAudioProcessing = async () => {
     sourceNode.connect(gainNode)
     gainNode.connect(processorNode)
     processorNode.connect(analyser)
-    processorNode.connect(destinationNode)
+    analyser.connect(destinationNode)
 
     cpaSourceNode.connect(cpaGainNode)
     cpaGainNode.connect(cpaAnalyser)

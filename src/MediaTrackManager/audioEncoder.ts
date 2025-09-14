@@ -15,6 +15,7 @@ export default class InputAudioProcessor {
     private ws: WebSocket;
     private encoder: AudioEncoder | null = null;
     private state: ProcessorStateType = ProcessorState.IDLE;
+    private audioConfig: AudioEncoderConfig | null = null;
 
     constructor(trackID: TrackIDType, ws: WebSocket, audioTrack: MediaStreamAudioTrack) {
         this.trackID = trackID;
@@ -45,8 +46,10 @@ export default class InputAudioProcessor {
                 sampleRate: firstFrame.sampleRate || 48000,
                 numberOfChannels: firstFrame.numberOfChannels || 1,
                 bitrate: 128_000,
+                // bitrateMode: 'constant',// CBR mode makes every chunk in one size
             };
 
+            this.audioConfig = config;
 
             const support = await AudioEncoder.isConfigSupported(config);
             if (!support.supported) {
@@ -78,12 +81,8 @@ export default class InputAudioProcessor {
     }
 
     private handleEncodedChunk(chunk: EncodedAudioChunk, _metadata?: EncodedAudioChunkMetadata) {
-        // console.log(`Encoded chunk received:
-        //     Type: ${chunk.type} 
-        //     Size: ${chunk.byteLength} bytes
-        //     Timestamp: ${chunk.timestamp}
-        //     Duration: ${chunk.duration} microseconds
-        // `);
+
+        // printChunkInfo(chunk, this.audioConfig);
 
         const buffer = new Uint8Array(chunk.byteLength);
         chunk.copyTo(buffer);
@@ -174,4 +173,30 @@ export default class InputAudioProcessor {
 
         console.log('Audio processing stopped');
     }
+}
+
+const printChunkInfo = (chunk: EncodedAudioChunk, audioConfig: AudioEncoderConfig | null) => {
+    // 计算音频采样帧数量 (不是编码帧数量)
+    // 音频采样帧数 = duration(微秒) * sampleRate / 1,000,000
+    const d = chunk.duration || 0;
+    const sampleRate = audioConfig?.sampleRate || 48000;
+    const audioSampleFrames = Math.round((d * sampleRate) / 1_000_000);
+
+    // 计算实际比特率和理论比特率的比较
+    const durationSeconds = d / 1_000_000;
+    const actualBitrate = durationSeconds > 0 ? (chunk.byteLength * 8) / durationSeconds : 0;
+    const targetBitrate = audioConfig?.bitrate || 128_000;
+    const compressionRatio = actualBitrate / targetBitrate;
+
+    console.log(
+        `Encoded chunk received:
+            Type: ${chunk.type} 
+            Size: ${chunk.byteLength} bytes
+            Timestamp: ${chunk.timestamp}
+            Duration: ${chunk.duration} microseconds (${durationSeconds.toFixed(3)}s)
+            audio_sample_frames: ${audioSampleFrames} (采样点数量)
+            actual_bitrate: ${Math.round(actualBitrate)} bps
+            target_bitrate: ${targetBitrate} bps
+            compression_ratio: ${compressionRatio.toFixed(2)}x`
+    );
 }

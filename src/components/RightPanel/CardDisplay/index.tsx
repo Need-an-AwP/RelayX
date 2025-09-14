@@ -4,7 +4,7 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/comp
 import { SelfCard, SelfThumbnailCard } from "./selfCards"
 import { ChevronUp } from "lucide-react"
 import { useRemoteUsersStore } from "@/stores"
-// import { UserCard, UserThumbnailCard } from "./userCards"
+import { UserCard, UserThumbnailCard } from "./userCards"
 import ControlPanel from "./controlPanel"
 
 
@@ -39,7 +39,7 @@ export default function CardDisplay({ isHovering, switchFullScreen }: { isHoveri
                         maximiumCard={maximiumCard}
                         onClick={() => setMaximiumCard(maximiumCard === 'self' ? null : 'self')}
                     />
-                    {/* {Object.entries(peers)
+                    {Object.entries(peers)
                         .filter(([peerIP, peerState]) => peerState.isInChat)
                         .map(([peerIP, peerState]) => (
                             <UserCard
@@ -49,7 +49,7 @@ export default function CardDisplay({ isHovering, switchFullScreen }: { isHoveri
                                 peerState={peerState}
                                 onClick={() => setMaximiumCard(maximiumCard === peerIP ? null : peerIP)}
                             />
-                        ))} */}
+                        ))}
                 </CardGrid>
 
                 {/* collapse button */}
