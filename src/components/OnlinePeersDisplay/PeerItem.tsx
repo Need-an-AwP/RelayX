@@ -30,7 +30,7 @@ const PeerItem = ({ peerStatus, userState }: { peerStatus: PeerStatus, userState
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <div className="border rounded-md space-y-2 p-2 mb-2 mx-2 text-xs hover:bg-muted/50 cursor-pointer">
+                <div className="border rounded-md space-y-2 p-2 mb-2 mx-2 text-xs hover:bg-muted/50 cursor-pointer select-none">
                     {user && (<>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3 min-w-0 overflow-hidden">

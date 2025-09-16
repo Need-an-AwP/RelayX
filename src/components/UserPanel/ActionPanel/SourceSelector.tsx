@@ -1,9 +1,9 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Tabs, TabsList, TabsTrigger, } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, } from "@/components/ui/tooltip"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button";
-import { X, Monitor, AppWindow, RotateCcw, Settings, OctagonX } from 'lucide-react';
+import { X, Monitor, AppWindow, RotateCcw, Settings, OctagonX, LoaderCircle } from 'lucide-react';
 import { useLocalUserStateStore, useDesktopCapture } from '@/stores'
 
 export default function SourceSelector() {
@@ -12,19 +12,31 @@ export default function SourceSelector() {
         requestSources,
         stream,
         setStream,
-        setIsSelectingSource
+        setIsSelectingSource,
+        isCapturing,
+        setIsCapturing,
     } = useDesktopCapture()
     const updateSelfState = useLocalUserStateStore(state => state.updateSelfState)
     const [selectedCategory, setSelectedCategory] = useState<string>('screen')
+    const [isLoading, setIsLoading] = useState<boolean>(false)
 
 
     const startCapture = async (sourceId: string) => {
+        if (isCapturing) {
+            if (isCapturing === sourceId) {
+                setIsSelectingSource(false);
+                // already capturing this source, do nothing
+                return;
+            }
+        }
+        setIsLoading(true);
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
         }
         try {
             // set source id first then use getdisplaymedia method
             window.ipcBridge.setScreenCaptureId(sourceId);
+            setIsCapturing(sourceId);
 
             const captureStream = await navigator.mediaDevices.getDisplayMedia({
                 video: {
@@ -42,10 +54,12 @@ export default function SourceSelector() {
         } catch (error) {
             console.error('capture error:', error);
         }
+        setIsLoading(false);
     }
 
     const cancelCapture = () => {
         setIsSelectingSource(false);
+        setIsCapturing(null);
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
         }
@@ -59,6 +73,13 @@ export default function SourceSelector() {
 
     return (
         <div className="flex-1 flex-col select-none">
+            {/* loading */}
+            {isLoading && <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50">
+                <div className="flex flex-col items-center space-y-2">
+                    <LoaderCircle className="w-12 h-12 animate-spin" />
+                    <span className="text-white">Loading capture...</span>
+                </div>
+            </div>}
             {/* title */}
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold">Select Share Source</h3>
@@ -132,6 +153,13 @@ export default function SourceSelector() {
                                                 src={source.thumbnail}
                                                 alt={source.name}
                                                 className="object-cover"
+                                                onLoad={(e) => {
+                                                    const img = e.currentTarget;
+                                                    const span = img.closest('.group')?.querySelector('span');
+                                                    if (span) {
+                                                        span.style.width = img.offsetWidth * 0.9 + 'px';
+                                                    }
+                                                }}
                                             />
                                         </div>
                                         <div className="grid grid-cols-[auto_1fr] items-center gap-2 px-1 max-w-full min-w-0">

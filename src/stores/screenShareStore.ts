@@ -12,11 +12,13 @@ export type CaptureSource = {
 interface DesktopCaptureState {
     stream: MediaStream | null
     isSelectingSource: boolean
+    isCapturing: string | null
     captureSources: CaptureSource[]
 
     setCaptureSources: (sources: CaptureSource[]) => void
     requestSources: () => Promise<void>
     setIsSelectingSource: (isSelectingSource: boolean) => void
+    setIsCapturing: (isCapturing: string | null) => void
     setStream: (stream: MediaStream | null) => void
     stopScreenShare: () => void
 }
@@ -24,6 +26,7 @@ interface DesktopCaptureState {
 export const useDesktopCapture = create<DesktopCaptureState>((set, get) => ({
     stream: null,
     isSelectingSource: false,
+    isCapturing: null,
     captureSources: [],
     setCaptureSources: (captureSources: CaptureSource[]) => set({ captureSources }),
     requestSources: async () => {
@@ -32,6 +35,7 @@ export const useDesktopCapture = create<DesktopCaptureState>((set, get) => ({
         set({ captureSources: sources });
     },
     setIsSelectingSource: (isSelectingSource: boolean) => set({ isSelectingSource }),
+    setIsCapturing: (isCapturing: string | null) => set({ isCapturing }),
     setStream: (stream: MediaStream | null) => set({ stream }),
     stopScreenShare: () => {
         const { stream } = get()

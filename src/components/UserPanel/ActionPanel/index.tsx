@@ -36,6 +36,11 @@ const ActionPanel = () => {
         }
     }
 
+    const handleChangeScreenShareSource = () => {
+        setIsDropdownOpen(false)
+        setIsSelectingSource(true)
+        requestSources()
+    }
 
     return (
         <TooltipProvider>
@@ -118,7 +123,7 @@ const ActionPanel = () => {
                             className="w-[80vw] !max-w-none"
                         >
                             <VisuallyHidden>
-                                <DialogHeader>
+                                <DialogHeader tabIndex={-1} hidden={true}>
                                     <DialogTitle>Select a screen to share</DialogTitle>
                                     <DialogDescription>
                                         a selector for selecting a video source, including screen, window, and camera
@@ -132,7 +137,7 @@ const ActionPanel = () => {
                         <DropdownMenuItem onClick={handleStopScreenShare}>
                             <LuScreenShareOff className="h-5 w-5" /> stop screen sharing
                         </DropdownMenuItem>
-                        <DropdownMenuItem disabled={true}>
+                        <DropdownMenuItem disabled={false} onClick={handleChangeScreenShareSource}>
                             <LuScreenShare className="h-5 w-5" /> change screen sharing source
                         </DropdownMenuItem>
                     </DropdownMenuContent>

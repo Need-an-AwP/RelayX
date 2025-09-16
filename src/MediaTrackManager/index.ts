@@ -1,3 +1,3 @@
-export * from './InputTrackManager';
+export * from './input/InputTrackManager';
 
 export * from './OutputTrackManager';

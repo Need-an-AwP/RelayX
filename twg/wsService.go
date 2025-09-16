@@ -150,7 +150,9 @@ func handleMediaChunk(data []byte) {
 	}
 	mediaData := data[9:]
 
-	// log.Printf("Received video chunk: trackID=%d, duration=%d", trackID, duration)
+	if trackID == CPA_AUDIO {
+		log.Printf("Received CPA chunk: bytelength=%d, duration=%d", len(mediaData), duration)
+	}
 
 	// write sample to every connection
 	for _, connection := range rtcManager.connections {

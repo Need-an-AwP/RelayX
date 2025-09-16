@@ -73,7 +73,17 @@ export default class InputAudioProcessor {
 
             this.encoder.configure(config);
             this.state = ProcessorState.RUNNING;
-            console.log('[audio encoder] AudioEncoder initialized with config:', config);
+
+            // 配置多个不同目标码率的opus，尝试同步
+            // let n = 0;
+            // setInterval(() => {
+            //     this.encoder!.configure({
+            //         ...config,
+            //         bitrate: n % 2 === 0 ? 32_000 : 128_000,
+            //     })
+            //     console.log(`[audio encoder] Reconfigured encoder, bitrate: ${n % 2 === 0 ? 32_000 : 128_000}`);
+            //     n++;
+            // }, 10 * 1000);
         } catch (error) {
             console.error('[audio encoder] Failed to initialize AudioEncoder:', error);
             this.state = ProcessorState.STOPPED;

@@ -1,11 +1,16 @@
-import { useLocalUserStateStore, useRemoteUsersStore, useAudioProcessing, useWsStore } from "@/stores"
+import {
+    useLocalUserStateStore, useRemoteUsersStore,
+    useAudioProcessing, useWsStore, useDesktopCapture
+} from "@/stores"
 import InputAudioProcessor from "./audioEncoder"
-import {TrackID} from "@/types"
+import InputVideoProcessor from "./videoEncoder"
+import { TrackID } from "@/types"
 
 class InputTrackManager {
     private static instance: InputTrackManager | null = null;
     private microphoneProcessor: InputAudioProcessor | null = null;
     private cpaProcessor: InputAudioProcessor | null = null;
+    private screenProcessor: InputVideoProcessor | null = null;
 
     private constructor() {
         // only subscribe core state changes
@@ -21,18 +26,18 @@ class InputTrackManager {
                 const leftChat = !current.isInChat && previous.isInChat;
 
 
-                 if (enteredChat) {
+                if (enteredChat) {
                     this.startTransMicAudio();
                     // 如果在进入前本地已勾选共享状态（例如持久化恢复），补启动
                     if (current.isSharingAudio) this.startTransCpaAudio();
-                    // if (current.isSharingScreen) this.startScreenShare();
+                    if (current.isSharingScreen) this.startTransScreenVideo();
                 }
 
                 if (leftChat) {
                     // close all when leaving chat
                     this.stopTransMicAudio();
                     this.stopTransCpaAudio();
-                    // this.stopScreenShare();
+                    this.stopTransScreenVideo();
                     return;
                 }
 
@@ -44,9 +49,9 @@ class InputTrackManager {
                     }
 
                     if (current.isSharingScreen && !previous.isSharingScreen) {
-                        // this.startScreenShare();
+                        this.startTransScreenVideo();
                     } else if (!current.isSharingScreen && previous.isSharingScreen) {
-                        // this.stopScreenShare();
+                        this.stopTransScreenVideo();
                     }
                 }
             }
@@ -138,6 +143,40 @@ class InputTrackManager {
         }
     }
 
+    private async startTransScreenVideo(): Promise<void> {
+        if (this.screenProcessor?.isActive()) {
+            console.log('[MediaTrackManager] Screen video transmission already active');
+            return;
+        }
+
+        const { stream } = useDesktopCapture.getState();
+        if (!stream) {
+            console.warn('[MediaTrackManager] No desktop capture stream available for screen video.');
+            return;
+        }
+
+        const screenVideoTrack = stream.getVideoTracks()[0];
+        if (!screenVideoTrack) {
+            console.warn('[MediaTrackManager] No screen video track available.');
+            return;
+        }
+
+        const { mediaWs } = useWsStore.getState();
+        if (!mediaWs) {
+            console.warn('[MediaTrackManager] No media WebSocket available.');
+            return;
+        }
+
+        try {
+            this.screenProcessor = new InputVideoProcessor(TrackID.SCREEN_SHARE_VIDEO, mediaWs, screenVideoTrack);
+            console.log('[MediaTrackManager] Started transmitting screen video');
+
+        } catch (error) {
+            console.error('[MediaTrackManager] Failed to start screen video transmission:', error);
+            this.screenProcessor = null;
+        }
+    }
+
     private async stopTransMicAudio(): Promise<void> {
         if (this.microphoneProcessor) {
             this.microphoneProcessor.stop();
@@ -151,6 +190,14 @@ class InputTrackManager {
             this.cpaProcessor.stop();
             this.cpaProcessor = null;
             console.log('[MediaTrackManager] Stopped transmitting CPA audio');
+        }
+    }
+
+    private async stopTransScreenVideo(): Promise<void> {
+        if (this.screenProcessor) {
+            this.screenProcessor.stop();
+            this.screenProcessor = null;
+            console.log('[MediaTrackManager] Stopped transmitting screen video');
         }
     }
 

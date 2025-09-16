@@ -27,7 +27,7 @@ function setScreenCaptureId(id) {
 
 function setDisplayMediaRequestHandler() {
     session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
-        console.log('setDisplayMediaRequestHandler', request);
+        // console.log('setDisplayMediaRequestHandler', request);
         try {
             let captureId = screenCaptureId;
 
