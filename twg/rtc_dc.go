@@ -59,12 +59,15 @@ func (rm *RTCManager) setupDataChannelHandlers(dc *webrtc.DataChannel, peerIP st
 			} else {
 				msgType := jsonData.(map[string]interface{})["type"]
 				switch msgType {
-
 				case "userState":
+					if userStateData, ok := jsonData.(map[string]interface{})["userState"]; ok {
+						rm.updateIsInChat(peerIP, userStateData.(map[string]interface{}))
+					}
+
 					jsonData.(map[string]interface{})["from"] = peerIP
 					modifiedData, err := json.Marshal(jsonData)
 					if err != nil {
-						log.Printf("Failed to marshal modified JSON: %v", err)
+						log.Printf("[RTC dc] Failed to marshal modified JSON: %v", err)
 						return
 					}
 
@@ -72,6 +75,8 @@ func (rm *RTCManager) setupDataChannelHandlers(dc *webrtc.DataChannel, peerIP st
 					if err != nil {
 						// 错误已经在 sendMsgWs 中处理和记录了
 					}
+				default:
+					log.Printf("[RTC dc] Unknown message type from %s: %v", peerIP, msgType)
 				}
 			}
 		}
@@ -95,14 +100,36 @@ func (rm *RTCManager) broadcastUserState(latestMirrorState PeerState) {
 			peerIP := connection.peerIP
 			if dc != nil && dc.ReadyState() == webrtc.DataChannelStateOpen {
 				if err := dc.SendText(string(jsonData)); err != nil {
-					log.Printf("[RTC] Failed to broadcast userState to %s: %v", peerIP, err)
+					log.Printf("[RTC dc] Failed to broadcast userState to %s: %v", peerIP, err)
 				}
-				log.Printf("[RTC broadcastUserState] broadcasted userState to %s, by dc id: %d", peerIP, *dc.ID())
-			}else {
-				log.Printf("[RTC broadcastUserState] broadcast failed to %s", peerIP)
+				log.Printf("[RTC dc] broadcasted userState to %s, by dc id: %d", peerIP, *dc.ID())
+			} else {
+				log.Printf("[RTC dc] broadcast failed to %s", peerIP)
 			}
 
 			connection.mu.RUnlock()
 		}
 	}
+}
+
+// updateIsInChat 根据接收到的userState更新连接的isInChat状态
+func (rm *RTCManager) updateIsInChat(peerIP string, userState map[string]interface{}) {
+	rm.mu.RLock()
+	connection, exists := rm.connections[peerIP]
+	rm.mu.RUnlock()
+
+	if !exists {
+		return
+	}
+
+	connection.mu.Lock()
+	defer connection.mu.Unlock()
+
+	isInChat, ok := userState["isInChat"].(bool)
+	if !ok {
+		log.Printf("[RTC dc] Failed to get isInChat status for peer %s: value is not a boolean", peerIP)
+		return
+	}
+	connection.isInChat = isInChat
+
 }

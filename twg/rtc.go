@@ -33,8 +33,9 @@ type RTCConnection struct {
 	pdc               *webrtc.DataChannel
 	candidatesMu      sync.RWMutex
 	pendingCandidates []*webrtc.ICECandidate
-	tracks            map[string]*webrtc.TrackLocalStaticSample // key is track.ID
-	senders           map[string]*webrtc.RTPSender              // key is track.ID
+	tracks            map[uint8]*webrtc.TrackLocalStaticSample // key is track.ID
+	isInChat          bool
+	senders           map[uint8]*webrtc.RTPSender // key is track.ID
 	CreatedAt         time.Time
 	mu                sync.RWMutex
 	lastPingTime      time.Time
@@ -264,8 +265,9 @@ func (rm *RTCManager) createConnection(role RTCRole, peerIP string, sdpWithIce *
 		dc:                dc, // nil at answer side
 		pdc:               pdc,
 		pendingCandidates: make([]*webrtc.ICECandidate, 0),
-		tracks:            make(map[string]*webrtc.TrackLocalStaticSample),
-		senders:           make(map[string]*webrtc.RTPSender),
+		tracks:            make(map[uint8]*webrtc.TrackLocalStaticSample),
+		isInChat:          false,
+		senders:           make(map[uint8]*webrtc.RTPSender),
 		CreatedAt:         time.Now(),
 	}
 

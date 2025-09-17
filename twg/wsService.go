@@ -154,9 +154,16 @@ func handleMediaChunk(data []byte) {
 		log.Printf("Received CPA chunk: bytelength=%d, duration=%d", len(mediaData), duration)
 	}
 
-	// write sample to every connection
+	// write sample to connections which is in chat
+	rtcManager.mu.RLock()
 	for _, connection := range rtcManager.connections {
-		track, exist := connection.tracks[trackMap[trackID].id]
+		connection.mu.RLock()
+		if connection.isInChat != true {
+			connection.mu.RUnlock()
+			continue
+		}
+
+		track, exist := connection.tracks[trackID]
 		if !exist {
 			log.Printf("Track not found: %d", trackID)
 			continue
@@ -166,7 +173,9 @@ func handleMediaChunk(data []byte) {
 			Data:     mediaData,
 			Duration: duration,
 		})
+		connection.mu.RUnlock()
 	}
+	rtcManager.mu.RUnlock()
 }
 
 func handleMessage(data []byte) {

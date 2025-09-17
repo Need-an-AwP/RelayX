@@ -16,7 +16,7 @@ export default function SourceSelector() {
         isCapturing,
         setIsCapturing,
     } = useDesktopCapture()
-    const updateSelfState = useLocalUserStateStore(state => state.updateSelfState)
+    const {userState, updateSelfState} = useLocalUserStateStore()
     const [selectedCategory, setSelectedCategory] = useState<string>('screen')
     const [isLoading, setIsLoading] = useState<boolean>(false)
 
@@ -29,6 +29,7 @@ export default function SourceSelector() {
                 return;
             }
         }
+        
         setIsLoading(true);
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
@@ -47,6 +48,11 @@ export default function SourceSelector() {
             console.log('captureStream:', captureStream);
             setStream(captureStream);
             setIsSelectingSource(false);
+            //////// for restarting the video encoder
+            updateSelfState({
+                isSharingScreen: false,
+            });
+            ////////
             updateSelfState({
                 isSharingScreen: true,
             });

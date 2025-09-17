@@ -20,13 +20,14 @@ import {
     ContextMenuSubTrigger,
     ContextMenuTrigger,
 } from "@/components/ui/context-menu"
-import { useAudioStore } from "@/stores"
+import { useAudioStore, useLocalUserStateStore } from "@/stores"
 import { Label } from "@/components/ui/label"
 import { animationLoopManager } from "@/utils/animationLoopManager"
 import { AudioContextManager } from "@/AudioManager"
 
 
 const User = ({ peerIP, peerState }: { peerIP: string, peerState: PeerState }) => {
+    const { isInChat: isLocalInChat } = useLocalUserStateStore(state => state.userState)
     const { audioActiveThreshold } = useAudioStore()
     const [audioActive, setAudioActive] = useState(false)
     const [isMuted, setIsMuted] = useState(false)
@@ -39,8 +40,11 @@ const User = ({ peerIP, peerState }: { peerIP: string, peerState: PeerState }) =
 
 
     useEffect(() => {
+        if (!isLocalInChat) return;
+        
         const checkAudioLevel = () => {
             const volumeLevel = PeerNodeManager.getPeerVolumeLevel(peerIP)
+            if (isNaN(volumeLevel)) return;
             setAudioActive(volumeLevel > audioActiveThreshold ? true : false)
         }
 
@@ -49,7 +53,7 @@ const User = ({ peerIP, peerState }: { peerIP: string, peerState: PeerState }) =
         return () => {
             animationLoopManager.remove(id)
         }
-    }, [peerIP, id])
+    }, [peerIP, id, isLocalInChat])
 
     // 获取用户名首字母作为头像备用显示
     const getInitials = (name: string) => {

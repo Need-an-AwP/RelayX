@@ -29,7 +29,7 @@ export default class InputVideoProcessor {
         return this.state === ProcessorState.RUNNING;
     }
 
-    private async init(firstFrame: VideoFrame) {
+    private async init() {
         if (this.state !== ProcessorState.IDLE) {
             return; // 避免重复初始化
         }
@@ -106,14 +106,11 @@ export default class InputVideoProcessor {
         const dataView = new Uint8Array(packet, offset); // 从offset开始的视图
         dataView.set(buffer);
 
-        // 处理并发送编码数据的部分注释留空
-        /*
         if (this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(packet);
         } else {
             console.warn('mediaWs is not open. Unable to send video data.');
         }
-        */
     }
 
     private async encodeFromVideoTrack(track: MediaStreamVideoTrack) {
@@ -133,8 +130,7 @@ export default class InputVideoProcessor {
                     if (done) break;
 
                     if (this.state === ProcessorState.IDLE) {
-                        // 使用第一帧初始化编码器
-                        await this.init(value);
+                        await this.init();
                     }
 
                     if (this.encoder && this.state === ProcessorState.RUNNING) {

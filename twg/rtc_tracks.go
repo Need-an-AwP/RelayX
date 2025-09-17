@@ -61,7 +61,7 @@ func ipv4ToBytes(ip string) [4]byte {
 
 func (rm *RTCManager) addTracks(pc *webrtc.PeerConnection, connection *RTCConnection) error {
 
-	for _, t := range trackMap {
+	for i, t := range trackMap {
 		track, err := webrtc.NewTrackLocalStaticSample(
 			webrtc.RTPCodecCapability{MimeType: t.MimeType},
 			t.id,
@@ -78,8 +78,9 @@ func (rm *RTCManager) addTracks(pc *webrtc.PeerConnection, connection *RTCConnec
 			return err
 		}
 
-		connection.tracks[track.ID()] = track
-		connection.senders[track.ID()] = sender
+		// using uint8 flag as key
+		connection.tracks[i] = track
+		connection.senders[i] = sender
 
 		// feedback from rtcp
 		go handleRTCP("sender:"+track.ID(), sender)
@@ -114,109 +115,109 @@ func handleTrack(track *webrtc.TrackRemote, peerIP string) {
 			log.Printf("unknown audio track ID: %s", track.ID())
 			return
 		}
+	} else if track.Kind() == webrtc.RTPCodecTypeVideo &&
+		track.Codec().MimeType == webrtc.MimeTypeVP9 &&
+		track.ID() == trackMap[SCREEN_SHARE_VIDEO].id {
+		go depackVideoRTP(track, SCREEN_SHARE_VIDEO, peerIP)
+		return
+	} else {
+		log.Printf("Unsupported track kind or codec: Kind=%s, Codec=%s, ID=%s", track.Kind(), track.Codec().MimeType, track.ID())
+		return
 	}
+}
 
-	/*
-		if track.Kind() != webrtc.RTPCodecTypeVideo {
-			return
-		}
-		codecName := track.Codec().MimeType
-		log.Printf("Track has started, codec: %s", codecName)
-		//  if strings.EqualFold(codecName, webrtc.MimeTypeVP8) {
-		// 	fmt.Errorf("codec unsupported: %s", codecName)
-		//  }
+func depackVideoRTP(track *webrtc.TrackRemote, trackID uint8, peerIP string) {
+	depacketizer := codecs.VP9Packet{}
+	var frameBuffer []byte
+	var lastTimestamp uint32 = 0
 
-		depacketizer := &codecs.VP8Packet{}
-		var frameBuffer []byte
-		var lastTimestamp uint32 = 0
-
-		go func() {
-			for {
-				rtpPacket, _, readErr := track.ReadRTP()
-				if readErr != nil {
-					log.Printf("RTP read error: %v", readErr)
-					return
-				}
-
-				// use sendMediaWs to send video data
-				// 检查是否是新帧的开始
-				if rtpPacket.Timestamp != lastTimestamp && len(frameBuffer) > 0 {
-					// 发送完整的前一帧
-					ipBytes := ipv4ToBytes(peerIP)
-					headerSize := 1 + 4 // 1字节轨道ID + 4字节IP地址
-					totalSize := headerSize + len(frameBuffer)
-					packet := make([]byte, totalSize)
-
-					offset := 0
-					packet[offset] = SCREEN_SHARE_VIDEO // 轨道ID标识
-					offset += 1
-
-					// 添加IPv4地址（4字节）
-					copy(packet[offset:offset+4], ipBytes[:])
-					offset += 4
-
-					copy(packet[offset:], frameBuffer)
-
-					err := sendMediaWs(packet)
-					if err != nil {
-						log.Printf("Failed to send video frame via WebSocket: %v", err)
-					}
-					frameBuffer = frameBuffer[:0] // 清空缓冲区
-				}
-				lastTimestamp = rtpPacket.Timestamp
-
-				// 解包RTP载荷
-				frameData, err := depacketizer.Unmarshal(rtpPacket.Payload)
-				if err != nil {
-					continue
-				}
-
-				// 将数据添加到帧缓冲区
-				frameBuffer = append(frameBuffer, frameData...)
+	go func() {
+		for {
+			rtpPacket, _, readErr := track.ReadRTP()
+			if readErr != nil {
+				log.Printf("RTP read error: %v", readErr)
+				return
 			}
-		}()
-	*/
+
+			// 检查是否是新帧的开始
+			if rtpPacket.Timestamp != lastTimestamp && len(frameBuffer) > 0 {
+				// 发送完整的前一帧
+				ipBytes := ipv4ToBytes(peerIP)
+				headerSize := 1 + 4 // 1字节轨道ID + 4字节IP地址
+				totalSize := headerSize + len(frameBuffer)
+				packet := make([]byte, totalSize)
+
+				offset := 0
+				packet[offset] = SCREEN_SHARE_VIDEO // 轨道ID标识
+				offset += 1
+
+				// 添加IPv4地址（4字节）
+				copy(packet[offset:offset+4], ipBytes[:])
+				offset += 4
+
+				copy(packet[offset:], frameBuffer)
+
+				err := sendMediaWs(packet)
+				if err != nil {
+					log.Printf("Failed to send video frame via WebSocket: %v", err)
+				}
+				frameBuffer = frameBuffer[:0] // 清空缓冲区
+			}
+			lastTimestamp = rtpPacket.Timestamp
+
+			// 解包RTP载荷
+			frameData, err := depacketizer.Unmarshal(rtpPacket.Payload)
+			if err != nil {
+				continue
+			}
+
+			// 将数据添加到帧缓冲区
+			frameBuffer = append(frameBuffer, frameData...)
+		}
+	}()
 }
 
 func depackAudioRTP(track *webrtc.TrackRemote, trackID uint8, peerIP string) {
 	depacketizer := &codecs.OpusPacket{}
 
-	for {
-		rtpPacket, _, readErr := track.ReadRTP()
-		if readErr != nil {
-			log.Printf("Audio RTP read error: %v", readErr)
-			return
+	go func() {
+		for {
+			rtpPacket, _, readErr := track.ReadRTP()
+			if readErr != nil {
+				log.Printf("Audio RTP read error: %v", readErr)
+				return
+			}
+			// log.Printf("Audio RTP packet received: Timestamp=%d, PayloadSize=%d", rtpPacket.Timestamp, len(rtpPacket.Payload))
+
+			// depack
+			opusFrame, err := depacketizer.Unmarshal(rtpPacket.Payload)
+			if err != nil {
+				log.Printf("Failed to unmarshal Opus packet: %v", err)
+				continue
+			}
+
+			// create packet with header
+			ipBytes := ipv4ToBytes(peerIP)
+			headerSize := 1 + 4 // 1字节轨道ID + 4字节IP地址
+			totalSize := headerSize + len(opusFrame)
+			packet := make([]byte, totalSize)
+
+			offset := 0
+			packet[offset] = trackID // 轨道ID标识
+			offset += 1
+
+			// 添加IPv4地址（4字节）
+			copy(packet[offset:offset+4], ipBytes[:])
+			offset += 4
+
+			copy(packet[offset:], opusFrame)
+
+			err = sendMediaWs(packet)
+			if err != nil {
+				log.Printf("Failed to send audio frame via WebSocket: %v", err)
+			}
 		}
-		// log.Printf("Audio RTP packet received: Timestamp=%d, PayloadSize=%d", rtpPacket.Timestamp, len(rtpPacket.Payload))
-
-		// depack
-		opusFrame, err := depacketizer.Unmarshal(rtpPacket.Payload)
-		if err != nil {
-			log.Printf("Failed to unmarshal Opus packet: %v", err)
-			continue
-		}
-
-		// create packet with header
-		ipBytes := ipv4ToBytes(peerIP)
-		headerSize := 1 + 4 // 1字节轨道ID + 4字节IP地址
-		totalSize := headerSize + len(opusFrame)
-		packet := make([]byte, totalSize)
-
-		offset := 0
-		packet[offset] = trackID // 轨道ID标识
-		offset += 1
-
-		// 添加IPv4地址（4字节）
-		copy(packet[offset:offset+4], ipBytes[:])
-		offset += 4
-
-		copy(packet[offset:], opusFrame)
-
-		err = sendMediaWs(packet)
-		if err != nil {
-			log.Printf("Failed to send audio frame via WebSocket: %v", err)
-		}
-	}
+	}()
 }
 
 // not using transceivers to presave track
