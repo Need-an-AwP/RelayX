@@ -6,8 +6,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { LoaderCircle } from "lucide-react";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from "@/components/ui/context-menu"
 import UserAudioSpectrum from "@/components/UserAudioSpectrum";
-import type { PeerState } from "@/types"
+import { type PeerState, TrackID } from "@/types"
 import { AudioContextManager } from "@/AudioManager"
+import { useVideoStreamStore } from "@/stores/videoStreamStore"
 
 type peerIP = string;
 
@@ -25,27 +26,20 @@ export function UserCard({ maximiumCard,
 }) {
     const PeerNodeManager = AudioContextManager.getInstance().peerManager
     const analyser = PeerNodeManager.getPeerNodes(peerIP)?.analyserNode
-    // const { getPeerAnalyserNode } = useAudioStore()
-    // const { getPeerAnalyserNode, getPeerVideoTracks } = useMediaStore()
-    // const analyser = getPeerAnalyserNode(peerIP)
-    // const videoTracks = getPeerVideoTracks(peerIP)
+
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isDisplayingSpectrum, setIsDisplayingSpectrum] = useState(false)
     const [isDisplayingAvatar, setIsDisplayingAvatar] = useState(true)
-    const hasVideoTrack = false;
-    const videoTrack = null;
+    const [hasVideoTrack, setHasVideoTrack] = useState(false);
+    const videoStream = useVideoStreamStore(state => state.streamsByPeer[peerIP]?.find(vs => vs.trackID === TrackID.SCREEN_SHARE_VIDEO) || null);
 
-    // 检查是否有视频轨道（主要是screen_share_video）
-    // const hasVideoTrack = videoTracks && Object.keys(videoTracks).length > 0
-    // const videoTrack = hasVideoTrack ? Object.values(videoTracks)[0] : null
-
-    // useEffect(() => {
-    //     if (videoRef.current && videoTrack && !isDisplayingSpectrum) {
-    //         const video = videoRef.current;
-    //         const videoStream = new MediaStream([videoTrack]);
-    //         video.srcObject = videoStream;
-    //     }
-    // }, [videoTrack, isDisplayingSpectrum, peerState.isSharingScreen]);
+    useEffect(() => {
+        if (videoRef.current && videoStream && !isDisplayingSpectrum) {
+            const video = videoRef.current;
+            video.srcObject = videoStream.stream;
+        }
+        setHasVideoTrack(!!videoStream);
+    }, [videoStream, isDisplayingSpectrum, peerState.isSharingScreen, peerIP]);
 
     return (
         <ContextMenu key={peerIP}>
@@ -64,7 +58,7 @@ export function UserCard({ maximiumCard,
                         <>
                             <div className="h-full w-full">
                                 <video
-                                    key={videoTrack?.id || 'no-track'} // 强制重新渲染
+                                    key={videoStream?.trackID || 'no-track'} // 强制重新渲染
                                     ref={videoRef}
                                     autoPlay
                                     playsInline

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { useRemoteUsersStore } from './remoteUsersStateStore';
 import { syncMirrorState } from './localUserStateStore';
 import { PeerStateSchema, TrackID, type TrackIDType } from '@/types';
-import { OutputTrackManager } from '@/MediaTrackManager';
+import { OutputTrackManager, VideoOutputManager } from '@/MediaTrackManager';
 
 interface wsStateStore {
     mediaWs: WebSocket | null;
@@ -85,7 +85,7 @@ const createWs = (mediaWsAddr: string, msgWsAddr: string) => {
                     await handleAudioData(trackID, buffer);
                     break;
                 case TrackID.SCREEN_SHARE_VIDEO:
-                    // TODO: 处理视频数据
+                    await handleVideoData(trackID, buffer);
                     console.log('[ws] Received screen share video data');
                     break;
                 default:
@@ -183,15 +183,45 @@ const handleAudioData = async (trackID: TrackIDType, buffer: Uint8Array) => {
             timestamp: performance.now() * 1000, // 使用当前时间戳，单位为微秒
         });
 
-        if (trackID === TrackID.CPA_AUDIO) {
-            // console.log(`[Audio] Created chunk for track ${trackID} from ${peerIP}, size: ${opusData.length} bytes`);
-        }
+        // if (trackID === TrackID.CPA_AUDIO) {
+        //     console.log(`[Audio] Created chunk for track ${trackID} from ${peerIP}, size: ${opusData.length} bytes`);
+        // }
         // 使用 OutputTrackManager 处理音频数据
         const outputManager = OutputTrackManager.getInstance();
         outputManager.processAudioChunk(peerIP, trackID, chunk);
 
     } catch (error) {
         console.error(`[Audio] Failed to create EncodedAudioChunk for track ${trackID} from ${peerIP}:`, error);
+    }
+}
+
+const handleVideoData = async (trackID: TrackIDType, buffer: Uint8Array) => {
+    const headerSize = 1 + 4; // TrackID (1 byte) + peerIP (4 bytes)
+    if (buffer.length <= headerSize) {
+        console.warn(`[Video] Invalid video data size for track ${trackID}: ${buffer.length}`);
+        return;
+    }
+
+    const peerIPBytes = buffer.slice(1, 5);
+    const peerIP = `${peerIPBytes[0]}.${peerIPBytes[1]}.${peerIPBytes[2]}.${peerIPBytes[3]}`;
+    const vp9Data = buffer.slice(headerSize);
+
+    try {
+        // VP9 关键帧检测逻辑
+        // 检查第一个字节的第 3 位 (frame_type)，0 表示关键帧
+        const isKeyFrame = (vp9Data[0] & 0x08) === 0;
+
+        // 创建 EncodedVideoChunk 来解码
+        const chunk = new EncodedVideoChunk({
+            type: isKeyFrame ? 'key' : 'delta',
+            timestamp: performance.now() * 1000, // 转换为微秒
+            data: vp9Data
+        });
+
+        const outputManager = VideoOutputManager.getInstance();
+        outputManager.processVideoChunk(peerIP, trackID, chunk);
+    } catch (error) {
+        console.error(`[Video] Failed to create EncodedVideoChunk for track ${trackID} from ${peerIP}:`, error);
     }
 }
 

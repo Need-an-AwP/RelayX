@@ -31,7 +31,7 @@ dist-ssr
 .env.node-B
 .env.node-C
 
-#tailscale Dir
+#tailscale temporary data Dir
 tsNodeDir
 
 # exe files
