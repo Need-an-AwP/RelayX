@@ -52,7 +52,7 @@ const SelfUser = () => {
 
     return (
         <div
-            className={`group rounded-md select-none border-1 
+            className={`group rounded-md select-none border-1
             border-muted-foreground/30 hover:border-sky-300/100
             transition-all duration-300 ${isExtended ? 'h-45' : 'h-14'}`}
         >

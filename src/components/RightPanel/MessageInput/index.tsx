@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useMessageStore, useRemoteUsersStore } from "@/stores";
+import { useDMStore, useRemoteUsersStore } from "@/stores";
 import { Checkbox } from "@/components/ui/checkbox"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { LoaderCircle } from "lucide-react";
@@ -37,7 +37,7 @@ export default function MessageInput({ onFocusChange }: MessageInputProps) {
         handleSendMessage,
         messagesByPeer,
         getLatestMessage
-    } = useMessageStore()
+    } = useDMStore()
 
     // 记录每个 peer 的最后一条消息 ID，用于检测新消息
     const lastMessageIdRef = useRef<Record<string, string>>({});

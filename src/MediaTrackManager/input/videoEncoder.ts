@@ -17,6 +17,8 @@ export default class InputVideoProcessor {
     private state: ProcessorStateType = ProcessorState.IDLE;
     private videoConfig: VideoEncoderConfig | null = null;
     private videoTrack: MediaStreamVideoTrack;
+    private frameCount: number = 0;
+    private keyFrameInterval: number = 30;
 
     constructor(trackID: TrackIDType, ws: WebSocket, videoTrack: MediaStreamVideoTrack) {
         this.trackID = trackID;
@@ -49,7 +51,7 @@ export default class InputVideoProcessor {
                 width: trackSettings.width || 1920,
                 height: trackSettings.height || 1080,
                 framerate: trackSettings.frameRate || 30,
-                bitrate: 2_000_000, // 2 Mbps
+                bitrate: 200_000, // 200 Kbps
                 scalabilityMode: 'L1T2', // SVC mode
             };
 
@@ -135,7 +137,9 @@ export default class InputVideoProcessor {
 
                     if (this.encoder && this.state === ProcessorState.RUNNING) {
                         try {
-                            this.encoder.encode(value);
+                            const needsKeyFrame = this.frameCount % this.keyFrameInterval === 0;
+                            this.encoder.encode(value, { keyFrame: needsKeyFrame });
+                            this.frameCount++;
                         } catch (error) {
                             console.error('Error encoding frame:', error);
                         }
@@ -154,6 +158,7 @@ export default class InputVideoProcessor {
     }
 
     public stop() {
+        this.frameCount = 0;
         this.state = ProcessorState.STOPPING;
 
         if (this.encoder) {

@@ -16,8 +16,12 @@ export * from './audioStore'
 
 export * from './screenShareStore'
 
-export * from './messageStore'
+export * from './dmStore'
 
 export * from './localUserStateStore'
 
 export * from './remoteUsersStateStore'
+
+export * from './videoStreamStore'
+
+export * from './latencyStore'

@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/pion/webrtc/v4"
+
+	"encoding/json"
 	"log"
 	"time"
 )
@@ -10,11 +12,33 @@ func (rm *RTCManager) sendPingsByPdc() {
 	rm.mu.RLock()
 	defer rm.mu.RUnlock()
 
+	// 收集所有连接的延迟信息
+	type LatencyInfo struct {
+		PeerIP  string `json:"peerIP"`
+		Latency string `json:"latency"`
+	}
+
+	type LatencyUpdate struct {
+		Type      string        `json:"type"`
+		Timestamp int64         `json:"timestamp"`
+		Latencies []LatencyInfo `json:"latencies"`
+	}
+
+	var latencies []LatencyInfo
+
 	for _, connection := range rm.connections {
+		connection.mu.RLock()
 		if connection.pdc != nil {
 			if connection.pdc.ReadyState() == webrtc.DataChannelStateOpen {
 				connection.pingMu.Lock()
+
 				connection.lastPingTime = time.Now()
+
+				latencies = append(latencies, LatencyInfo{
+					PeerIP:  connection.peerIP,
+					Latency: connection.latency.String(),
+				})
+
 				connection.pingMu.Unlock()
 
 				err := connection.pdc.SendText("ping")
@@ -22,6 +46,27 @@ func (rm *RTCManager) sendPingsByPdc() {
 					log.Printf("[RTC] Failed to send ping to %s: %v", connection.peerIP, err)
 				}
 			}
+		}
+		connection.mu.RUnlock()
+	}
+
+	// 发送延迟信息
+	if len(latencies) > 0 {
+		latencyUpdate := LatencyUpdate{
+			Type:      "latency",
+			Timestamp: time.Now().UnixMilli(),
+			Latencies: latencies,
+		}
+
+		jsonData, err := json.Marshal(latencyUpdate)
+		if err != nil {
+			log.Printf("[RTC] Failed to marshal latency data: %v", err)
+			return
+		}
+
+		err = sendMsgWs(jsonData)
+		if err != nil {
+			log.Printf("[RTC] Failed to send latency data via websocket: %v", err)
 		}
 	}
 }
@@ -46,7 +91,7 @@ func (rm *RTCManager) setupPingDataChannel(pdc *webrtc.DataChannel, peerIP strin
 				if !connection.lastPingTime.IsZero() {
 					latency := time.Since(connection.lastPingTime)
 					connection.latency = latency
-					log.Printf("[RTC ping] Latency to %s: %v", peerIP, latency)
+					// log.Printf("[RTC ping] Latency to %s: %v", peerIP, latency)
 				}
 			}
 		}

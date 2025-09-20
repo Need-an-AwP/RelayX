@@ -2,6 +2,7 @@ import type { peerNodesType, PeerAudioNodes } from '../types';
 import { MainAudioNodes } from './MainAudioNodes';
 import type { TrackNodeManager } from './TrackNodeManager';
 import { AudioAnalyser } from "../utils/AudioAnalyser";
+import {useAudioStore} from "@/stores";
 
 export class PeerNodeManager {
     private audioContext: AudioContext;
@@ -37,6 +38,7 @@ export class PeerNodeManager {
             analyserNode.connect(this.mainNodes.mainGainNode);
 
             this.peerNodes[peerIP] = { gainNode, analyserNode };
+            useAudioStore.getState().setPeerAnalyser(peerIP, analyserNode);
             return true;
         } catch (error) {
             console.error(`Failed to create peer nodes for ${peerIP}:`, error);
@@ -92,6 +94,7 @@ export class PeerNodeManager {
         // 移除 peer 节点
         if (this.peerNodes[peerIP]) {
             try {
+                useAudioStore.getState().removePeerAnalyser(peerIP);
                 this.peerNodes[peerIP].gainNode.disconnect();
                 this.peerNodes[peerIP].analyserNode.disconnect();
 

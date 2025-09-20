@@ -7,8 +7,7 @@ import { LoaderCircle } from "lucide-react";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from "@/components/ui/context-menu"
 import UserAudioSpectrum from "@/components/UserAudioSpectrum";
 import { type PeerState, TrackID } from "@/types"
-import { AudioContextManager } from "@/AudioManager"
-import { useVideoStreamStore } from "@/stores/videoStreamStore"
+import { useVideoStreamStore, useAudioStore } from "@/stores"
 
 type peerIP = string;
 
@@ -24,14 +23,12 @@ export function UserCard({ maximiumCard,
     peerIP: peerIP,
     peerState: PeerState
 }) {
-    const PeerNodeManager = AudioContextManager.getInstance().peerManager
-    const analyser = PeerNodeManager.getPeerNodes(peerIP)?.analyserNode
-
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isDisplayingSpectrum, setIsDisplayingSpectrum] = useState(false)
     const [isDisplayingAvatar, setIsDisplayingAvatar] = useState(true)
     const [hasVideoTrack, setHasVideoTrack] = useState(false);
     const videoStream = useVideoStreamStore(state => state.streamsByPeer[peerIP]?.find(vs => vs.trackID === TrackID.SCREEN_SHARE_VIDEO) || null);
+    const analyser = useAudioStore(state => state.peerAnalysers[peerIP]);
 
     useEffect(() => {
         if (videoRef.current && videoStream && !isDisplayingSpectrum) {
@@ -66,7 +63,7 @@ export function UserCard({ maximiumCard,
                                     className="h-full w-full object-fit object-center"
                                 />
                                 <div className={`absolute top-2 left-2 w-[6%] aspect-square z-10 opacity-0 
-                                    ${maximiumCard === peerIP ? 'group-hover:opacity-100' : ''}
+                                    ${maximiumCard === peerIP && isDisplayingAvatar ? 'group-hover:opacity-100' : ''}
                                     transition-opacity duration-300`}>
                                     <Avatar className="flex-shrink-0 h-full w-full">
                                         <AvatarImage src={peerState.userAvatar} draggable={false} />

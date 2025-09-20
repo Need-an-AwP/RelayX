@@ -66,9 +66,9 @@ const UserProfile = () => {
     }
 
     // every component have z-50 when activePopover is null
-    // but when other popover is active, only that popover have z-50
+    // but when one popover is active, only that popover have z-50
     // this ensures the activated popover is always on top of the blur overlay
-    const shouldShowAboveOverlay = `${!activePopover || isUserPopoverOpen && 'z-50'}`
+    const shouldShowAboveOverlay = `${(!activePopover || isUserPopoverOpen) && 'z-50'}`
 
     return (
         <Popover

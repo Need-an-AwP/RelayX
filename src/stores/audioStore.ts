@@ -13,13 +13,19 @@ interface AudioStore {
     mainMuted: boolean;
     volumeBeforeMute: number;
 
+    // peer analyser nodes management
+    peerAnalysers: Record<string, AnalyserNode>;
+    
     setMainVolume: (volume: number) => void;
     setMainMuted: (muted: boolean) => void;
     toggleMute: () => void;
 
     getAudioContextInfo: () => any;
-
     setAudioActiveThreshold?: (threshold: number) => void;
+
+    // peer analyser management methods
+    setPeerAnalyser: (peerIP: string, analyser: AnalyserNode) => void;
+    removePeerAnalyser: (peerIP: string) => void;
 }
 
 const useAudioStore = create<AudioStore>((set, get) => ({
@@ -28,7 +34,7 @@ const useAudioStore = create<AudioStore>((set, get) => ({
     mainVolume: 1.0,
     mainMuted: false,
     volumeBeforeMute: 1.0,
-
+    peerAnalysers: {},
 
     /**
      * 设置主音量
@@ -115,7 +121,24 @@ const useAudioStore = create<AudioStore>((set, get) => ({
         if (threshold < 0) threshold = 0;
         if (threshold > 255) threshold = 255;
         set({ audioActiveThreshold: threshold });
-    }
+    },
+
+    // peer analyser management methods
+    setPeerAnalyser: (peerIP: string, analyser: AnalyserNode) => {
+        set((state) => ({
+            peerAnalysers: {
+                ...state.peerAnalysers,
+                [peerIP]: analyser
+            }
+        }));
+    },
+
+    removePeerAnalyser: (peerIP: string) => {
+        set((state) => {
+            const { [peerIP]: removed, ...rest } = state.peerAnalysers;
+            return { peerAnalysers: rest };
+        });
+    },
 }));
 
 export { useAudioStore };

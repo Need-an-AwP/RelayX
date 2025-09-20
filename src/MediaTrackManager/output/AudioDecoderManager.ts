@@ -8,8 +8,8 @@ interface AudioDecoderInstance {
     writer: WritableStreamDefaultWriter<AudioData>;
 }
 
-class OutputTrackManager {
-    private static instance: OutputTrackManager | null = null;
+class AudioDecoderManager {
+    private static instance: AudioDecoderManager | null = null;
     private decoders = new Map<string, AudioDecoderInstance>();
     private audioContextManager: AudioContextManager;
 
@@ -19,11 +19,11 @@ class OutputTrackManager {
         console.log('[OutputTrackManager] Initialized with AudioContextManager integration');
     }
 
-    public static getInstance(): OutputTrackManager {
-        if (!OutputTrackManager.instance) {
-            OutputTrackManager.instance = new OutputTrackManager();
+    public static getInstance(): AudioDecoderManager {
+        if (!AudioDecoderManager.instance) {
+            AudioDecoderManager.instance = new AudioDecoderManager();
         }
-        return OutputTrackManager.instance;
+        return AudioDecoderManager.instance;
     }
 
     /**
@@ -242,8 +242,4 @@ class OutputTrackManager {
     }
 }
 
-const initOutputTrackManager = () => {
-    OutputTrackManager.getInstance();
-}
-
-export { OutputTrackManager, initOutputTrackManager };
+export { AudioDecoderManager };

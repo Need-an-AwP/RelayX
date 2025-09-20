@@ -6,6 +6,7 @@ interface VideoDecoderInstance {
     generator: MediaStreamTrackGenerator<VideoFrame>;
     track: MediaStreamTrack;
     writer: WritableStreamDefaultWriter<VideoFrame>;
+    waitingForKeyFrame: boolean; // 添加标志位跟踪是否等待key帧
 }
 
 /**
@@ -14,31 +15,33 @@ interface VideoDecoderInstance {
  * 将编码的视频块解码为 VideoFrame，然后通过 MediaStreamTrackGenerator 生成 MediaStreamTrack。
  * 生成的轨道可以通过 getVideoTrack 方法被外部模块获取。
  */
-class VideoOutputManager {
-    private static instance: VideoOutputManager | null = null;
+class VideoDecoderManager {
+    private static instance: VideoDecoderManager | null = null;
     private decoders: Record<string, VideoDecoderInstance> = {};
 
     private constructor() {
         console.log('[VideoOutputManager] Initialized');
     }
 
-    public static getInstance(): VideoOutputManager {
-        if (!VideoOutputManager.instance) {
-            VideoOutputManager.instance = new VideoOutputManager();
+    public static getInstance(): VideoDecoderManager {
+        if (!VideoDecoderManager.instance) {
+            VideoDecoderManager.instance = new VideoDecoderManager();
         }
-        return VideoOutputManager.instance;
+        return VideoDecoderManager.instance;
     }
 
     private generateDecoderKey(peerIP: string, trackID: TrackIDType): string {
         return `${peerIP}-${trackID}`;
     }
 
-    private getOrCreateDecoder(peerIP: string, trackID: TrackIDType): VideoDecoderInstance | null {
+    /**
+     * 初始化视频解码器和MediaStreamTrackGenerator
+     * @param peerIP peer IP 地址
+     * @param trackID 轨道 ID
+     * @returns VideoDecoderInstance 或 null
+     */
+    private initializeDecoderInstance(peerIP: string, trackID: TrackIDType): VideoDecoderInstance | null {
         const key = this.generateDecoderKey(peerIP, trackID);
-
-        if (this.decoders[key]) {
-            return this.decoders[key];
-        }
 
         try {
             const generator = new MediaStreamTrackGenerator({ kind: 'video' });
@@ -53,7 +56,10 @@ class VideoOutputManager {
                 },
                 error: (error: Error) => {
                     console.error(`[VideoOutputManager] Decoder error for ${key}:`, error);
-                    this.removeDecoder(peerIP, trackID);
+                    // 自动重启解码器
+                    setTimeout(() => {
+                        this.restartDecoder(peerIP, trackID);
+                    }, 100);
                 }
             });
 
@@ -67,22 +73,61 @@ class VideoOutputManager {
                 decoder,
                 generator,
                 track,
-                writer
+                writer,
+                waitingForKeyFrame: true // 新创建的解码器需要等待key帧
             };
 
-            this.decoders[key] = decoderInstance;
-            console.log(`[VideoOutputManager] Created decoder and video track for ${key}`);
-
-            // 将生成的track添加到videoStreamStore中
-            const { addVideoStream } = useVideoStreamStore.getState();
-            addVideoStream(peerIP, trackID, track);
-            console.log(`[VideoOutputManager] Added track to videoStreamStore for ${key}`);
-
+            console.log(`[VideoOutputManager] Initialized decoder and video track for ${key}`);
             return decoderInstance;
         } catch (error) {
-            console.error(`[VideoOutputManager] Failed to create decoder for ${key}:`, error);
+            console.error(`[VideoOutputManager] Failed to initialize decoder for ${key}:`, error);
             return null;
         }
+    }
+
+    private getOrCreateDecoder(peerIP: string, trackID: TrackIDType): VideoDecoderInstance | null {
+        const key = this.generateDecoderKey(peerIP, trackID);
+
+        if (this.decoders[key]) {
+            return this.decoders[key];
+        }
+
+        const decoderInstance = this.initializeDecoderInstance(peerIP, trackID);
+        if (!decoderInstance) {
+            console.error(`[VideoOutputManager] Failed to create decoder for ${key}`);
+            return null;
+        }
+
+        this.decoders[key] = decoderInstance;
+
+        // 将生成的track添加到videoStreamStore中
+        const { addVideoStream } = useVideoStreamStore.getState();
+        addVideoStream(peerIP, trackID, decoderInstance.track);
+
+        return decoderInstance;
+    }
+
+    /**
+     * 重启特定解码器实例
+     * @param peerIP peer IP 地址
+     * @param trackID 轨道 ID
+     * @returns 重启是否成功
+     */
+    public restartDecoder(peerIP: string, trackID: TrackIDType): boolean {
+        const key = this.generateDecoderKey(peerIP, trackID);
+        console.log(`[VideoOutputManager] Restarting decoder for ${key}`);
+
+        // 先移除现有的解码器
+        this.removeDecoder(peerIP, trackID);
+
+        // 重新创建解码器
+        const newDecoderInstance = this.getOrCreateDecoder(peerIP, trackID);
+        
+        if (newDecoderInstance) {
+            return true;
+        }
+        
+        return false;
     }
 
     /**
@@ -93,18 +138,30 @@ class VideoOutputManager {
      */
     public processVideoChunk(peerIP: string, trackID: TrackIDType, videoChunk: EncodedVideoChunk): void {
         const decoderInstance = this.getOrCreateDecoder(peerIP, trackID);
-
         if (!decoderInstance) {
             console.error(`[VideoOutputManager] Failed to get decoder for ${peerIP}-${trackID}`);
             return;
         }
 
+        // 如果解码器正在等待key帧，检查当前chunk是否为key帧
+        if (decoderInstance.waitingForKeyFrame) {
+            if (videoChunk.type !== 'key') {
+                console.log(`[VideoOutputManager] Decoder ${peerIP}-${trackID} waiting for key frame, skipping delta frame`);
+                return;
+            } else {
+                decoderInstance.waitingForKeyFrame = false;
+            }
+        }
+
         try {
             if (decoderInstance.decoder.state === 'configured') {
                 decoderInstance.decoder.decode(videoChunk);
+            } else {
+                console.warn(`[VideoOutputManager] Decoder ${peerIP}-${trackID} not in configured state: ${decoderInstance.decoder.state}`);
             }
         } catch (error) {
             console.error(`[VideoOutputManager] Failed to decode video chunk for ${peerIP}-${trackID}:`, error);
+            decoderInstance.waitingForKeyFrame = true;
         }
     }
 
@@ -129,6 +186,13 @@ class VideoOutputManager {
 
         if (decoderInstance) {
             try {
+                // 在关闭前先flush解码器队列
+                if (decoderInstance.decoder.state === 'configured') {
+                    decoderInstance.decoder.flush().catch(err => {
+                        console.warn(`[VideoOutputManager] Failed to flush decoder for ${key}:`, err);
+                    });
+                }
+                
                 decoderInstance.writer.close().catch(() => { });
                 if (decoderInstance.decoder.state !== 'closed') {
                     decoderInstance.decoder.close();
@@ -163,7 +227,7 @@ class VideoOutputManager {
         // 也从videoStreamStore中移除该peer的所有stream
         const { removePeerStreams } = useVideoStreamStore.getState();
         removePeerStreams(peerIP);
-        
+
         console.log(`[VideoOutputManager] Removed all decoders for peer ${peerIP}`);
     }
 
@@ -182,8 +246,5 @@ class VideoOutputManager {
     }
 }
 
-const initVideoOutputManager = () => {
-    VideoOutputManager.getInstance();
-}
 
-export { VideoOutputManager, initVideoOutputManager };
+export { VideoDecoderManager };

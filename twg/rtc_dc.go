@@ -75,6 +75,15 @@ func (rm *RTCManager) setupDataChannelHandlers(dc *webrtc.DataChannel, peerIP st
 					if err != nil {
 						// 错误已经在 sendMsgWs 中处理和记录了
 					}
+				case "dm":
+					jsonData.(map[string]interface{})["from"] = peerIP
+					modifiedData, err := json.Marshal(jsonData)
+					if err != nil {
+						log.Printf("[RTC dc] Failed to marshal modified JSON: %v", err)
+						return
+					}
+
+					_ = sendMsgWs(modifiedData)
 				default:
 					log.Printf("[RTC dc] Unknown message type from %s: %v", peerIP, msgType)
 				}

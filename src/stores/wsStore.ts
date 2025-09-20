@@ -1,8 +1,10 @@
 import { create } from 'zustand';
 import { useRemoteUsersStore } from './remoteUsersStateStore';
 import { syncMirrorState } from './localUserStateStore';
+import { useDMStore } from './dmStore';
+import { useLatencyStore } from './latencyStore';
 import { PeerStateSchema, TrackID, type TrackIDType } from '@/types';
-import { OutputTrackManager, VideoOutputManager } from '@/MediaTrackManager';
+import { AudioDecoderManager, VideoDecoderManager } from '@/MediaTrackManager';
 
 interface wsStateStore {
     mediaWs: WebSocket | null;
@@ -86,7 +88,6 @@ const createWs = (mediaWsAddr: string, msgWsAddr: string) => {
                     break;
                 case TrackID.SCREEN_SHARE_VIDEO:
                     await handleVideoData(trackID, buffer);
-                    console.log('[ws] Received screen share video data');
                     break;
                 default:
                     console.warn(`[ws] Unknown track ID: ${trackID}`);
@@ -156,6 +157,23 @@ const handleWsMessage = (event: MessageEvent) => {
             case "BER":
                 console.log('BER', msg);
                 break;
+            case "dm":
+                console.log('dm', msg);
+                useDMStore.getState().addMessage(msg.from || 'unknown', msg);
+                break;
+            case "latency":
+                // console.log('latency', msg);
+                // 将数组格式转换为 Record<string, string> 格式
+                const latencyRecord: Record<string, string> = {};
+                if (Array.isArray(msg.latencies)) {
+                    msg.latencies.forEach((item: any) => {
+                        if (item.peerIP && item.latency) {
+                            latencyRecord[item.peerIP] = item.latency;
+                        }
+                    });
+                }
+                useLatencyStore.getState().updateLatencies(latencyRecord);
+                break;
             default:
                 console.warn('[ws] Unknown message type:', msg);
                 break;
@@ -186,8 +204,7 @@ const handleAudioData = async (trackID: TrackIDType, buffer: Uint8Array) => {
         // if (trackID === TrackID.CPA_AUDIO) {
         //     console.log(`[Audio] Created chunk for track ${trackID} from ${peerIP}, size: ${opusData.length} bytes`);
         // }
-        // 使用 OutputTrackManager 处理音频数据
-        const outputManager = OutputTrackManager.getInstance();
+        const outputManager = AudioDecoderManager.getInstance();
         outputManager.processAudioChunk(peerIP, trackID, chunk);
 
     } catch (error) {
@@ -218,7 +235,7 @@ const handleVideoData = async (trackID: TrackIDType, buffer: Uint8Array) => {
             data: vp9Data
         });
 
-        const outputManager = VideoOutputManager.getInstance();
+        const outputManager = VideoDecoderManager.getInstance();
         outputManager.processVideoChunk(peerIP, trackID, chunk);
     } catch (error) {
         console.error(`[Video] Failed to create EncodedVideoChunk for track ${trackID} from ${peerIP}:`, error);

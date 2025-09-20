@@ -169,7 +169,8 @@ const useAudioProcessing = create<AudioProcessingState>((set, get) => ({
 
 const initializeAudioProcessing = async () => {
     window.ipcBridge.receive('audio-sessions', (data: AduioSessionInfo[]) => {
-        console.log(data)
+        console.log('audio-sessions', data)
+        data = data.filter(session => session.processName !== "process-audio-capture.exe");
         const { setAudioSessions } = useAudioProcessing.getState();
         setAudioSessions(data)
     })

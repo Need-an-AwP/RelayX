@@ -46,6 +46,7 @@ const PeersView = () => {
                                 key="local-self" 
                                 peerStatus={localPeer} 
                                 userState={userState}
+                                displayLatency={false}
                             />
                         )}
                         

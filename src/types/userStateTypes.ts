@@ -15,11 +15,3 @@ type PeerState = z.infer<typeof PeerStateSchema>;
 
 
 export { PeerStateSchema, type PeerState };
-
-export type DirectMessage = {
-    type: string//'dm'
-    from: string
-    content: string
-    timestamp: number
-    messageId: string
-}

@@ -23,7 +23,7 @@ import VoiceChatPanel from '@/components/VoiceChatPanel'
 import RightPanel from '@/components/RightPanel'
 // import RTCConnectionDisplay from '@/components/RTCConnectionDisplay'
 // import WelcomePanel from '@/components/WelcomePanel'
-import { initInputTrackManager, initOutputTrackManager } from '@/MediaTrackManager'
+import { initInputTrackManager } from '@/MediaTrackManager'
 import { initAudioContextManager } from '@/AudioManager'
 import TsLoading from './components/TsLoading'
 
@@ -52,7 +52,6 @@ function App() {
 
         // init track managers
         initInputTrackManager()
-        initOutputTrackManager()
 
         // init global audio context
         initAudioContextManager()

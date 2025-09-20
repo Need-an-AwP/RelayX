@@ -6,8 +6,10 @@ import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from "@/components/ui/context-menu"
 import { LoaderCircle } from "lucide-react";
-import { useAudioProcessing, useLocalUserStateStore, useDesktopCapture } from "@/stores"
+import { useAudioProcessing, useLocalUserStateStore, useDesktopCapture, useDMStore } from "@/stores"
 import UserAudioSpectrum from "@/components/UserAudioSpectrum";
+import { useFloating, offset, autoUpdate, useDismiss, useInteractions, FloatingPortal } from '@floating-ui/react';
+import { Toaster, toast } from 'sonner'
 
 
 export function SelfCard({

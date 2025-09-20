@@ -150,9 +150,9 @@ func handleMediaChunk(data []byte) {
 	}
 	mediaData := data[9:]
 
-	if trackID == CPA_AUDIO {
-		log.Printf("Received CPA chunk: bytelength=%d, duration=%d", len(mediaData), duration)
-	}
+	// if trackID == CPA_AUDIO {
+	// 	log.Printf("Received CPA chunk: bytelength=%d, duration=%d", len(mediaData), duration)
+	// }
 
 	// write sample to connections which is in chat
 	rtcManager.mu.RLock()
@@ -162,10 +162,14 @@ func handleMediaChunk(data []byte) {
 			connection.mu.RUnlock()
 			continue
 		}
-
+		if connection.pc.ConnectionState() != webrtc.PeerConnectionStateConnected {
+			connection.mu.RUnlock()
+			continue
+		}
 		track, exist := connection.tracks[trackID]
 		if !exist {
 			log.Printf("Track not found: %d", trackID)
+			connection.mu.RUnlock()
 			continue
 		}
 
@@ -186,6 +190,11 @@ func handleMessage(data []byte) {
 		msgType := jsonData.(map[string]interface{})["type"]
 		switch msgType {
 		case "userState":
+			if _, ok := jsonData.(map[string]interface{})["userState"]; !ok {
+				log.Printf("userState message does not contain userState field")
+				break
+			}
+
 			log.Printf("broadcasting userState: %v", jsonData)
 			for _, connection := range rtcManager.connections {
 				if connection.dc != nil && connection.dc.ReadyState() == webrtc.DataChannelStateOpen {
@@ -221,6 +230,13 @@ func handleMessage(data []byte) {
 			} else {
 				log.Printf("[userState] mirrorLocalState message does not contain userState field")
 			}
+		case "dm":
+			if _, ok := jsonData.(map[string]interface{})["content"].(string); !ok {
+				log.Printf("[dm] dm message does not contain content field")
+			}
+
+			handleDM(jsonData, data)
+
 		default:
 			log.Printf("Unknown message type: %v", msgType)
 		}
@@ -229,7 +245,49 @@ func handleMessage(data []byte) {
 
 }
 
-// sendMsgWs 安全地通过 msgWsConn 发送文本消息
+func handleDM(jsonData interface{}, data []byte) {
+	// 检查是否有 targetPeers 字段
+	var targetPeers []string
+	if targetPeersRaw, hasTargetPeers := jsonData.(map[string]interface{})["targetPeers"]; hasTargetPeers {
+		// 尝试将 targetPeers 转换为字符串数组
+		if targetPeersArray, ok := targetPeersRaw.([]interface{}); ok {
+			for _, peer := range targetPeersArray {
+				if peerStr, ok := peer.(string); ok {
+					targetPeers = append(targetPeers, peerStr)
+				}
+			}
+		}
+	}
+
+	log.Printf("[dm] Sending message to peers: %v", targetPeers)
+
+	for _, connection := range rtcManager.connections {
+		if connection.dc != nil && connection.dc.ReadyState() == webrtc.DataChannelStateOpen {
+			// 如果有 targetPeers 字段，检查当前连接是否在目标列表中
+			if len(targetPeers) > 0 {
+				found := false
+				for _, targetPeer := range targetPeers {
+					if connection.peerIP == targetPeer {
+						found = true
+						break
+					}
+				}
+				if !found {
+					continue // 跳过不在目标列表中的连接
+				}
+			}
+
+			err := connection.dc.SendText(string(data))
+			if err != nil {
+				log.Printf("[RTC] Failed to send dm to %s via dc: %v", connection.peerIP, err)
+			} else {
+				log.Printf("[RTC] Successfully sent dm to %s via dc", connection.peerIP)
+			}
+		}
+	}
+
+}
+
 func sendMsgWs(data []byte) error {
 	msgWsConnMu.Lock()
 	defer msgWsConnMu.Unlock()
@@ -248,7 +306,6 @@ func sendMsgWs(data []byte) error {
 	return nil
 }
 
-// sendMediaWs 安全地通过 wsConn 发送二进制消息
 func sendMediaWs(data []byte) error {
 	wsConnMu.Lock()
 	defer wsConnMu.Unlock()

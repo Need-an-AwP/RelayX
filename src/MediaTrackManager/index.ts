@@ -1,5 +1,5 @@
 export * from './input/InputTrackManager';
 
-export * from './OutputTrackManager';
+export * from './output/AudioDecoderManager';
 
-export * from './VideoOutputManager';
+export * from './output/VideoDecoderManager';

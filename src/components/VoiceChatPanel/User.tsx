@@ -63,7 +63,7 @@ const User = ({ peerIP, peerState }: { peerIP: string, peerState: PeerState }) =
     return (
         <div
             className={`group rounded-md border-1 border-muted-foreground/30 hover:border-muted-foreground/100
-            flex flex-col
+            flex flex-col select-none
             transition-all duration-300 ${isExtended ? 'h-60' : 'h-14'}`}
         >
             <ContextMenu>

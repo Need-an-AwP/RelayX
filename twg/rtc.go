@@ -123,14 +123,20 @@ func (rm *RTCManager) assignEstimatorToPeer(peerIP string) {
 
 func initWebRTC(conn net.PacketConn, httpClient *http.Client) {
 	// setup BandwidthEstimator
-	var lowBitrate int = 100_000 // 100kbps
+	var initBitrate int = 600_000
+	var maxBitrate int = 50_000_000
+	var minBitrate int = 100_000 // 100kbps
 	interceptorRegistry := &interceptor.Registry{}
 	mediaEngine := &webrtc.MediaEngine{}
 	if err := mediaEngine.RegisterDefaultCodecs(); err != nil {
 		panic(err)
 	}
 	congestionController, err := cc.NewInterceptor(func() (cc.BandwidthEstimator, error) {
-		return gcc.NewSendSideBWE(gcc.SendSideBWEInitialBitrate(lowBitrate))
+		return gcc.NewSendSideBWE(
+			gcc.SendSideBWEInitialBitrate(initBitrate),
+			gcc.SendSideBWEMaxBitrate(maxBitrate),
+			gcc.SendSideBWEMinBitrate(minBitrate),
+		)
 	})
 	if err != nil {
 		panic(err)
@@ -249,7 +255,7 @@ func (rm *RTCManager) createConnection(role RTCRole, peerIP string, sdpWithIce *
 		}
 		rm.setupDataChannelHandlers(dc, peerIP)
 
-		pdc, err := pc.CreateDataChannel("ping", nil)
+		pdc, err = pc.CreateDataChannel("ping", nil)
 		if err != nil {
 			log.Printf("[RTC] Failed to create ping data channel for %s: %v", peerIP, err)
 			pc.Close()

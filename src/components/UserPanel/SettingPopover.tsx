@@ -25,7 +25,7 @@ const SettingPopover = () => {
 
     const [isTesting, setIsTesting] = useState(false);
     const audioPlaybackRef = useRef<HTMLAudioElement>(null);
-    const shouldShowAboveOverlay = `${!activePopover || isSettingOpen && 'z-50'}`;
+    const shouldShowAboveOverlay = `${(!activePopover || isSettingOpen) && 'z-50'}`;
 
     return (
         <Popover

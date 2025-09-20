@@ -57,7 +57,7 @@ const AudioCaptureSettings = () => {
 
     }, [isAudioCaptureOpen])
 
-    const shouldShowAboveOverlay = `${!activePopover || isAudioCaptureOpen && 'z-50'}`
+    const shouldShowAboveOverlay = `${(!activePopover || isAudioCaptureOpen) && 'z-50'}`
 
 
     return (

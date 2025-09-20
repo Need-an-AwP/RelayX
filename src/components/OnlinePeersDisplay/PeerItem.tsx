@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge";
 import { Laptop, Server, Smartphone, Globe } from 'lucide-react';
 import type { PeerStatus, PeerState } from "@/types"
+import LatencyDisplay from './LatencyDisplay';
 
 const OsIcon = memo(({ os }: { os?: string }) => {
     if (!os) return <Laptop className="h-4 w-4 text-muted-foreground" />;
@@ -18,7 +19,7 @@ const OsIcon = memo(({ os }: { os?: string }) => {
     return <Globe className="h-4 w-4 text-muted-foreground" />;
 });
 
-const PeerItem = ({ peerStatus, userState }: { peerStatus: PeerStatus, userState: PeerState }) => {
+const PeerItem = ({ peerStatus, userState, displayLatency = true }: { peerStatus: PeerStatus, userState: PeerState, displayLatency?: boolean }) => {
     const peer = peerStatus
     const user = userState
 
@@ -46,7 +47,7 @@ const PeerItem = ({ peerStatus, userState }: { peerStatus: PeerStatus, userState
                                 </span>
                             </div>
 
-                            {/* <LatencyDisplay peerIP={peerIP} /> */}
+                            {displayLatency && <LatencyDisplay peerIP={peer.TailscaleIPs[0]} />}
 
                         </div>
                         <Separator />
