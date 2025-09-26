@@ -9,7 +9,11 @@ import { setupWindowActions } from './window/window-actions.mjs';
 import { startCpaProcess } from './subprocess/cpa.mjs';
 import { startTwgProcess } from './subprocess/twg.mjs';
 import { initLogger } from './utils/logger.mjs';
-initLogger();
+
+// init log file writer
+if (!process.env.DEV) {
+    initLogger();
+}
 
 const store = initConfigStore(configName);
 
