@@ -65,15 +65,7 @@ jobs:
         release_name: RelayX ${{ steps.tag.outputs.TAG_NAME }}
         draft: false
         prerelease: false
-        body: |
-          ## RelayX ${{ steps.tag.outputs.TAG_NAME }}
-          
-          ### 下载
-          - Windows Portable: RelayX-Portable-${{ steps.tag.outputs.TAG_NAME }}.exe
-          
-          ### 更新内容
-          请查看提交历史了解详细更新内容。
-
+        
     - name: Find and upload executable
       run: |
         $exePath = Get-ChildItem -Path "./release" -Name "*.exe" | Select-Object -First 1
