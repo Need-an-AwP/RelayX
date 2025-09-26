@@ -47,15 +47,42 @@ export default class InputVideoProcessor {
 
             const trackSettings = this.videoTrack.getSettings();
             const config: VideoEncoderConfig = {
-                codec: 'vp09.00.10.08', // VP9 with SVC
+                codec: 'vp09.00.41.08',//'avc1.4d001f',//'hev1.1.6.L93.B0',//'av01.0.01M.08',//
                 width: trackSettings.width || 1920,
                 height: trackSettings.height || 1080,
                 framerate: trackSettings.frameRate || 30,
-                bitrate: 200_000, // 200 Kbps
-                scalabilityMode: 'L1T2', // SVC mode
+                bitrate: 500_000, // 0.5 Mbps
+                // hardwareAcceleration: 'prefer-hardware',
+                // scalabilityMode: 'L1T3', // only L1 SVC mode is supported
             };
 
             this.videoConfig = config;
+
+            // const codecsLevels = [
+            //     10, 11, 20, 21, 30, 31, 40, 41, 50, 51, 52, 60, 61, 62
+            // ]
+
+            // const svcModes = [
+            //     'S2T3',
+            //     'L1T1', 'L1T2', 'L1T3',
+            //     'L2T1', 'L2T2', 'L2T3',
+            //     'L3T1', 'L3T2', 'L3T3',
+            //     'L2T1h', 'L2T2h', 'L2T3h',
+            //     'L3T1h', 'L3T2h', 'L3T3h',
+            //     'L2T2_KEY', 'L2T2_KEY_SHIFT',
+            //     'L2T3_KEY', 'L2T3_KEY_SHIFT',
+            //     'L3T1_KEY', 'L3T2_KEY', 'L3T3_KEY',
+            //     'L3T2_KEY_SHIFT', 'L3T3_KEY_SHIFT'
+            // ];
+
+            // for (const mode of svcModes) {
+            //     const test_config = { ...config };
+            //     // test_config.codec = `vp09.00.${level.toString().padStart(2, '0')}.08`;
+            //     test_config.scalabilityMode = mode;
+            //     console.log(test_config)
+            //     const support = await VideoEncoder.isConfigSupported(test_config);
+            //     console.log(`[video encoder] Checking support for scalabilityMode=${mode}:`, support.supported);
+            // }
 
             const support = await VideoEncoder.isConfigSupported(config);
             if (!support.supported) {
@@ -182,19 +209,22 @@ export default class InputVideoProcessor {
 }
 
 const printChunkInfo = (chunk: EncodedVideoChunk, videoConfig: VideoEncoderConfig | null) => {
-    const durationSeconds = (chunk.duration || 0) / 1_000_000;
-    const actualBitrate = durationSeconds > 0 ? (chunk.byteLength * 8) / durationSeconds : 0;
-    const targetBitrate = videoConfig?.bitrate || 2_000_000;
-    const compressionRatio = actualBitrate / targetBitrate;
+    // Calculate duration in seconds based on framerate
+    const frameDurationSeconds = videoConfig?.framerate ? 1 / videoConfig.framerate : 0;
+    // Convert to microseconds for consistency with chunk.duration unit
+    const calculatedDuration = frameDurationSeconds * 1000000;
+
+    // Calculate bitrate based on the calculated duration
+    const actualBitrate = frameDurationSeconds > 0 ? (chunk.byteLength * 8) / frameDurationSeconds : 0;
+    const targetBitrate = videoConfig?.bitrate || 0;
 
     console.log(
         `Encoded chunk received:
             Type: ${chunk.type}
             Size: ${chunk.byteLength} bytes
             Timestamp: ${chunk.timestamp}
-            Duration: ${chunk.duration} microseconds (${durationSeconds.toFixed(3)}s)
-            actual_bitrate: ${Math.round(actualBitrate)} bps
-            target_bitrate: ${targetBitrate} bps
-            compression_ratio: ${compressionRatio.toFixed(2)}x`
+            Duration: ${calculatedDuration} microseconds
+            actual_bitrate: ${actualBitrate / 1_000_000} mbps
+            target_bitrate: ${targetBitrate / 1_000_000} mbps`
     );
 }

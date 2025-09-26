@@ -293,7 +293,7 @@ const PeerItem = ({ peerStatus, userState, displayLatency = true }: { peerStatus
                                         <div>
                                             <h4 className="text-sm font-semibold mb-2">Available Endpoints</h4>
                                             <div className="space-y-1">
-                                                {peer.Addrs.slice(0, 5).map((addr, index) => (
+                                                {peer.Addrs.map((addr, index) => (
                                                     <div key={index} className="font-mono text-xs bg-background rounded px-2 py-1 flex justify-between">
                                                         <span>{addr}</span>
                                                         {addr === peer.CurAddr && (
@@ -301,11 +301,6 @@ const PeerItem = ({ peerStatus, userState, displayLatency = true }: { peerStatus
                                                         )}
                                                     </div>
                                                 ))}
-                                                {peer.Addrs.length > 5 && (
-                                                    <div className="text-muted-foreground text-xs italic">
-                                                        ... and {peer.Addrs.length - 5} more
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     </>

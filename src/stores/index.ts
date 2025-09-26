@@ -25,3 +25,5 @@ export * from './remoteUsersStateStore'
 export * from './videoStreamStore'
 
 export * from './latencyStore'
+
+export * from './welcomeStore'

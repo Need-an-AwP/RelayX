@@ -36,6 +36,7 @@ type RTCConnection struct {
 	tracks            map[uint8]*webrtc.TrackLocalStaticSample // key is track.ID
 	isInChat          bool
 	senders           map[uint8]*webrtc.RTPSender // key is track.ID
+	videoRTCtrack     *webrtc.TrackLocalStaticRTP
 	CreatedAt         time.Time
 	mu                sync.RWMutex
 	lastPingTime      time.Time
@@ -50,6 +51,7 @@ type RTCManager struct {
 	estimatorsMu      sync.RWMutex
 	api               *webrtc.API
 	client            *http.Client
+	localPC           *webrtc.PeerConnection
 	mu                sync.RWMutex
 	pendingEstimators []cc.BandwidthEstimator // 待分配的估计器队列
 	estimatorQueue    sync.Mutex
@@ -158,8 +160,8 @@ func initWebRTC(conn net.PacketConn, httpClient *http.Client) {
 
 	// setup settingengine
 	settingEngine := webrtc.SettingEngine{}
-	settingEngine.SetNetworkTypes([]webrtc.NetworkType{webrtc.NetworkTypeUDP4}) // only use tailscale's conn
-	settingEngine.SetICEUDPMux(webrtc.NewICEUDPMux(nil, conn))                  // only collect udp4 ice
+	settingEngine.SetNetworkTypes([]webrtc.NetworkType{webrtc.NetworkTypeUDP4}) // only collect udp4 ice
+	settingEngine.SetICEUDPMux(webrtc.NewICEUDPMux(nil, conn))                  // only use tailscale's conn
 
 	api := webrtc.NewAPI(
 		webrtc.WithSettingEngine(settingEngine),

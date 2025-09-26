@@ -52,8 +52,8 @@ export default function TsLoading() {
             case 'WaitingForUserspaceRestart':
                 return 'text-yellow-500 dark:text-yellow-400';
             case 'Offline':
-            case 'NoState': // Assuming NoState is also a problematic state
-                return 'text-red-500 dark:text-red-400';
+            case 'NoState':
+                return 'text-white';
             default:
                 return 'text-foreground'; // Default color
         }
@@ -71,9 +71,10 @@ export default function TsLoading() {
                 }
 
 
-                {tsBackendState ?
-                    <span className="font-semibold">Tailscale backend is {tsBackendState}</span> :
-                    <span className="font-semibold">Waiting for Tailscale backend</span>}
+                {(!tsBackendState || tsBackendState === 'NoState') ?
+                    <span className="font-semibold">Waiting for Tailscale backend</span> :
+                    <span className="font-semibold">Tailscale backend is {tsBackendState}</span>
+                }
             </div>
         </div>
     )

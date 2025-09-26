@@ -5,7 +5,7 @@ import { __dirname, exeDirPath } from '../utils/app-dir-name.mjs';
 
 const defaultConfig = {
     userName: 'default user name',
-    userAvatar: 'https://github.com/shadcn.png',
+    userAvatar: 'https://api.dicebear.com/9.x/thumbs/svg?seed=Emmahbj0bjqrpoe',
     userStatus: 'online',
     theme: 'dark',
     initAudioDevices: {

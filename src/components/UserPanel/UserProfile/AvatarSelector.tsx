@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
@@ -108,32 +108,30 @@ export default function AvatarSelector({ currentAvatar, setCurrentAvatar }: Avat
     return (
         <div className="flex flex-col gap-4 text-sm">
             <div className="flex flex-col items-center gap-2">
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Avatar
-                                className="flex-shrink-0 size-16 cursor-pointer"
-                                onClick={generateRandomAvatarFromDiceBear}
-                                onMouseEnter={() => setIsMouseHoverAvatar(true)}
-                                onMouseLeave={() => setIsMouseHoverAvatar(false)}
-                            >
-                                <AvatarImage src={currentAvatar} draggable={false} />
-                                <AvatarFallback>
-                                    <LoaderCircle className="w-4 h-4 animate-spin" />
-                                </AvatarFallback>
-                                {isMouseHoverAvatar && (
-                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                        <RefreshCcw className="w-6 h-6" />
-                                    </div>
-                                )}
-                            </Avatar>
-                        </TooltipTrigger>
-                        <TooltipContent className="text-center">
-                            <p className="text-md font-bold">Click to generate a random avatar</p>
-                            <p>Random avatar is powered by <a href="https://dicebear.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500" onClick={(event) => { event.preventDefault(); window.ipcBridge.openURL("https://dicebear.com/") }}>dicebear.com</a></p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Avatar
+                            className="flex-shrink-0 size-16 cursor-pointer"
+                            onClick={generateRandomAvatarFromDiceBear}
+                            onMouseEnter={() => setIsMouseHoverAvatar(true)}
+                            onMouseLeave={() => setIsMouseHoverAvatar(false)}
+                        >
+                            <AvatarImage src={currentAvatar} draggable={false} />
+                            <AvatarFallback>
+                                <LoaderCircle className="w-4 h-4 animate-spin" />
+                            </AvatarFallback>
+                            {isMouseHoverAvatar && (
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                    <RefreshCcw className="w-6 h-6" />
+                                </div>
+                            )}
+                        </Avatar>
+                    </TooltipTrigger>
+                    <TooltipContent className="text-center">
+                        <p className="text-md font-bold">Click to generate a random avatar</p>
+                        <p>Random avatar is powered by <a href="https://dicebear.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500" onClick={(event) => { event.preventDefault(); window.ipcBridge.openURL("https://dicebear.com/") }}>dicebear.com</a></p>
+                    </TooltipContent>
+                </Tooltip>
             </div>
 
             <Separator />
@@ -145,18 +143,16 @@ export default function AvatarSelector({ currentAvatar, setCurrentAvatar }: Avat
                         value={unavatarPlatform}
                         onValueChange={setUnavatarPlatform}
                     >
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a platform" />
-                                    </SelectTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Powered by <a href="https://unavatar.io/" target="_blank" rel="noopener noreferrer" className="text-blue-500" onClick={(event) => { event.preventDefault(); window.ipcBridge.openURL("https://unavatar.io/") }}>unavatar.io</a></p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <SelectTrigger autoFocus={false}>
+                                    <SelectValue placeholder="Select a platform" />
+                                </SelectTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Powered by <a href="https://unavatar.io/" target="_blank" rel="noopener noreferrer" className="text-blue-500" onClick={(event) => { event.preventDefault(); window.ipcBridge.openURL("https://unavatar.io/") }}>unavatar.io</a></p>
+                            </TooltipContent>
+                        </Tooltip>
                         <SelectContent className="z-999">
                             {unavatarPlatforms.map((platform) => (
                                 <SelectItem value={platform.value} key={platform.value}>
@@ -184,28 +180,26 @@ export default function AvatarSelector({ currentAvatar, setCurrentAvatar }: Avat
             <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                     <p>or use a link of any picture</p>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Info className="w-4 h-4" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Accept any image links that can be accessed publicly.
-                                    <br />Like <a
-                                        href={exampleURL}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-500"
-                                        onClick={(event) => {
-                                            event.preventDefault();
-                                            setCurrentAvatar(exampleURL)
-                                        }}
-                                    >{exampleURL}</a>
-                                    <br />if any peer can't access your avatar image, they will see a default avatar.
-                                </p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Info className="w-4 h-4" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Accept any image links that can be accessed publicly.
+                                <br />Like <a
+                                    href={exampleURL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-500"
+                                    onClick={(event) => {
+                                        event.preventDefault();
+                                        setCurrentAvatar(exampleURL)
+                                    }}
+                                >{exampleURL}</a>
+                                <br />if any peer can't access your avatar image, they will see a default avatar.
+                            </p>
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
 
                 <Input
@@ -215,9 +209,7 @@ export default function AvatarSelector({ currentAvatar, setCurrentAvatar }: Avat
                     onChange={(e) => setCurrentAvatar(e.target.value)}
                 />
             </div>
-
-            <Separator />
-
+            
         </div>
     )
 }

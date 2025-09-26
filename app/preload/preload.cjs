@@ -46,7 +46,7 @@ contextBridge.exposeInMainWorld('ipcBridge', {
 
     getEnvConfig: () => ipcRenderer.invoke('get-env-config'),
     setEnvConfig: (config) => ipcRenderer.send('set-env-config', config),
-
+    restartTwg: () => ipcRenderer.send('restart-twg'),
 });
 
 contextBridge.exposeInMainWorld('cpa', {

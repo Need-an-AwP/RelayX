@@ -111,5 +111,6 @@ export const startTwgProcess = (window) => {
         }, 2000);
     }
 
+    global.quitTwgProcess = quitTwgProcess;
     return quitTwgProcess;
 }

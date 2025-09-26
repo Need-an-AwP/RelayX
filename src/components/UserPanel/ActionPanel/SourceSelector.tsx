@@ -16,7 +16,7 @@ export default function SourceSelector() {
         isCapturing,
         setIsCapturing,
     } = useDesktopCapture()
-    const {userState, updateSelfState} = useLocalUserStateStore()
+    const { userState, updateSelfState } = useLocalUserStateStore()
     const [selectedCategory, setSelectedCategory] = useState<string>('screen')
     const [isLoading, setIsLoading] = useState<boolean>(false)
 
@@ -29,7 +29,7 @@ export default function SourceSelector() {
                 return;
             }
         }
-        
+
         setIsLoading(true);
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
@@ -41,7 +41,7 @@ export default function SourceSelector() {
 
             const captureStream = await navigator.mediaDevices.getDisplayMedia({
                 video: {
-                    frameRate: 60,//120,
+                    frameRate: 20// 60
                 },
                 audio: false,
             })

@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
 import AvatarSelector from "./AvatarSelector"
 import { LoaderCircle, X } from "lucide-react";
 
@@ -123,6 +124,8 @@ const UserProfile = () => {
                         </div>
                     )}
                     <AvatarSelector currentAvatar={localAvatar} setCurrentAvatar={setLocalAvatar} />
+
+                    <Separator />
 
                     <div className="flex flex-row gap-2">
                         <Label htmlFor="username" className="whitespace-nowrap">

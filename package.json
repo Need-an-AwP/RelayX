@@ -3,7 +3,7 @@
   "author": "xxx",
   "description": "xxx",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "main": "app/index.mjs",
   "scripts": {
@@ -31,7 +31,7 @@
       "app/**/*"
     ],
     "asarUnpack": [
-      "app/turn-on-tailscale.exe",
+      "app/tailscale-webrtc-gateway.exe",
       "app/process-audio-capture.exe"
     ],
     "win": {
@@ -71,6 +71,7 @@
     "commander": "^14.0.0",
     "electron-store": "^10.1.0",
     "emoji-picker-react": "^4.13.3",
+    "envfile": "^7.1.0",
     "frimousse": "^0.3.0",
     "immer": "^10.1.1",
     "lucide-react": "^0.544.0",

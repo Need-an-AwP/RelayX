@@ -5,6 +5,9 @@ import { useDMStore } from './dmStore';
 import { useLatencyStore } from './latencyStore';
 import { PeerStateSchema, TrackID, type TrackIDType } from '@/types';
 import { AudioDecoderManager, VideoDecoderManager } from '@/MediaTrackManager';
+import { InputTrackManager } from '@/MediaTrackManager/input/InputTrackManager';
+import { LocalRTC } from '@/MediaTrackManager/localRTC';
+
 
 interface wsStateStore {
     mediaWs: WebSocket | null;
@@ -163,7 +166,6 @@ const handleWsMessage = (event: MessageEvent) => {
                 break;
             case "latency":
                 // console.log('latency', msg);
-                // 将数组格式转换为 Record<string, string> 格式
                 const latencyRecord: Record<string, string> = {};
                 if (Array.isArray(msg.latencies)) {
                     msg.latencies.forEach((item: any) => {
@@ -174,6 +176,13 @@ const handleWsMessage = (event: MessageEvent) => {
                 }
                 useLatencyStore.getState().updateLatencies(latencyRecord);
                 break;
+            case "local_answer":
+                LocalRTC.getInstance().pc?.setRemoteDescription(new RTCSessionDescription(msg.answer));
+                for (const candidate of msg.ice) {
+                    console.log('[ws] Adding ICE candidate:', candidate);
+                    LocalRTC.getInstance().pc?.addIceCandidate(candidate);
+                }
+                break;
             default:
                 console.warn('[ws] Unknown message type:', msg);
                 break;
@@ -183,6 +192,7 @@ const handleWsMessage = (event: MessageEvent) => {
     }
 }
 
+// decode audio
 const handleAudioData = async (trackID: TrackIDType, buffer: Uint8Array) => {
     const headerSize = 1 + 4; // TrackID (1 byte) + peerIP (4 bytes)
     if (buffer.length <= headerSize) {
@@ -212,6 +222,7 @@ const handleAudioData = async (trackID: TrackIDType, buffer: Uint8Array) => {
     }
 }
 
+// decode video
 const handleVideoData = async (trackID: TrackIDType, buffer: Uint8Array) => {
     const headerSize = 1 + 4; // TrackID (1 byte) + peerIP (4 bytes)
     if (buffer.length <= headerSize) {

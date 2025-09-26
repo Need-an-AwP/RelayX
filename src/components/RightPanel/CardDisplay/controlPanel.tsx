@@ -3,13 +3,19 @@ import { Button } from "@/components/ui/button"
 import { Mic, MicOff, Headphones, HeadphoneOff, Video, Expand, Shrink, MessageCircle } from 'lucide-react'
 import { ImPhoneHangUp } from "react-icons/im";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { useLocalUserStateStore } from "@/stores"
+import { useLocalUserStateStore, useAudioStore } from "@/stores"
 
 
 export default function ControlPanel({ switchFullScreen }: { switchFullScreen: any }) {
-    const { updateSelfState } = useLocalUserStateStore()
-    const [isMicMuted, setIsMicMuted] = useState(false)
-    const [isHeadphoneMuted, setIsHeadphoneMuted] = useState(false)
+    const { userState, updateSelfState } = useLocalUserStateStore()
+    const { mainVolume, mainMuted, setMainVolume, toggleMute } = useAudioStore();
+
+    const isMicMuted = userState.isInputMuted
+    const setIsMicMuted = (isMicMuted: boolean) => {
+        updateSelfState({
+            isInputMuted: isMicMuted
+        })
+    }
     const [isFullScreen, setIsFullScreen] = useState(false)
 
     return (
@@ -49,18 +55,18 @@ export default function ControlPanel({ switchFullScreen }: { switchFullScreen: a
             </Sheet>
             <div className='flex flex-row gap-2 rounded-md bg-muted/40'>
                 <Button
-                    variant="ghost"
+                    variant={`${isMicMuted ? 'destructive' : 'ghost'}`}
                     className='cursor-pointer'
                     onClick={() => setIsMicMuted(!isMicMuted)}
                 >
                     {isMicMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                 </Button>
                 <Button
-                    variant="ghost"
+                    variant={`${mainMuted ? 'destructive' : 'ghost'}`}
                     className='cursor-pointer'
-                    onClick={() => setIsHeadphoneMuted(!isHeadphoneMuted)}
+                    onClick={toggleMute}
                 >
-                    {isHeadphoneMuted ? <HeadphoneOff className="w-4 h-4" /> : <Headphones className="w-4 h-4" />}
+                    {mainMuted ? <HeadphoneOff className="w-4 h-4" /> : <Headphones className="w-4 h-4" />}
                 </Button>
             </div>
             <Button variant="ghost" className='cursor-pointer'>

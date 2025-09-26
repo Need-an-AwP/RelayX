@@ -43,6 +43,7 @@ interface TailscaleState {
     updateTailscaleStatus: (status: Status) => void;
     updateOnlinePeers: (peers: onlinePeers) => void;
     setTsBackendState: (state: TsBackendState | null) => void;
+    setShowWelcome: (show: boolean) => void;
 }
 
 const useTailscaleStore = create<TailscaleState>()(
@@ -54,11 +55,14 @@ const useTailscaleStore = create<TailscaleState>()(
         updateTailscaleStatus: (status) => set({ tailscaleStatus: status }),
         updateOnlinePeers: (peers) => set({ onlinePeers: peers }),
         setTsBackendState: (state) => set({ tsBackendState: state }),
+        setShowWelcome: (show) => set({ showWelcome: show }),
     }))
 )
 
 
 const initializeTwgListeners = async () => {
+    const { updateTailscaleStatus, setTsBackendState } = useTailscaleStore.getState();
+
     // try get tsBackendState first
     // when refresh page the info will be lost
     window.ipcBridge.invoke('getTsBackendState')
@@ -66,12 +70,17 @@ const initializeTwgListeners = async () => {
             setTsBackendState(state as TsBackendState);
         })
 
-    const { updateTailscaleStatus, setTsBackendState } = useTailscaleStore.getState();
-
     window.ipcBridge.receive('no-env-file', (message: any) => {
         console.log('no-env-file', message);
-        useTailscaleStore.setState({ showWelcome: true });
+        useTailscaleStore.getState().setShowWelcome(true);
     })
+
+    window.ipcBridge.invoke('no-env-file')
+        .then((message: any) => {
+            if (message !== false) {
+                useTailscaleStore.getState().setShowWelcome(true);
+            }
+        })
 
     window.ipcBridge.receive('tsBackendState', (message: backendState) => {
         console.log('tsBackendState', message);

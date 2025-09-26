@@ -62,6 +62,29 @@ func ipv4ToBytes(ip string) [4]byte {
 func (rm *RTCManager) addTracks(pc *webrtc.PeerConnection, connection *RTCConnection) error {
 
 	for i, t := range trackMap {
+		// if i == SCREEN_SHARE_VIDEO {
+		// 	track, err := webrtc.NewTrackLocalStaticRTP(
+		// 		webrtc.RTPCodecCapability{MimeType: t.MimeType},
+		// 		t.id,
+		// 		t.streamID,
+		// 	)
+		// 	if err != nil {
+		// 		log.Printf("[RTC] Failed to create track: %v", err)
+		// 		return err
+		// 	}
+
+		// 	sender, err := pc.AddTrack(track)
+		// 	if err != nil {
+		// 		log.Printf("[RTC] Failed to add track %s: %v", track.ID(), err)
+		// 		return err
+		// 	}
+
+		// 	connection.videoRTCtrack = track
+
+		// 	// feedback from rtcp
+		// 	go handleRTCP("sender:"+track.ID(), sender)
+		// 	continue
+		// }
 		track, err := webrtc.NewTrackLocalStaticSample(
 			webrtc.RTPCodecCapability{MimeType: t.MimeType},
 			t.id,

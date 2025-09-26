@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Headphones, HeadphoneOff } from 'lucide-react'
 import { Button } from "@/components/ui/button";
-import {  useAudioStore } from "@/stores"
+import { useAudioStore } from "@/stores"
 import { Slider } from "@/components/ui/slider"
 
 
@@ -43,7 +43,8 @@ const HeadphoneSettings = () => {
                 ref={buttonRef}
                 size="icon"
                 variant={`${mainMuted ? 'destructive' : 'ghost'}`}
-                onClick={toggleMute}>
+                onClick={toggleMute}
+            >
                 {mainMuted ? (
                     <HeadphoneOff className="h-4 w-4" />
                 ) : isTooltipOpen ? (
@@ -70,7 +71,7 @@ const HeadphoneSettings = () => {
                             onValueChange={(value) => {
                                 const newVolume = value[0]
                                 setMainVolume(newVolume)
-                                
+
                                 if (newVolume > 0 && mainMuted) {
                                     // 如果手动调整音量且当前是静音状态，则取消静音
                                     toggleMute()

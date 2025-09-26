@@ -154,8 +154,11 @@ func handleMediaChunk(data []byte) {
 	// 	log.Printf("Received CPA chunk: bytelength=%d, duration=%d", len(mediaData), duration)
 	// }
 
+	// 在此处尝试分离svc的不同层级
+
 	// write sample to connections which is in chat
 	rtcManager.mu.RLock()
+	defer rtcManager.mu.RUnlock()
 	for _, connection := range rtcManager.connections {
 		connection.mu.RLock()
 		if connection.isInChat != true {
@@ -179,7 +182,7 @@ func handleMediaChunk(data []byte) {
 		})
 		connection.mu.RUnlock()
 	}
-	rtcManager.mu.RUnlock()
+
 }
 
 func handleMessage(data []byte) {
@@ -237,12 +240,25 @@ func handleMessage(data []byte) {
 
 			handleDM(jsonData, data)
 
+		case "local_offer":
+			// 解析 offer 和 ice 字段
+			offerData, hasOffer := jsonData.(map[string]interface{})["offer"]
+			iceData, hasIce := jsonData.(map[string]interface{})["ice"]
+
+			if !hasOffer {
+				log.Printf("[TestRTC] offer message does not contain offer field")
+				break
+			}
+			if !hasIce {
+				log.Printf("[TestRTC] offer message does not contain ice field")
+				break
+			}
+
+			rtcManager.createLocalRTC(offerData, iceData)
 		default:
-			log.Printf("Unknown message type: %v", msgType)
+			log.Printf("[localRTC] Unknown message type: %v", msgType)
 		}
-
 	}
-
 }
 
 func handleDM(jsonData interface{}, data []byte) {

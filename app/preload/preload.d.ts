@@ -18,7 +18,8 @@ export interface IpcBridge {
     setUserConfig: (config: string, value: string) => void;
 
     getEnvConfig: () => Promise<any>;
-    setEnvConfig: (config: any) => Promise<any>;
+    setEnvConfig: (config: { [key: string]: string }) => void;
+    restartTwg: () => void;
 }
 
 export interface Cpa {

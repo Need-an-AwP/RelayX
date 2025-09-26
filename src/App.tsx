@@ -22,7 +22,7 @@ import OnlinePeersDisplay from '@/components/OnlinePeersDisplay'
 import VoiceChatPanel from '@/components/VoiceChatPanel'
 import RightPanel from '@/components/RightPanel'
 // import RTCConnectionDisplay from '@/components/RTCConnectionDisplay'
-// import WelcomePanel from '@/components/WelcomePanel'
+import WelcomePanel from '@/components/WelcomePanel'
 import { initInputTrackManager } from '@/MediaTrackManager'
 import { initAudioContextManager } from '@/AudioManager'
 import TsLoading from './components/TsLoading'
@@ -63,7 +63,7 @@ function App() {
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
             <div className="flex flex-col h-screen w-screen overflow-hidden">
                 <TitleBar />
-                {/* <WelcomePanel /> */}
+                <WelcomePanel />
                 {/* presave 32px height for title bar */}
                 <div className="flex-1 overflow-hidden mt-[32px]">
                     <ClickSpark

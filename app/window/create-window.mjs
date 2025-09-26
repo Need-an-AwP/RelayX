@@ -19,6 +19,7 @@ export const createMainWindow = (store) => {
             spellcheck: false,
             nodeIntegration: true,
             contextIsolation: true,
+            hardwareAcceleration: true,
         }
     };
 
@@ -53,11 +54,8 @@ export const createWebRTCInternalsWindow = () => {
         }
     });
 
-    webrtcInternalsWindow.loadURL('chrome://webrtc-internals');
-
-    webrtcInternalsWindow.on('closed', () => {
-        webrtcInternalsWindow = null;
-    });
+    // webrtcInternalsWindow.loadURL('chrome://webrtc-internals');
+    webrtcInternalsWindow.loadURL('chrome://gpu');
 
     return webrtcInternalsWindow;
 }

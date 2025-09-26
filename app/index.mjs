@@ -3,11 +3,13 @@ import { configName } from './utils/args.mjs';
 import { initConfigStore } from './config/config-store.mjs';
 import { installExtensions } from './utils/extansions.mjs';
 import { setDisplayMediaRequestHandler } from './displayMediaRequestHandler/index.mjs';
+import { registerIpcHandler } from './ipc/registerIpcHandler.mjs';
 import { createMainWindow, createWebRTCInternalsWindow } from './window/create-window.mjs';
 import { setupWindowActions } from './window/window-actions.mjs';
 import { startCpaProcess } from './subprocess/cpa.mjs';
 import { startTwgProcess } from './subprocess/twg.mjs';
-
+import { initLogger } from './utils/logger.mjs';
+initLogger();
 
 const store = initConfigStore(configName);
 
@@ -24,7 +26,15 @@ app.whenReady().then(() => {
 
     // create app window
     const mainWindow = createMainWindow(store);
-    
+    // const rtcWindow = createWebRTCInternalsWindow();
+    // mainWindow.on('closed', () => {
+    //     if (rtcWindow && !rtcWindow.isDestroyed()) {
+    //         rtcWindow.close();
+    //     }
+    // });
+
+    registerIpcHandler(mainWindow);
+
     setupWindowActions(mainWindow, store);
 
     mainWindow.on('ready-to-show', () => {
