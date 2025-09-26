@@ -1,0 +1,21 @@
+# buf.gen.yaml
+# This file configures the code generation process using Buf.
+
+version: v1
+plugins:
+  # This section defines the configuration for the @bufbuild/protoc-gen-ts plugin.
+  - plugin: bufbuild/ts
+    # 'out' specifies the output directory for the generated files.
+    # The path is relative to this 'buf.gen.yaml' file.
+    out: ../src/protogen
+    # 'opt' provides a list of options for the ts-proto plugin
+    # to customize the generated code.
+    opt:
+      - outputEncodeMethods=true   # Only generate encode methods
+      - outputDecodeMethods=false  # Do not generate decode methods
+      - outputJsonMethods=false    # Do not generate JSON serialization methods
+      - outputPartialMethods=false # Do not generate 'fromPartial' methods
+      - outputTypeRegistry=false   # Do not generate a type registry
+      - outputClientImpl=false     # Do not generate client implementations
+      - useExactTypes=false        # Do not use complex 'Exact<>' types
+      - exportCommonSymbols=false  # Do not export common helper symbols

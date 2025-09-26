@@ -1,0 +1,42 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+release
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+#env files
+.env
+.env.node-A
+.env.nodeA
+.env.node-B
+.env.node-C
+
+#tailscale temporary data Dir
+tsNodeDir
+
+# exe files
+process-audio-capture.exe
+tailscale-webrtc-gateway.exe
+
+# start with _
+_*

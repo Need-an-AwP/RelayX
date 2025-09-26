@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package audio;
+
+message AudioPacket {
+  uint32 track_id = 1;
+  uint64 duration = 2;
+  bytes data = 3;
+}

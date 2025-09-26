@@ -1,0 +1,16 @@
+{
+	"userName": "default user name",
+	"userAvatar": "https://github.com/shadcn.png",
+	"userStatus": "online",
+	"theme": "dark",
+	"initAudioDevices": {
+		"input": "default",
+		"output": "default"
+	},
+	"windowBounds": {
+		"x": 190,
+		"y": 125,
+		"width": 1400,
+		"height": 783
+	}
+}

@@ -1,0 +1,16 @@
+{
+	"userName": "default aa user naaaaameeeee",
+	"userAvatar": "https://unavatar.io/x/lemoontya",
+	"userStatus": "online",
+	"theme": "dark",
+	"initAudioDevices": {
+		"input": "default",
+		"output": "default"
+	},
+	"windowBounds": {
+		"x": 361,
+		"y": 179,
+		"width": 1400,
+		"height": 800
+	}
+}
