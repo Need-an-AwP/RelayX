@@ -7,27 +7,50 @@ import chalk from 'chalk';
 import { join } from 'path';
 
 
-export const startTwgProcess = (window) => {
-    const envFilePath = resolveEnvFilePath(window);
-    console.log(chalk.green('env file path:'), envFilePath);
+export const startTwgProcess = (window, store) => {
+    const envFilePath = resolveEnvFilePath(); //prepare env file even if not using key login
+    console.log('Resolved env file path:', envFilePath);
+    global.showWelcome = false;// define global.showWelcome here
+
+    if (store.get('loginMethod') === null) {
+        console.log(chalk.red('twg won`t start due to no login method specified'));
+        global.showWelcome = true;
+        return () => { };
+    }
     const args = [];
+
+    if (store.get('loginMethod') === 'key') {
+        if (envFilePath) {
+            console.log(chalk.green('env file path:'), envFilePath);
+            args.push(`--env=${envFilePath}`);
+        } else {
+            console.log(chalk.red('twg won`t start due to no env file'));
+            global.showWelcome = { type: 'authkey' };
+            return () => { };
+        }
+    } else if (store.get('loginMethod') === 'account') {
+        console.log(chalk.green('using account login'));
+        global.showWelcome = false;
+    } else {
+        console.log(chalk.red('twg won`t start due to unknown login method'));
+        global.showWelcome = true;
+        return () => { };
+    }
+
     if (!process.env.DEV) {
         args.push(`--dirpath=${join(exeDirPath, 'tsNodeDir')}`);
     }
-    if (envFilePath) {
-        args.push(`--env=${envFilePath}`);
-    } else {
-        console.log(chalk.red('twg won`t start due to no env file'));
-        return () => { };
-    }
+
 
     const exePath = getExecutablePath('tailscale-webrtc-gateway.exe');
     console.log(chalk.blue('path of tailscale-webrtc-gateway.exe:'), exePath);
     const twgProcess = spawn(exePath, args, { detached: false });
 
-    // stdin
-    const stdinTypes = ['dc', 'userState']
+    // 将进程实例存储到全局变量中，用于重启时检查状态
+    global.twgProcess = twgProcess;
 
+    // stdin forwarding
+    const stdinTypes = ['dc', 'userState']
     stdinTypes.forEach(type => {
         ipcMain.on(type, (event, message) => {
             if (twgProcess && twgProcess.stdin) {
@@ -35,6 +58,10 @@ export const startTwgProcess = (window) => {
             }
         })
     })
+
+    // remove before create listeners to avoid duplication error
+    ipcMain.removeHandler('getWsInfo');
+    ipcMain.removeHandler('getTsBackendState');
 
 
     let wsInfo = null;
@@ -77,6 +104,14 @@ export const startTwgProcess = (window) => {
                         case "tsStatus":// response every 1 second
                             window.webContents.send('tsStatus', jsonData);
                             break;
+                        case "tsAuthURL":
+                            console.log(chalk.green('Backend TS Auth URL:'), jsonData);
+                            break;
+                        case "tsError":
+                            console.log(chalk.red('Backend TS Error:'), jsonData);
+                            window.webContents.send('tsError', jsonData);
+                            break;
+
                     }
                 }
             } catch (e) {
@@ -97,6 +132,10 @@ export const startTwgProcess = (window) => {
 
     twgProcess.on('close', (code, signal) => {
         console.log(`Go backend process exited with code ${code} and signal ${signal}`);
+        // 清理全局变量引用
+        if (global.twgProcess === twgProcess) {
+            global.twgProcess = null;
+        }
     });
 
     const quitTwgProcess = () => {
@@ -107,6 +146,10 @@ export const startTwgProcess = (window) => {
             if (!twgProcess.killed) {
                 console.log('Force killing Go backend process...');
                 twgProcess.kill('SIGKILL');
+            }
+            // 清理全局变量引用
+            if (global.twgProcess === twgProcess) {
+                global.twgProcess = null;
             }
         }, 2000);
     }

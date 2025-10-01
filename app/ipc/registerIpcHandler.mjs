@@ -1,11 +1,10 @@
 import { ipcMain } from 'electron';
 import { getEnvConfig, setEnvConfig } from '../config/env-handler.mjs';
 import { startTwgProcess } from '../subprocess/twg.mjs';
-import { getExecutablePath } from '../utils/get-exe-path.mjs';
 import chalk from 'chalk';
 
 
-export const registerIpcHandler = (mainWindow) => {
+export const registerIpcHandler = (mainWindow, store) => {
     // async request TURN info
     ipcMain.handle('request-TURN-info', async () => {
         return global.TURNinfo;
@@ -16,8 +15,8 @@ export const registerIpcHandler = (mainWindow) => {
         return getEnvConfig();
     })
 
-    ipcMain.handle('no-env-file', () => {
-        return global.noEnvFile;
+    ipcMain.handle('show-welcome', () => {
+        return global.showWelcome;
     })
 
     ipcMain.on('set-env-config', (event, config) => {
@@ -27,17 +26,27 @@ export const registerIpcHandler = (mainWindow) => {
     // restart turn-on-tailscale
     ipcMain.on('restart-twg', async () => {
         try {
-            if (global.quitTwgProcess) {
+            if (global.quitTwgProcess && global.twgProcess && !global.twgProcess.killed) {
+                console.log(chalk.blue('Stopping existing TWG process...'));
                 global.quitTwgProcess();
+                await new Promise(resolve => setTimeout(resolve, 500));
+            } else if (global.twgProcess && global.twgProcess.killed) {
+                console.log(chalk.blue('TWG process already terminated, skipping quit step'));
+            } else {
+                console.log(chalk.blue('No existing TWG process found'));
             }
 
-            await new Promise(resolve => setTimeout(resolve, 500));
-
             console.log(chalk.yellow('restarting tailscale-webrtc-gateway...'));
-            global.quitTurnTsProcess = startTwgProcess(mainWindow);
+            global.quitTurnTsProcess = startTwgProcess(mainWindow, store);
 
         } catch (error) {
             console.error(chalk.red('restart tailscale-webrtc-gateway failed:'), error);
+        }
+    })
+
+    ipcMain.on('close-twg', () => {
+        if (global.quitTwgProcess) {
+            global.quitTwgProcess();
         }
     })
 }

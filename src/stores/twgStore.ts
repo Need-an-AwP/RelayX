@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 import type { Status, PeerStatus } from '@/types'
+import { useWelcomeStore } from './welcomeStore'
 
 /**
  * BackendState is an ipn.State string value:
@@ -61,7 +62,10 @@ const useTailscaleStore = create<TailscaleState>()(
 
 
 const initializeTwgListeners = async () => {
-    const { updateTailscaleStatus, setTsBackendState } = useTailscaleStore.getState();
+    setInterval(() => {
+        console.log('showWelcome state:', useTailscaleStore.getState().showWelcome)
+    }, 100);
+    const { updateTailscaleStatus, setTsBackendState, setShowWelcome } = useTailscaleStore.getState();
 
     // try get tsBackendState first
     // when refresh page the info will be lost
@@ -70,21 +74,30 @@ const initializeTwgListeners = async () => {
             setTsBackendState(state as TsBackendState);
         })
 
-    window.ipcBridge.receive('no-env-file', (message: any) => {
-        console.log('no-env-file', message);
-        useTailscaleStore.getState().setShowWelcome(true);
+    window.ipcBridge.receive('show-welcome', (message: any) => {
+        console.log('show-welcome', message);
+        useTailscaleStore.getState().setShowWelcome(message !== false ? true : false);
     })
 
-    window.ipcBridge.invoke('no-env-file')
+    window.ipcBridge.invoke('show-welcome')
         .then((message: any) => {
-            if (message !== false) {
-                useTailscaleStore.getState().setShowWelcome(true);
-            }
+            console.log('show-welcome', message);
+            useTailscaleStore.getState().setShowWelcome(message !== false ? true : false);
         })
 
     window.ipcBridge.receive('tsBackendState', (message: backendState) => {
         console.log('tsBackendState', message);
         setTsBackendState(message.state as TsBackendState);
+        if (message.state === 'Starting') {
+            setShowWelcome(false);
+            useWelcomeStore.getState().setIsVarifyingKey(false);
+        }
+    })
+
+    window.ipcBridge.receive('tsError', (message: any) => {
+        console.log('tsError', message);
+        useWelcomeStore.getState().setIsInvalidKey(true);
+        useWelcomeStore.getState().setIsVarifyingKey(false);
     })
 
     window.ipcBridge.receive('tsStatus', (message: { type: string, status: Status }) => {

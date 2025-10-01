@@ -1,28 +1,68 @@
 package main
 
 import (
-	// "log"
+	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"tailscale.com/client/local"
+	"tailscale.com/tsnet"
 )
 
 func main() {
+	// Setup signal handling first to catch Ctrl+C during initialization
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	hostname, controlURL, authKey, dirPath = InitConfig()
-	server, lc, udpConn, rtcConn, httpListener, httpClient := initTS(hostname, authKey, dirPath)
+	hostname, controlURL, authKey, dirPath, isEphemeral := InitConfig()
+
+	// Initialize TS in a goroutine to avoid blocking signal handling
+	type InitResult struct {
+		server       *tsnet.Server
+		lc           *local.Client
+		udpConn      net.PacketConn
+		rtcConn      net.PacketConn
+		httpListener net.Listener
+		httpClient   *http.Client
+		err          error
+	}
+
+	initResult := make(chan InitResult, 1)
+
+	go func() {
+		server, lc, udpConn, rtcConn, httpListener, httpClient := initTS(hostname, authKey, dirPath, isEphemeral)
+		initResult <- InitResult{
+			server:       server,
+			lc:           lc,
+			udpConn:      udpConn,
+			rtcConn:      rtcConn,
+			httpListener: httpListener,
+			httpClient:   httpClient,
+			err:          nil,
+		}
+	}()
+
+	// Wait for either initialization completion or termination signal
+	var result InitResult
+	select {
+	case result = <-initResult:
+		// Initialization completed successfully
+	case <-sigChan:
+		// Received termination signal during initialization
+		return
+	}
 
 	_ = controlURL
 
 	httpReady := make(chan struct{})
-	initHttpService(httpListener, httpReady)
+	initHttpService(result.httpListener, httpReady)
 	<-httpReady
 
-	go startOnlineBroadcast(udpConn, lc)
+	go startOnlineBroadcast(result.udpConn, result.lc)
 
-	go initWebRTC(rtcConn, httpClient)
+	go initWebRTC(result.rtcConn, result.httpClient)
 
 	go initWsService()
 
@@ -31,16 +71,16 @@ func main() {
 	<-sigChan
 
 	// clean
-	if udpConn != nil {
-		udpConn.Close()
+	if result.udpConn != nil {
+		result.udpConn.Close()
 	}
-	if rtcConn != nil {
-		rtcConn.Close()
+	if result.rtcConn != nil {
+		result.rtcConn.Close()
 	}
-	if httpListener != nil {
-		httpListener.Close()
+	if result.httpListener != nil {
+		result.httpListener.Close()
 	}
-	if server != nil {
-		server.Close()
+	if result.server != nil {
+		result.server.Close()
 	}
 }

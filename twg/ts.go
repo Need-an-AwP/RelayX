@@ -9,13 +9,45 @@ import (
 	"math/big"
 	"net"
 	"net/http"
+	"strings"
 	"os"
+	"os/exec"
+	"runtime"
 	"time"
 
 	"tailscale.com/client/local"
 	"tailscale.com/ipn"
 	"tailscale.com/tsnet"
 )
+
+func openBrowser(url string) {
+	var cmd string
+	var args []string
+
+	switch runtime.GOOS {
+	case "windows":
+		cmd = "rundll32"
+		args = []string{"url.dll,FileProtocolHandler", url}
+	case "darwin":
+		cmd = "open"
+		args = []string{url}
+	case "linux":
+		cmd = "xdg-open"
+		args = []string{url}
+	default:
+		log.Printf("Unsupported platform for opening browser: %s", runtime.GOOS)
+		log.Printf("Please manually open the following URL in your browser: %s", url)
+		return
+	}
+
+	err := exec.Command(cmd, args...).Start()
+	if err != nil {
+		log.Printf("Failed to open browser automatically: %v", err)
+		log.Printf("Please manually open the following URL in your browser: %s", url)
+	} else {
+		log.Printf("Opened authentication URL in browser: %s", url)
+	}
+}
 
 func initNodeInfo(selfIP string, hostname string) {
 	randamID := func() uint64 {
@@ -39,20 +71,37 @@ func initNodeInfo(selfIP string, hostname string) {
 	}
 }
 
-func initTS(hostName string, authKey string, dirPath string) (*tsnet.Server, *local.Client, net.PacketConn, net.PacketConn, net.Listener, *http.Client) {
-	os.Setenv("TSNET_FORCE_LOGIN", "1")
-	srv := &tsnet.Server{
-		Ephemeral: true, // ephemeral or not is depend on the authkey's properties
-		Hostname:  hostName,
-		AuthKey:   authKey,
-		Dir:       fmt.Sprintf("%s/%s", dirPath, hostName), // dirPath is tsNodeDir by default, specify the directory for the node storage
-		// ControlURL: controlURL,// using Tailscale's official control server
-		// Logf:       log.Printf,
+func initTS(hostName string, authKey string, dirPath string, isEphemeral bool) (*tsnet.Server, *local.Client, net.PacketConn, net.PacketConn, net.Listener, *http.Client) {
+	var srv *tsnet.Server
+	dir := fmt.Sprintf("%s/%s", dirPath, hostName) // dirPath is tsNodeDir by default, specify the directory for the node storage
+	if authKey != "" {
+		// use authkey login
+		// os.Setenv("TSNET_FORCE_LOGIN", "1")
+		// this can force the node to re-login every time,
+		// ephemeral mode will remove the node in a short time after the node goes offline
+		srv = &tsnet.Server{
+			// Ephemeral: true, // only effect when using account login, authkey's behavior depends on its properties
+			Hostname: hostName,
+			AuthKey:  authKey,
+			Dir:      dir,
+			// ControlURL: controlURL,// using Tailscale's official control server
+			// Logf:       log.Printf,
+		}
+	} else {
+		// use account login
+		srv = &tsnet.Server{
+			Ephemeral: isEphemeral, // save the node in tsnet by default when using account login
+			Hostname:  hostName,
+			// AuthKey:   authKey,
+			Dir: dir,
+			// ControlURL: controlURL,// using Tailscale's official control server
+			// Logf:       log.Printf,
+		}
 	}
 
 	lc, err := srv.LocalClient()
 	if err != nil {
-		log.Fatal("Error getting local client, quitting...")
+		log.Fatal("Error getting local client, quitting with error: ", err)
 	}
 
 	initComplete := make(chan struct {
@@ -111,8 +160,10 @@ func startBackendStateMonitor(
 		httpClient   *http.Client
 	},
 ) {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	initialized := false
+	var hasAuthKey bool = srv.AuthKey != ""
 
 	watcher, err := lc.WatchIPNBus(ctx, ipn.NotifyInitialState|ipn.NotifyInitialNetMap)
 	if err != nil {
@@ -128,6 +179,71 @@ func startBackendStateMonitor(
 		if err != nil {
 			log.Printf("IPN bus watcher error: %v", err)
 			return
+		}
+
+		// Handle ErrMessage for login errors
+		if notify.ErrMessage != nil {
+			errorMsg := *notify.ErrMessage
+			log.Printf("Tailscale error: %s", errorMsg)
+
+			type errorStruct struct {
+				Type      string `json:"type"`
+				Error     string `json:"error"`
+				Timestamp int64  `json:"timestamp"`
+			}
+
+			errorData := errorStruct{
+				Type:      "tsError",
+				Error:     errorMsg,
+				Timestamp: time.Now().UTC().Unix(),
+			}
+
+			if errorJson, err := json.Marshal(errorData); err == nil {
+				fmt.Println(string(errorJson))
+			}
+
+			// Check if this is an authkey-related error
+			if hasAuthKey && (strings.Contains(strings.ToLower(errorMsg), "invalid") ||
+				strings.Contains(strings.ToLower(errorMsg), "expired") ||
+				strings.Contains(strings.ToLower(errorMsg), "unauthorized") ||
+				strings.Contains(strings.ToLower(errorMsg), "auth") ||
+				strings.Contains(strings.ToLower(errorMsg), "key")) {
+				log.Printf("ERROR: AuthKey appears to be invalid - %s", errorMsg)
+				os.Exit(1)
+			}
+		}
+
+		// Handle LoginFinished event
+		if notify.LoginFinished != nil {
+			log.Printf("Login completed successfully")
+		}
+
+		// Handle BrowseToURL for opening authentication URL in browser
+		if notify.BrowseToURL != nil {
+			authURL := *notify.BrowseToURL
+			log.Printf("Authentication required. Opening browser to: %s", authURL)
+
+			type authStruct struct {
+				Type      string `json:"type"`
+				AuthURL   string `json:"authUrl"`
+				Timestamp int64  `json:"timestamp"`
+			}
+
+			authData := authStruct{
+				Type:      "tsAuthURL",
+				AuthURL:   authURL,
+				Timestamp: time.Now().UTC().Unix(),
+			}
+
+			authJsonData, err := json.Marshal(authData)
+			if err != nil {
+				log.Printf("Failed to marshal auth URL data: %v", err)
+			} else {
+				fmt.Println(string(authJsonData))
+			}
+
+			// Attempt to open the URL in the default browser
+			go openBrowser(authURL)
 		}
 
 		if notify.State != nil {
@@ -152,6 +268,17 @@ func startBackendStateMonitor(
 			}
 
 			fmt.Println(string(jsonData))
+
+			// start browser authentication when don't have authkey and in NeedsLogin state
+			if backendState == "NeedsLogin" && !initialized && !hasAuthKey {
+				go func() {
+					log.Printf("Starting interactive login...")
+					err := lc.StartLoginInteractive(ctx)
+					if err != nil {
+						log.Printf("Failed to start interactive login: %v", err)
+					}
+				}()
+			}
 
 			if backendState == "Running" && !initialized {
 				go func() {

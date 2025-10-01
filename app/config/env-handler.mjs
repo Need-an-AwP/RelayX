@@ -10,7 +10,6 @@ var currentEnv = {
     TAILSCALE_AUTH_KEY: null,
 }
 
-global.noEnvFile = false;
 
 const keepEnvVariables = (envPath) => {
     const content = readFileSync(envPath, 'utf8');
@@ -37,7 +36,7 @@ const validateEnvContent = (filePath) => {
     }
 };
 
-export const resolveEnvFilePath = (window) => {
+export const resolveEnvFilePath = () => {
     if (argsEnvFilePath) {
         if (existsSync(argsEnvFilePath)) {
             global.envFilePath = argsEnvFilePath; // 即使无效也设置路径，以便后续写入
@@ -47,7 +46,6 @@ export const resolveEnvFilePath = (window) => {
                 return argsEnvFilePath;
             } else {
                 console.log(chalk.red(`env from flag is invalid: ${argsEnvFilePath}`));
-                global.noEnvFile = { created: true, path: argsEnvFilePath };
                 return null;
             }
         } else {
@@ -64,7 +62,6 @@ export const resolveEnvFilePath = (window) => {
             return probEnvFilePath;
         } else {
             console.log(chalk.red(`default env file is invalid: ${probEnvFilePath}`));
-            global.noEnvFile = { created: true, path: probEnvFilePath };
             return null;
         }
     }
@@ -73,12 +70,10 @@ export const resolveEnvFilePath = (window) => {
     // create empty env file
     try {
         writeFileSync(probEnvFilePath, '# Environment Configuration\n# NODE_HOSTNAME=your_hostname\n# TAILSCALE_AUTH_KEY=your_auth_key', 'utf8');
-        global.noEnvFile = { created: true, path: probEnvFilePath };
         global.envFilePath = probEnvFilePath;
         return null;
     } catch (error) {
         console.log(chalk.red(`failed to create .env file: ${error.message}`));
-        global.noEnvFile = { created: false, error: error.message };
         return null;
     }
 }
@@ -95,6 +90,8 @@ export const setEnvConfig = (envObject) => {
     }
 
     if (global.envFilePath) {
+        console.log('setEnvConfig called with:', envObject);
+        console.log('writing env to:', global.envFilePath);
         const content = stringify(envObject);
         writeFileSync(global.envFilePath, content, 'utf8');
         // 更新currentEnv

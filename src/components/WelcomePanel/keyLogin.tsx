@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,10 +7,15 @@ import { useWelcomeStore } from '@/stores';
 import { Eye, EyeOff } from "lucide-react";
 import validateTsAuthKey from "@/utils/validateTsAuthKey";
 
-export default function TsPart() {
+
+export default function KeyLogin({ onValidationChange }: { onValidationChange?: (isValid: boolean) => void; }) {
     const { nodeHostname, tailscaleAuthKey, setNodeHostname, setTailscaleAuthKey } = useWelcomeStore();
     const [isValidKey, setIsValidKey] = useState(true);
     const [authKeyVisible, setAuthKeyVisible] = useState(false);
+
+    useEffect(() => {
+        onValidationChange?.(isValidKey && tailscaleAuthKey.length > 0);
+    }, [isValidKey, tailscaleAuthKey, onValidationChange]);
 
     const generateRandomHostname = () => {
         const randomString = Math.random().toString(36).substring(2, 10);
@@ -51,6 +56,7 @@ export default function TsPart() {
                 </Label>
                 <div className="flex items-center space-x-2">
                     <Input
+                        maxLength={128}
                         id="tailscale-auth-key"
                         className={`${!isValidKey && '!border-red-500'}`}
                         type={authKeyVisible ? "text" : "password"}
@@ -64,7 +70,7 @@ export default function TsPart() {
                     <Button
                         size="icon"
                         variant="outline"
-                        title="generate random hostname"
+                        title="toggle auth key visibility"
                         className="cursor-pointer"
                         onClick={() => setAuthKeyVisible(!authKeyVisible)}
                     >

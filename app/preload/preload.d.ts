@@ -15,11 +15,12 @@ export interface IpcBridge {
     setScreenCaptureId: (id: string) => void;
 
     getUserConfig: () => Promise<any>;
-    setUserConfig: (config: string, value: string) => void;
+    setUserConfig: (config: string, value: any) => void;
 
     getEnvConfig: () => Promise<any>;
     setEnvConfig: (config: { [key: string]: string }) => void;
     restartTwg: () => void;
+    closeTwg: () => void;
 }
 
 export interface Cpa {

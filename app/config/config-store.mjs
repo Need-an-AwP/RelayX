@@ -17,7 +17,8 @@ const defaultConfig = {
         height: 800,//default value
         minWidth: 600,//default value
         minHeight: 500,//default value
-    }
+    },
+    loginMethod: null, // 'authkey' | 'account' | null
 }
 
 

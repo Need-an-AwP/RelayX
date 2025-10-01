@@ -37,7 +37,7 @@ app.whenReady().then(() => {
     //     }
     // });
 
-    registerIpcHandler(mainWindow);
+    registerIpcHandler(mainWindow, store);
 
     setupWindowActions(mainWindow, store);
 
@@ -49,7 +49,7 @@ app.whenReady().then(() => {
         // start capture process audio subprocess
         quitCpa = startCpaProcess(mainWindow);
         // start core tailscale webrtc gateway subprocess
-        quitTwg = startTwgProcess(mainWindow);
+        quitTwg = startTwgProcess(mainWindow, store);
     })
 })
 
