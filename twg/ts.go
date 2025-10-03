@@ -76,7 +76,7 @@ func initTS(hostName string, authKey string, dirPath string, isEphemeral bool) (
 	dir := fmt.Sprintf("%s/%s", dirPath, hostName) // dirPath is tsNodeDir by default, specify the directory for the node storage
 	if authKey != "" {
 		// use authkey login
-		// os.Setenv("TSNET_FORCE_LOGIN", "1")
+		os.Setenv("TSNET_FORCE_LOGIN", "1")
 		// this can force the node to re-login every time,
 		// ephemeral mode will remove the node in a short time after the node goes offline
 		srv = &tsnet.Server{
