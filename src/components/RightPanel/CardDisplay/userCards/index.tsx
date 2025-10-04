@@ -1,5 +1,6 @@
 export { default as UserThumbnailCard } from "./UserThumbnailCard"
 
+
 import { useEffect, useRef, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -8,6 +9,8 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, C
 import UserAudioSpectrum from "@/components/UserAudioSpectrum";
 import { type PeerState, TrackID } from "@/types"
 import { useVideoStreamStore, useAudioStore } from "@/stores"
+import { AudioContextManager } from "@/AudioManager"
+
 
 type peerIP = string;
 
@@ -27,8 +30,16 @@ export function UserCard({ maximiumCard,
     const [isDisplayingSpectrum, setIsDisplayingSpectrum] = useState(false)
     const [isDisplayingAvatar, setIsDisplayingAvatar] = useState(true)
     const [hasVideoTrack, setHasVideoTrack] = useState(false);
+    const [isMuted, setIsMuted] = useState(false)
     const videoStream = useVideoStreamStore(state => state.streamsByPeer[peerIP]?.find(vs => vs.trackID === TrackID.SCREEN_SHARE_VIDEO) || null);
     const analyser = useAudioStore(state => state.peerAnalysers[peerIP]);
+    const { mutedPeers, setMutedPeer } = useAudioStore();
+
+    const PeerNodeManager = AudioContextManager.getInstance().peerManager
+    useEffect(() => {
+        PeerNodeManager.setPeerMuted(peerIP, isMuted)
+        setMutedPeer(peerIP, isMuted)
+    }, [isMuted])
 
     useEffect(() => {
         if (videoRef.current && videoStream && !isDisplayingSpectrum) {
@@ -88,8 +99,9 @@ export function UserCard({ maximiumCard,
                                 <UserAudioSpectrum
                                     renderId={`user-audio-card-${peerIP}`}
                                     analyser={analyser}
-                                    className="absolute w-full h-full top-0 left-0 opacity-60
-                                    group-hover:opacity-100 transition-opacity duration-300"
+                                    className={`absolute w-full h-full top-0 left-0 opacity-60
+                                    group-hover:opacity-100 transition-opacity duration-300
+                                    ${mutedPeers.includes(peerIP) ? 'grayscale contrast-50' : ''}`}
                                     verticalAlignment='center'
                                 />}
                         </>}
@@ -106,6 +118,9 @@ export function UserCard({ maximiumCard,
                 }}>
                     Switch to display {isDisplayingSpectrum ? 'video' : 'spectrum'}
                 </ContextMenuItem>}
+                <ContextMenuItem onClick={() => { setIsMuted(!isMuted) }}>
+                    {isMuted ? 'Unmute this User' : 'Mute this User'}
+                </ContextMenuItem>
                 <ContextMenuSeparator />
                 <span className='block max-w-[200px] px-2 text-xs text-muted-foreground overflow-hidden truncate'>
                     {peerState.userName}

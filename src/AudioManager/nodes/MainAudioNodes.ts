@@ -5,6 +5,7 @@ export class MainAudioNodes {
     private audioContext: AudioContext;
     public mainGainNode: GainNode;
     public mainAnalyserNode: AnalyserNode;
+    public mainMuteGainNode: GainNode;
     public mainDestination: MediaStreamAudioDestinationNode;
 
     constructor(audioContext: AudioContext) {
@@ -12,6 +13,7 @@ export class MainAudioNodes {
         this.mainDestination = this.audioContext.createMediaStreamDestination();
         this.mainGainNode = this.audioContext.createGain();
         this.mainAnalyserNode = AudioAnalyser.createAnalyserNode(this.audioContext);
+        this.mainMuteGainNode = this.audioContext.createGain();
         this.mainGainNode.gain.value = 1.0;
 
         // play global audio only when local user is in chat
@@ -26,7 +28,8 @@ export class MainAudioNodes {
             }
         )
         
-        this.mainAnalyserNode.connect(this.mainDestination);
+        this.mainAnalyserNode.connect(this.mainMuteGainNode);
+        this.mainMuteGainNode.connect(this.mainDestination);
 
         // this.playRandomNoise(); // random noise for testing
     }
@@ -71,7 +74,7 @@ export class MainAudioNodes {
      * @param muted whether to mute
      */
     public setMainOutputMuted(muted: boolean): void {
-        this.mainGainNode.gain.value = muted ? 0 : this.mainGainNode.gain.value;
+        this.mainMuteGainNode.gain.value = muted ? 0 : 1;
     }
 
     // getter 方法

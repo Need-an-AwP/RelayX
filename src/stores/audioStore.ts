@@ -11,9 +11,8 @@ interface AudioStore {
     // main volume states
     mainVolume: number;
     mainMuted: boolean;
-    volumeBeforeMute: number;
 
-    // peer analyser nodes management
+    mutedPeers: string[]; // array of peer IPs that are muted
     peerAnalysers: Record<string, AnalyserNode>;
     
     setMainVolume: (volume: number) => void;
@@ -26,6 +25,8 @@ interface AudioStore {
     // peer analyser management methods
     setPeerAnalyser: (peerIP: string, analyser: AnalyserNode) => void;
     removePeerAnalyser: (peerIP: string) => void;
+
+    setMutedPeer: (peerIP: string, muted: boolean) => void;
 }
 
 const useAudioStore = create<AudioStore>((set, get) => ({
@@ -33,7 +34,7 @@ const useAudioStore = create<AudioStore>((set, get) => ({
     // 初始状态
     mainVolume: 1.0,
     mainMuted: false,
-    volumeBeforeMute: 1.0,
+    mutedPeers: [],
     peerAnalysers: {},
 
     /**
@@ -43,13 +44,8 @@ const useAudioStore = create<AudioStore>((set, get) => ({
     setMainVolume: (volume: number) => {
         set({ mainVolume: volume });
 
-        // 如果当前不是静音状态，更新 volumeBeforeMute
-        const currentState = get();
-        if (!currentState.mainMuted) {
-            set({ volumeBeforeMute: volume });
-        }
-
-        // 调用 AudioContextManager 设置实际音量
+        // 直接调用 AudioContextManager 设置实际音量
+        // muteGainNode 会处理静音，所以这里不需要关心静音状态
         try {
             const mgr = AudioContextManager.getInstance();
             mgr.setMainOutputVolume(volume);
@@ -63,32 +59,12 @@ const useAudioStore = create<AudioStore>((set, get) => ({
      * @param muted 是否静音
      */
     setMainMuted: (muted: boolean) => {
-        const currentState = get();
-
-        if (muted) {
-            // 静音：保存当前音量，设置音量为0
-            set({
-                volumeBeforeMute: currentState.mainVolume,
-                mainMuted: true,
-                mainVolume: 0
-            });
-        } else {
-            // 取消静音：恢复之前的音量
-            set({
-                mainMuted: false,
-                mainVolume: currentState.volumeBeforeMute
-            });
-        }
+        set({ mainMuted: muted });
 
         // 调用 AudioContextManager 设置实际静音状态
         try {
             const mgr = AudioContextManager.getInstance();
             mgr.setMainOutputMuted(muted);
-
-            // 如果取消静音，恢复音量
-            if (!muted) {
-                mgr.setMainOutputVolume(currentState.volumeBeforeMute);
-            }
         } catch (error) {
             console.error('[AudioStore] Failed to set main muted:', error);
         }
@@ -99,11 +75,23 @@ const useAudioStore = create<AudioStore>((set, get) => ({
      */
     toggleMute: () => {
         const currentState = get();
-        const actions = get();
-        actions.setMainMuted(!currentState.mainMuted);
+        const newMutedState = !currentState.mainMuted;
+        
+        // 更新 zustand store
+        set({ mainMuted: newMutedState });
+
+        // 更新本地用户状态
         useLocalUserStateStore.getState().updateSelfState({
-            isOutputMuted: !currentState.mainMuted
+            isOutputMuted: newMutedState
         });
+
+        // 调用 AudioContextManager 设置实际静音状态
+        try {
+            const mgr = AudioContextManager.getInstance();
+            mgr.setMainOutputMuted(newMutedState);
+        } catch (error) {
+            console.error('[AudioStore] Failed to toggle mute:', error);
+        }
     },
 
 
@@ -139,6 +127,19 @@ const useAudioStore = create<AudioStore>((set, get) => ({
             return { peerAnalysers: rest };
         });
     },
+
+    setMutedPeer: (peerIP: string, muted: boolean) => {
+        set((state) => {
+            let updatedMutedPeers = [...state.mutedPeers];
+            if (muted) {
+                updatedMutedPeers.push(peerIP);
+            } else {
+                updatedMutedPeers = updatedMutedPeers.filter(ip => ip !== peerIP);
+            }
+            return { mutedPeers: updatedMutedPeers };
+        });
+    }
+
 }));
 
 export { useAudioStore };

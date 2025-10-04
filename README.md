@@ -41,6 +41,10 @@ yarn dev
 yarn build
 ```
 
+### start two instances for testing
+run vscode task `Run Default on 5173 & A on 5174`,
+this will start two dev instances in one terminal.
+
 ## Config files
 - `config.json`: Main configuration file for RelayX
 - `.env`: Tailscale authentication key and hostname (the empty env file will be created even if user don't use authkey to login)

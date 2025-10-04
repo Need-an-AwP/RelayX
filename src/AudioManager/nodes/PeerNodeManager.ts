@@ -32,12 +32,13 @@ export class PeerNodeManager {
         try {
             const gainNode = this.audioContext.createGain();
             const analyserNode = AudioAnalyser.createAnalyserNode(this.audioContext);
-            gainNode.gain.value = 1.0;
+            const muteGainNode = this.audioContext.createGain();
 
             gainNode.connect(analyserNode);
-            analyserNode.connect(this.mainNodes.mainGainNode);
+            analyserNode.connect(muteGainNode);
+            muteGainNode.connect(this.mainNodes.mainGainNode);
 
-            this.peerNodes[peerIP] = { gainNode, analyserNode };
+            this.peerNodes[peerIP] = { gainNode, analyserNode, muteGainNode };
             useAudioStore.getState().setPeerAnalyser(peerIP, analyserNode);
             return true;
         } catch (error) {
@@ -75,7 +76,7 @@ export class PeerNodeManager {
             return;
         }
 
-        this.peerNodes[peerIP].gainNode.gain.value = muted ? 0 : 1;
+        this.peerNodes[peerIP].muteGainNode.gain.value = muted ? 0 : 1;
     }
 
     /**

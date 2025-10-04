@@ -34,6 +34,7 @@ type RTCConnection struct {
 	candidatesMu      sync.RWMutex
 	pendingCandidates []*webrtc.ICECandidate
 	tracks            map[uint8]*webrtc.TrackLocalStaticSample // key is track.ID
+	targetBitrate     int
 	isInChat          bool
 	senders           map[uint8]*webrtc.RTPSender // key is track.ID
 	videoRTCtrack     *webrtc.TrackLocalStaticRTP
@@ -125,9 +126,9 @@ func (rm *RTCManager) assignEstimatorToPeer(peerIP string) {
 
 func initWebRTC(conn net.PacketConn, httpClient *http.Client) {
 	// setup BandwidthEstimator
-	var initBitrate int = 600_000
-	var maxBitrate int = 50_000_000
-	var minBitrate int = 100_000 // 100kbps
+	var initBitrate int = 100_000 // 100kbps
+	var maxBitrate int = 500_000  // 500kbps
+	var minBitrate int = 30_000   // 30kbps
 	interceptorRegistry := &interceptor.Registry{}
 	mediaEngine := &webrtc.MediaEngine{}
 	if err := mediaEngine.RegisterDefaultCodecs(); err != nil {

@@ -2,7 +2,7 @@ import { useEffect, useState, useId } from "react"
 import type { PeerState } from "@/types"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { ChevronUp, MicOff, HeadphoneOff, Music, Headphones } from "lucide-react"
+import { ChevronUp, MicOff, HeadphoneOff, Music, Headphones, Volume2, VolumeOff } from "lucide-react"
 import { CgScreen } from "react-icons/cg";
 import { Slider } from "@/components/ui/slider"
 import {
@@ -28,20 +28,26 @@ import { AudioContextManager } from "@/AudioManager"
 
 const User = ({ peerIP, peerState }: { peerIP: string, peerState: PeerState }) => {
     const { isInChat: isLocalInChat } = useLocalUserStateStore(state => state.userState)
-    const { audioActiveThreshold } = useAudioStore()
+    const { audioActiveThreshold, setMutedPeer } = useAudioStore()
     const [audioActive, setAudioActive] = useState(false)
     const [isMuted, setIsMuted] = useState(false)
     const [isMutedForThisUser, setIsMutedForThisUser] = useState(false)
     const [isExtended, setIsExtended] = useState(false)
+    const [volumeValue, setVolumeValue] = useState(100)
+    const [isSliderHovered, setIsSliderHovered] = useState(false)
     const id = useId()
 
     const PeerNodeManager = AudioContextManager.getInstance().peerManager
     // const setPeerMuted = 
 
+    useEffect(() => {
+        PeerNodeManager.setPeerMuted(peerIP, isMuted)
+        setMutedPeer(peerIP, isMuted)
+    }, [isMuted])
 
     useEffect(() => {
         if (!isLocalInChat) return;
-        
+
         const checkAudioLevel = () => {
             const volumeLevel = PeerNodeManager.getPeerVolumeLevel(peerIP)
             if (isNaN(volumeLevel)) return;
@@ -64,7 +70,7 @@ const User = ({ peerIP, peerState }: { peerIP: string, peerState: PeerState }) =
         <div
             className={`group rounded-md border-1 border-muted-foreground/30 hover:border-muted-foreground/100
             flex flex-col select-none
-            transition-all duration-300 ${isExtended ? 'h-60' : 'h-14'}`}
+            transition-all duration-300 ${isExtended ? 'h-40' : 'h-14'}`}
         >
             <ContextMenu>
                 <ContextMenuTrigger>
@@ -73,7 +79,9 @@ const User = ({ peerIP, peerState }: { peerIP: string, peerState: PeerState }) =
                         onClick={() => setIsExtended(!isExtended)}
                     >
                         <div className="flex items-center gap-3 min-w-0 max-w-[95%]">
-                            <Avatar className={`flex-shrink-0 transition-all ${audioActive ? 'ring-2 ring-offset-2 ring-green-500 ring-offset-background' : ''}`}>
+                            <Avatar className={`flex-shrink-0 transition-all 
+                                ${audioActive ? 'ring-2 ring-offset-2 ring-offset-background' : ''}
+                                ${isMuted ? 'ring-red-500' : 'ring-green-500'}`}>
                                 <AvatarImage src={peerState.userAvatar} draggable={false} />
                                 <AvatarFallback>{getInitials(peerState.userName)}</AvatarFallback>
                             </Avatar>
@@ -106,28 +114,51 @@ const User = ({ peerIP, peerState }: { peerIP: string, peerState: PeerState }) =
             <div className={`border-t-1 border-muted-foreground/30 overflow-hidden
                 ${isExtended ? 'opacity-100 h-50' : 'opacity-0 h-0'} transition-all duration-300`}>
                 <div className="flex justify-between items-start h-full">
-                    <div className="flex-1 flex flex-col justify-evenly text-center px-4 h-full w-1/2 border-r-1 border-muted-foreground/30">
+                    <div className="flex-1 flex flex-col justify-evenly text-center px-8 h-full w-1/2">
                         <div className="flex items-center gap-2 w-full">
-                            <Slider
-                                min={0}
-                                max={150}
-                                step={1}
-                            />
-                            <Label>{isMuted ? <HeadphoneOff className="w-4 h-4" /> : <Headphones className="w-4 h-4" />}</Label>
+                            <div
+                                className="flex-1 py-2"
+                                onMouseEnter={() => setIsSliderHovered(true)}
+                                onMouseLeave={() => setIsSliderHovered(false)}
+                            >
+                                <Slider
+                                    defaultValue={[100]}
+                                    min={0}
+                                    max={200}
+                                    step={1}
+                                    disabled={isMuted}
+                                    onValueChange={([value]) => {
+                                        setVolumeValue(value);
+                                        PeerNodeManager.setPeerVolume(peerIP, value / 100);
+                                    }}
+                                />
+                            </div>
+                            <Label
+                                className="cursor-pointer min-w-10 flex items-center justify-center"
+                                onClick={() => setIsMuted(!isMuted)}
+                            >
+                                {isSliderHovered ? (
+                                    <span className="text-xs">{volumeValue}%</span>
+                                ) : (
+                                    isMuted ? <VolumeOff className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />
+                                )}
+                            </Label>
                         </div>
 
-                        <div className="flex items-center gap-2 w-full">
-                            <Slider
-                                min={0}
-                                max={100}
-                                step={1}
-                                disabled={true}
-                            />
-                            <Label><Music className="w-4 h-4" /></Label>
-                        </div>
+                        {peerState.isSharingAudio &&
+                            <div className="flex items-center gap-4 w-full">
+                                <Slider
+                                    defaultValue={[100]}
+                                    min={0}
+                                    max={200}
+                                    step={1}
+                                    disabled={true}
+                                />
+                                <Label><Music className="w-4 h-4" /></Label>
+                            </div>}
                     </div>
 
-                    <div className="flex-1 flex flex-col gap-4 justify-center px-4 h-full w-1/2">
+                    {/* <div className="flex-1 flex flex-col gap-4 justify-center px-4 h-full w-1/2">
                         <Button
                             variant='outline'
                             className={`w-full cursor-pointer ${isMuted ? '!bg-red-500' : 'text-red-500'}`}
@@ -142,15 +173,12 @@ const User = ({ peerIP, peerState }: { peerIP: string, peerState: PeerState }) =
                         >
                             {isMutedForThisUser ? 'unmute my voice' : 'mute my voice for this user'}
                         </Button>
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </div>
     )
 }
 
-/*
-
-*/
 
 export default User;

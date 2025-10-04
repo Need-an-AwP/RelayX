@@ -8,9 +8,10 @@
 		"output": "default"
 	},
 	"windowBounds": {
-		"x": 190,
-		"y": 125,
+		"x": 364,
+		"y": 108,
 		"width": 1400,
 		"height": 783
-	}
+	},
+	"loginMethod": "key"
 }

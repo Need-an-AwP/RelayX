@@ -1,11 +1,18 @@
-import { useLatencyStore } from "@/stores";
+import { useLatencyStore, useLocalUserStateStore, useRemoteUsersStore } from "@/stores";
 
 export default function LatencyDisplay({ peerIP }: { peerIP: string }) {
-    const { latencies } = useLatencyStore();
+    const { latencies, targetBitrates } = useLatencyStore();
+    const { userState } = useLocalUserStateStore();
+    const { peers } = useRemoteUsersStore();
 
     return (
-        <div className="flex items-center text-xs text-muted-foreground space-x-1">
-            <span className="font-medium">{latencies[peerIP] || "--"}</span>
+        <div className="flex flex-col items-end text-xs text-muted-foreground">
+            <span className="font-medium" title="current latency">
+                {latencies[peerIP] || "--"}
+            </span>
+            {userState.isInChat && peers[peerIP].isInChat && <span className="font-medium" title="available outbound bandwidth">
+                {targetBitrates[peerIP] ? (targetBitrates[peerIP] / 1000) + " kbps" : "--"}
+            </span>}
         </div>
     );
 }

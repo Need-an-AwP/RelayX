@@ -16,10 +16,11 @@ import (
 )
 
 var (
-	wsConn      *websocket.Conn
-	wsConnMu    sync.Mutex
-	msgWsConn   *websocket.Conn
-	msgWsConnMu sync.Mutex
+	wsConn           *websocket.Conn
+	wsConnMu         sync.Mutex
+	msgWsConn        *websocket.Conn
+	msgWsConnMu      sync.Mutex
+	audioBitrateList = []uint32{32000, 64000, 128000}
 )
 
 type wsManager struct {
@@ -136,6 +137,17 @@ func initWsService() {
 	go rtcStatusReporter()
 }
 
+func selectBestAudioFrame(targetBitrate uint32) uint32 {
+	var bestBitrate uint32
+	bestBitrate = audioBitrateList[0]
+	for _, bitrate := range audioBitrateList {
+		if bitrate <= targetBitrate && bitrate > bestBitrate {
+			bestBitrate = bitrate
+		}
+	}
+	return bestBitrate
+}
+
 func handleMediaChunk(data []byte) {
 	if len(data) < 9 {
 		log.Printf("Invalid packet size: %d", len(data))
@@ -143,18 +155,19 @@ func handleMediaChunk(data []byte) {
 	}
 	trackID := data[0]
 	var duration time.Duration
+	var mediaData []byte
+	var chunkBitrate uint32
 	if trackID == SCREEN_SHARE_VIDEO {
 		duration = time.Second / 30
 	} else {
 		duration = time.Duration(binary.LittleEndian.Uint64(data[1:9]))
 	}
-	mediaData := data[9:]
-
-	// if trackID == CPA_AUDIO {
-	// 	log.Printf("Received CPA chunk: bytelength=%d, duration=%d", len(mediaData), duration)
-	// }
-
-	// 在此处尝试分离svc的不同层级
+	if trackID == CPA_AUDIO || trackID == MICROPHONE_AUDIO {
+		chunkBitrate = binary.LittleEndian.Uint32(data[9:13])
+		mediaData = data[13:]
+	} else {
+		mediaData = data[9:]
+	}
 
 	// write sample to connections which is in chat
 	rtcManager.mu.RLock()
@@ -176,10 +189,13 @@ func handleMediaChunk(data []byte) {
 			continue
 		}
 
-		track.WriteSample(media.Sample{
-			Data:     mediaData,
-			Duration: duration,
-		})
+		if chunkBitrate == selectBestAudioFrame(uint32(connection.targetBitrate/2)) {
+			track.WriteSample(media.Sample{
+				Data:     mediaData,
+				Duration: duration,
+			})
+		}
+
 		connection.mu.RUnlock()
 	}
 

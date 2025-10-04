@@ -1,6 +1,7 @@
 export interface PeerAudioNodes {
     gainNode: GainNode;
     analyserNode: AnalyserNode;
+    muteGainNode: GainNode;
 }
 
 export interface TrackAudioNodes {

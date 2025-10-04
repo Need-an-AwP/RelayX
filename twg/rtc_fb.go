@@ -24,7 +24,17 @@ func (rm *RTCManager) reportBandwidthEstimates() {
 	for peerIP, estimator := range rm.estimators {
 		if estimator != nil {
 			targetBitrate := estimator.GetTargetBitrate()
+			// save for reporting
 			targetBitrates[peerIP] = targetBitrate
+
+			// save for choosing audio chunk data
+			rm.mu.RLock()
+			if connection, exists := rm.connections[peerIP]; exists {
+				connection.mu.Lock()
+				connection.targetBitrate = targetBitrate
+				connection.mu.Unlock()
+			}
+			rm.mu.RUnlock()
 		}
 	}
 

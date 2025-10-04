@@ -159,6 +159,7 @@ const handleWsMessage = (event: MessageEvent) => {
                 break;
             case "BER":
                 console.log('BER', msg);
+                useLatencyStore.getState().updateTargetBitrates(msg.targetBitrates || {});
                 break;
             case "dm":
                 console.log('dm', msg);

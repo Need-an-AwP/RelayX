@@ -14,6 +14,8 @@ export default class InputAudioProcessor {
     private trackID: TrackIDType;
     private ws: WebSocket;
     private encoder: AudioEncoder | null = null;
+    private static bitrateList = [32_000, 64_000, 128_000];
+    private encoders: Record<number, AudioEncoder> = {};
     private state: ProcessorStateType = ProcessorState.IDLE;
     private audioConfig: AudioEncoderConfig | null = null;
 
@@ -58,32 +60,37 @@ export default class InputAudioProcessor {
                 return;
             }
 
+            for (const bitrate of InputAudioProcessor.bitrateList) {
+                const encoder = new AudioEncoder({
+                    output: (chunk: EncodedAudioChunk, metadata?: EncodedAudioChunkMetadata) => {
+                        this.handleMultipleEncoders(chunk, bitrate, metadata);
+                    },
+                    error: (error) => {
+                        console.error(`${bitrate} AudioEncoder error:`, error);
+                        if (this.state !== ProcessorState.STOPPING) {
+                            delete this.encoders[bitrate];
+                        }
+                    },
+                });
+                const cfg = { ...config, bitrate };
+                encoder.configure(cfg);
+                this.encoders[bitrate] = encoder;
+            }
 
-            this.encoder = new AudioEncoder({
-                output: this.handleEncodedChunk.bind(this),
-                error: (error) => {
-                    console.error('AudioEncoder error:', error);
-                    // 只有在非停止状态时才重置编码器状态
-                    if (this.state !== ProcessorState.STOPPING) {
-                        this.state = ProcessorState.STOPPED;
-                        this.encoder = null;
-                    }
-                },
-            });
+            // this.encoder = new AudioEncoder({
+            //     output: this.handleEncodedChunk.bind(this),
+            //     error: (error) => {
+            //         console.error('AudioEncoder error:', error);
+            //         // 只有在非停止状态时才重置编码器状态
+            //         if (this.state !== ProcessorState.STOPPING) {
+            //             this.state = ProcessorState.STOPPED;
+            //             this.encoder = null;
+            //         }
+            //     },
+            // });
+            // this.encoder.configure(config);
 
-            this.encoder.configure(config);
             this.state = ProcessorState.RUNNING;
-
-            // 配置多个不同目标码率的opus，尝试同步
-            // let n = 0;
-            // setInterval(() => {
-            //     this.encoder!.configure({
-            //         ...config,
-            //         bitrate: n % 2 === 0 ? 32_000 : 128_000,
-            //     })
-            //     console.log(`[audio encoder] Reconfigured encoder, bitrate: ${n % 2 === 0 ? 32_000 : 128_000}`);
-            //     n++;
-            // }, 10 * 1000);
         } catch (error) {
             console.error('[audio encoder] Failed to initialize AudioEncoder:', error);
             this.state = ProcessorState.STOPPED;
@@ -120,6 +127,38 @@ export default class InputAudioProcessor {
         }
     }
 
+    private handleMultipleEncoders(chunk: EncodedAudioChunk, bitrate: number, metadata?: EncodedAudioChunkMetadata) {
+        const buffer = new Uint8Array(chunk.byteLength);
+        chunk.copyTo(buffer);
+
+        const headerSize = 1 + 8 + 4; // trackID + duration + bitrate
+        const totalSize = headerSize + buffer.length;
+        const packet = new ArrayBuffer(totalSize);
+        const view = new DataView(packet);
+
+        let offset = 0;
+        view.setUint8(offset, this.trackID); // 轨道ID
+        offset += 1;
+
+        const duration = chunk.duration || 0;
+        view.setBigUint64(offset, BigInt(duration), true); // duration
+        offset += 8;
+
+        view.setUint32(offset, bitrate, true); // 比特率
+        offset += 4;
+
+        const dataView = new Uint8Array(packet, offset);
+        dataView.set(buffer);
+
+        // 发送多比特率编码数据
+        if (this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(packet);
+        } else {
+            console.warn('mediaWs is not open. Unable to send multi-bitrate audio data.');
+        }
+    }
+
+
 
     private async encodeFromAudioTrack(track: MediaStreamAudioTrack) {
         if (!('MediaStreamTrackProcessor' in window)) {
@@ -142,9 +181,13 @@ export default class InputAudioProcessor {
                         await this.init(value);
                     }
 
-                    if (this.encoder && this.state === ProcessorState.RUNNING) {
+                    if (this.state === ProcessorState.RUNNING) {
                         try {
-                            this.encoder.encode(value);
+                            // this.encoder.encode(value);
+
+                            this.encoders && Object.values(this.encoders).forEach(enc => {
+                                enc.encode(value);
+                            });
                         } catch (error) {
                             console.error('Error encoding frame:', error);
                         }
@@ -165,23 +208,42 @@ export default class InputAudioProcessor {
     public stop() {
         this.state = ProcessorState.STOPPING;
 
+        // 停止主编码器
         if (this.encoder) {
-            // Flush any pending frames and close the encoder
             this.encoder.flush()
                 .then(() => {
                     this.encoder?.close();
                     this.encoder = null;
-                    this.state = ProcessorState.STOPPED;
                 })
                 .catch(error => {
-                    console.error('Error flushing encoder:', error);
-                    this.state = ProcessorState.STOPPED;
+                    console.error('Error flushing main encoder:', error);
                 });
-        } else {
-            this.state = ProcessorState.STOPPED;
         }
 
-        console.log('Audio processing stopped');
+        // 停止所有多比特率编码器
+        const flushPromises = Object.entries(this.encoders).map(([bitrate, encoder]) => {
+            return encoder.flush()
+                .then(() => {
+                    encoder.close();
+                    console.log(`Closed encoder for ${bitrate}bps`);
+                })
+                .catch(error => {
+                    console.error(`Error flushing encoder ${bitrate}bps:`, error);
+                });
+        });
+
+        // 等待所有编码器完成
+        Promise.all(flushPromises)
+            .then(() => {
+                this.encoders = {};
+                this.state = ProcessorState.STOPPED;
+                console.log('All audio encoders stopped');
+            })
+            .catch(error => {
+                console.error('Error stopping audio encoders:', error);
+                this.encoders = {};
+                this.state = ProcessorState.STOPPED;
+            });
     }
 }
 

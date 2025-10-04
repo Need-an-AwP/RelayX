@@ -62,9 +62,6 @@ const useTailscaleStore = create<TailscaleState>()(
 
 
 const initializeTwgListeners = async () => {
-    setInterval(() => {
-        console.log('showWelcome state:', useTailscaleStore.getState().showWelcome)
-    }, 100);
     const { updateTailscaleStatus, setTsBackendState, setShowWelcome } = useTailscaleStore.getState();
 
     // try get tsBackendState first
