@@ -7,6 +7,7 @@ import { PeerStateSchema, TrackID, type TrackIDType } from '@/types';
 import { AudioDecoderManager, VideoDecoderManager } from '@/MediaTrackManager';
 import { InputTrackManager } from '@/MediaTrackManager/input/InputTrackManager';
 import { LocalRTC } from '@/MediaTrackManager/localRTC';
+import { useTailscaleStore } from './twgStore';
 
 
 interface wsStateStore {
@@ -128,7 +129,8 @@ const handleWsMessage = (event: MessageEvent) => {
         if (!msg.type) return
         switch (msg.type) {
             case 'onlinePeers':
-                console.log('[ws] onlinePeers', msg);
+                // console.log('[ws] onlinePeers', msg);
+                useTailscaleStore.getState().updateOnlinePeers(msg.peers || {});
                 break;
 
             case 'userState':
@@ -160,6 +162,9 @@ const handleWsMessage = (event: MessageEvent) => {
             case "BER":
                 console.log('BER', msg);
                 useLatencyStore.getState().updateTargetBitrates(msg.targetBitrates || {});
+                break;
+            case "setAudioBitrate":
+                console.log('current microphone bitrate:', msg.bitrate);
                 break;
             case "dm":
                 console.log('dm', msg);

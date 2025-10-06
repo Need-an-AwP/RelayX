@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge";
 import { Laptop, Server, Smartphone, Globe } from 'lucide-react';
 import type { PeerStatus, PeerState } from "@/types"
+import type { connectionMode } from '@/stores';
 import LatencyDisplay from './LatencyDisplay';
 
 const OsIcon = memo(({ os }: { os?: string }) => {
@@ -19,12 +20,23 @@ const OsIcon = memo(({ os }: { os?: string }) => {
     return <Globe className="h-4 w-4 text-muted-foreground" />;
 });
 
-const PeerItem = ({ peerStatus, userState, displayLatency = true }: { peerStatus: PeerStatus, userState: PeerState, displayLatency?: boolean }) => {
+const PeerItem = ({
+    peerStatus,
+    userState,
+    isSelf = false,
+    connectionMode
+}: {
+    peerStatus: PeerStatus,
+    userState: PeerState,
+    isSelf?: boolean,
+    connectionMode?: connectionMode
+}) => {
+    const displayLatency = !isSelf;
     const peer = peerStatus
     const user = userState
 
     const onlineStyle = useMemo(() =>
-        `text-[10px] px-1 py-0 cursor-default ${peer.Online ? "bg-green-500 text-white" : ""}`,
+        `text-[10px] px-1 py-0 cursor-default ${peer.Online ? "text-white" : "text-muted-foreground"}`,
         [peer.Online]
     );
 
@@ -56,10 +68,21 @@ const PeerItem = ({ peerStatus, userState, displayLatency = true }: { peerStatus
                     <div className="flex justify-between items-center mb-0">
                         <div className="font-medium text-muted-foreground truncate" title="HostName">{peer.HostName}</div>
                         <div className="flex items-center gap-1">
-                            <div title={peer.OS}><OsIcon os={peer.OS} /></div>
+                            {/* <div title={peer.OS}><OsIcon os={peer.OS} /></div> */}
+                            {connectionMode && peer.Online && <Badge
+                                variant={connectionMode.type === 'Direct' ? 'default' : 'destructive'}
+                                className="text-[10px] px-1 py-0 cursor-default"
+                                title={connectionMode.type === 'Direct' ?
+                                    'Direct Connection' : connectionMode.type === 'PeerRelay' ?
+                                        'Using peer relay: ' + connectionMode.info : 'Using relay: ' + connectionMode.info}
+                            >
+                                {connectionMode.type}
+                            </Badge>}
                             <Badge
                                 className={onlineStyle}
-                                variant={peer.Online ? "default" : "secondary"}>
+                                variant={peer.Online ? "secondary" : "outline"}
+                                title='Tailscale Online Status'
+                            >
                                 {peer.Online ? "Online" : "Offline"}
                             </Badge>
 
@@ -69,7 +92,9 @@ const PeerItem = ({ peerStatus, userState, displayLatency = true }: { peerStatus
             </DialogTrigger>
             <DialogContent showCloseButton={true} className="@container">
                 <DialogHeader>
-                    <DialogTitle>{peer.TailscaleIPs[0]}</DialogTitle>
+                    {isSelf ? <DialogTitle className="flex flex-row gap-2 items-center">
+                        {peer.TailscaleIPs[0]}<Badge className='-py-1'>Self</Badge>
+                    </DialogTitle> : <DialogTitle>{peer.TailscaleIPs[0]}</DialogTitle>}
                     <DialogDescription className="flex flex-row gap-2">
                         {peer.HostName}
                         {peer.TailscaleIPs?.map((ip: string) => (
@@ -83,49 +108,6 @@ const PeerItem = ({ peerStatus, userState, displayLatency = true }: { peerStatus
                             {JSON.stringify(user, null, 2)}
                         </pre>
                     </div>)} */}
-                    {/* {user && (
-                        <div className='max-w-[100cqw] overflow-hidden'>
-                            <div className="bg-green-800 border border-green-200 rounded-md p-3">
-                                <h4 className="text-sm font-semibold text-green-700 mb-2">User State</h4>
-                                <div className="space-y-1 text-xs">
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">User Name:</span>
-                                        <span className="font-medium">{user.userName}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">In Chat:</span>
-                                        <Badge variant={user.isInChat ? "default" : "secondary"} className="h-4">
-                                            {user.isInChat ? "Yes" : "No"}
-                                        </Badge>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Input Muted:</span>
-                                        <Badge variant={user.isInputMuted ? "destructive" : "secondary"} className="h-4">
-                                            {user.isInputMuted ? "Muted" : "Active"}
-                                        </Badge>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Output Muted:</span>
-                                        <Badge variant={user.isOutputMuted ? "destructive" : "secondary"} className="h-4">
-                                            {user.isOutputMuted ? "Muted" : "Active"}
-                                        </Badge>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Sharing Screen:</span>
-                                        <Badge variant={user.isSharingScreen ? "default" : "secondary"} className="h-4">
-                                            {user.isSharingScreen ? "Yes" : "No"}
-                                        </Badge>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Sharing Audio:</span>
-                                        <Badge variant={user.isSharingAudio ? "default" : "secondary"} className="h-4">
-                                            {user.isSharingAudio ? "Yes" : "No"}
-                                        </Badge>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )} */}
                     <div className="h-[50vh] w-[100cqw] bg-muted rounded-md p-1">
                         <ScrollArea className="h-full w-full">
                             {/*  <pre className="text-sm">
@@ -157,6 +139,14 @@ const PeerItem = ({ peerStatus, userState, displayLatency = true }: { peerStatus
                                             <div className="flex justify-between">
                                                 <span className="text-muted-foreground">Peer Relay:</span>
                                                 <span className="font-mono text-xs">{peer.PeerRelay}</span>
+                                            </div>
+                                        )}
+                                        {connectionMode && (
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Connection Mode:</span>
+                                                <span className={`font-mono text-xs ${connectionMode.type === 'Direct' ? 'text-green-500' : 'text-red-500'}`}>
+                                                    {connectionMode.type}
+                                                </span>
                                             </div>
                                         )}
                                     </div>
@@ -191,39 +181,44 @@ const PeerItem = ({ peerStatus, userState, displayLatency = true }: { peerStatus
                                     </div>
                                 </div>
 
-                                <Separator />
 
-                                <div>
-                                    <h4 className="text-sm font-semibold mb-2">Network Stats</h4>
-                                    <div className="space-y-1 text-xs">
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Bytes Sent:</span>
-                                            <span className="font-mono text-xs">{(peer.TxBytes / 1024 / 1024).toFixed(2)} MB</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Bytes Received:</span>
-                                            <span className="font-mono text-xs">{(peer.RxBytes / 1024 / 1024).toFixed(2)} MB</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Active:</span>
-                                            <Badge variant={peer.Active ? "default" : "secondary"} className="h-4">
-                                                {peer.Active ? "Yes" : "No"}
-                                            </Badge>
-                                        </div>
-                                        {peer.LastWrite && (
+                                {!isSelf && <>
+                                    <Separator />
+
+                                    <div>
+                                        <h4 className="text-sm font-semibold mb-2">Network Stats</h4>
+                                        <div className="space-y-1 text-xs">
+
                                             <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Last Activity:</span>
-                                                <span className="text-xs">{new Date(peer.LastWrite).toLocaleString()}</span>
+                                                <span className="text-muted-foreground">Bytes Sent:</span>
+                                                <span className="font-mono text-xs">{(peer.TxBytes / 1024 / 1024).toFixed(2)} MB</span>
                                             </div>
-                                        )}
-                                        {peer.LastHandshake && (
                                             <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Last Handshake:</span>
-                                                <span className="text-xs">{new Date(peer.LastHandshake).toLocaleString()}</span>
+                                                <span className="text-muted-foreground">Bytes Received:</span>
+                                                <span className="font-mono text-xs">{(peer.RxBytes / 1024 / 1024).toFixed(2)} MB</span>
                                             </div>
-                                        )}
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Active:</span>
+                                                <Badge variant={peer.Active ? "default" : "secondary"} className="h-4">
+                                                    {peer.Active ? "Yes" : "No"}
+                                                </Badge>
+                                            </div>
+
+                                            {peer.LastWrite && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">Last Activity:</span>
+                                                    <span className="text-xs">{new Date(peer.LastWrite).toLocaleString()}</span>
+                                                </div>
+                                            )}
+                                            {peer.LastHandshake && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">Last Handshake:</span>
+                                                    <span className="text-xs">{new Date(peer.LastHandshake).toLocaleString()}</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
+                                </>}
 
                                 <Separator />
 

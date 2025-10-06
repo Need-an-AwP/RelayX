@@ -47,4 +47,5 @@ var (
 	rtcManager        *RTCManager
 	mirrorState       PeerState
 	mirrorStateMu     sync.RWMutex
+	peerPingManager   *PeerPingManager
 )

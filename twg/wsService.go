@@ -148,6 +148,8 @@ func selectBestAudioFrame(targetBitrate uint32) uint32 {
 	return bestBitrate
 }
 
+var currentBitrate = audioBitrateList[0]
+
 func handleMediaChunk(data []byte) {
 	if len(data) < 9 {
 		log.Printf("Invalid packet size: %d", len(data))
@@ -190,6 +192,10 @@ func handleMediaChunk(data []byte) {
 		}
 
 		if chunkBitrate == selectBestAudioFrame(uint32(connection.targetBitrate/2)) {
+			if chunkBitrate != currentBitrate && trackID == MICROPHONE_AUDIO {
+				currentBitrate = chunkBitrate
+				go sendMsgWs([]byte(fmt.Sprintf(`{"type":"setAudioBitrate","peerIP":"%s","bitrate":%d}`, connection.peerIP, currentBitrate)))
+			}
 			track.WriteSample(media.Sample{
 				Data:     mediaData,
 				Duration: duration,

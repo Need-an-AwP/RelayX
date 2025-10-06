@@ -42,14 +42,14 @@ const PeersView = () => {
                     <ScrollArea className="h-full w-full">
                         {/* local user and machine */}
                         {localPeer && (
-                            <PeerItem 
-                                key="local-self" 
-                                peerStatus={localPeer} 
+                            <PeerItem
+                                key="local-self"
+                                peerStatus={localPeer}
                                 userState={userState}
-                                displayLatency={false}
+                                isSelf={true}
                             />
                         )}
-                        
+
                         {/* remote peers */}
                         {sortedPeerEntries.map(({ nodekey, peer }) => {
                             if (!peer) return null;
@@ -57,9 +57,15 @@ const PeersView = () => {
 
                             const peerIP = peer.TailscaleIPs[0]
                             const userState = peers[peerIP]
+                            const connectionMode = useTailscaleStore.getState().connectionModes?.[peerIP];
                             if (displayOption === "users" && !userState) return null;
 
-                            return <PeerItem key={nodekey} peerStatus={peer} userState={userState} />
+                            return <PeerItem
+                                key={nodekey}
+                                peerStatus={peer}
+                                userState={userState}
+                                connectionMode={connectionMode}
+                            />
                         })}
                     </ScrollArea>
                 </ContextMenuTrigger>

@@ -36,11 +36,17 @@ interface backendState {
     timestamp: number;
 }
 
+interface connectionMode {
+    type: "Direct" | "Relay" | "PeerRelay" | "NotConnected";
+    info: string;
+}
+
 interface TailscaleState {
     showWelcome: boolean;
     tailscaleStatus: Status | null;
     tsBackendState: TsBackendState | null;
     onlinePeers: onlinePeers | null;
+    connectionModes: Record<string, connectionMode> | null;// key is peerIP
     updateTailscaleStatus: (status: Status) => void;
     updateOnlinePeers: (peers: onlinePeers) => void;
     setTsBackendState: (state: TsBackendState | null) => void;
@@ -53,7 +59,39 @@ const useTailscaleStore = create<TailscaleState>()(
         tailscaleStatus: null,
         tsBackendState: null,
         onlinePeers: null,// udp broadcasted online clients
-        updateTailscaleStatus: (status) => set({ tailscaleStatus: status }),
+        connectionModes: null,
+        updateTailscaleStatus: (status) => {
+            const connectionModes: Record<string, connectionMode> = {};
+
+            if (status?.Peer) {
+                Object.entries(status.Peer).forEach(([peerKey, peerStatus]) => {
+                    if (!peerStatus) return;
+
+                    const peerIP = peerStatus.TailscaleIPs?.[0] || peerKey;
+                    const curAddr = peerStatus.CurAddr || '';
+                    const relay = peerStatus.Relay || '';
+                    const peerRelay = peerStatus.PeerRelay || '';
+
+                    let connectionMode: connectionMode;
+                    if (curAddr && curAddr.trim() !== '') {
+                        connectionMode = { type: 'Direct', info: curAddr };
+                    } else if (peerRelay && peerRelay.trim() !== '') {
+                        connectionMode = { type: 'PeerRelay', info: peerRelay };
+                    } else if (relay && relay.trim() !== '') {
+                        connectionMode = { type: 'Relay', info: relay };
+                    } else {
+                        connectionMode = { type: 'NotConnected', info: '' };
+                    }
+
+                    connectionModes[peerIP] = connectionMode;
+                });
+            }
+
+            set({
+                tailscaleStatus: status,
+                connectionModes: connectionModes
+            });
+        },
         updateOnlinePeers: (peers) => set({ onlinePeers: peers }),
         setTsBackendState: (state) => set({ tsBackendState: state }),
         setShowWelcome: (show) => set({ showWelcome: show }),
@@ -98,10 +136,10 @@ const initializeTwgListeners = async () => {
     })
 
     window.ipcBridge.receive('tsStatus', (message: { type: string, status: Status }) => {
-        // console.log('tsStatus', message);
+        console.log('tsStatus', message);
         updateTailscaleStatus(message.status);
     })
 
 }
 
-export { initializeTwgListeners, useTailscaleStore, type backendState, type TsBackendState }
+export { initializeTwgListeners, useTailscaleStore, type backendState, type TsBackendState, type connectionMode }

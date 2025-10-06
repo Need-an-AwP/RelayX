@@ -9,10 +9,10 @@ import (
 	"math/big"
 	"net"
 	"net/http"
-	"strings"
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"tailscale.com/client/local"
@@ -297,19 +297,12 @@ func startBackendStateMonitor(
 					initNodeInfo(selfAddr, hostname)
 					udpConn, rtcConn, httpListener, httpClient := initConns(srv, selfAddr)
 
+					// 初始化PeerPingManager
+					initPeerPingManager(lc, ctx)
+
 					// status stdout loop
 					ticker := time.NewTicker(1 * time.Second)
-					go func() {
-						defer ticker.Stop()
-						for range ticker.C {
-							st, err := lc.Status(ctx)
-							jsonData, err := json.Marshal(st)
-							if err != nil {
-								log.Printf("Error marshalling tailscale status to JSON: %v", err)
-							}
-							fmt.Printf("{\"type\":\"tsStatus\", \"status\":%s}\n", jsonData)
-						}
-					}()
+					go startTSStatusReportLoop(ticker, lc, ctx)
 
 					initComplete <- struct {
 						srv          *tsnet.Server
@@ -330,5 +323,27 @@ func startBackendStateMonitor(
 				initialized = true
 			}
 		}
+	}
+}
+
+func startTSStatusReportLoop(ticker *time.Ticker, lc *local.Client, ctx context.Context) {
+	defer ticker.Stop()
+	for range ticker.C {
+		st, err := lc.Status(ctx)
+		if err != nil {
+			log.Printf("Error getting tailscale status: %v", err)
+			continue
+		}
+
+		if peerPingManager != nil {
+			peerPingManager.checkPeerConnections(st)
+		}
+
+		jsonData, err := json.Marshal(st)
+		if err != nil {
+			log.Printf("Error marshalling tailscale status to JSON: %v", err)
+			continue
+		}
+		fmt.Printf("{\"type\":\"tsStatus\", \"status\":%s}\n", jsonData)
 	}
 }

@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"maps"
 	"net"
 	"time"
 
 	"tailscale.com/client/local"
 	// "tailscale.com/tsnet"
 )
-
 
 // startOnlineBroadcast 启动UDP在线消息广播
 func startOnlineBroadcast(conn net.PacketConn, lc *local.Client) {
@@ -98,5 +98,72 @@ func startUDPListener(conn net.PacketConn) {
 		}
 
 		updateOnlinePeer(receivedData)
+	}
+}
+
+// data includes key
+func updateOnlinePeer(data OnlinePeerData) {
+	onlinePeersMu.Lock()
+	defer onlinePeersMu.Unlock()
+
+	onlinePeers[data.NodeInfo.TailscaleIP] = data
+}
+
+func initOnlinePeers() {
+	onlinePeersMu.Lock()
+	onlinePeers = make(map[string]OnlinePeerData)
+	onlinePeersMu.Unlock()
+
+	go reportOnlinePeersLoop()
+	go cleanupExpiredPeersLoop()
+}
+
+func reportOnlinePeersLoop() {
+	ticker := time.NewTicker(broadcastInterval) // use the same interval as broadcast
+	defer ticker.Stop()
+
+	for range ticker.C {
+		onlinePeersMu.RLock()
+		peersCopy := make(map[string]OnlinePeerData)
+		maps.Copy(peersCopy, onlinePeers)
+		onlinePeersMu.RUnlock()
+
+		type jsonStruct struct {
+			Type  string                    `json:"type"`
+			Peers map[string]OnlinePeerData `json:"peers"`
+		}
+		data := jsonStruct{
+			Type:  "onlinePeers",
+			Peers: peersCopy,
+		}
+		jsonData, err := json.Marshal(data)
+		if err != nil {
+			log.Printf("Failed to marshal online peers data: %v", err)
+			continue
+		}
+
+		// 使用包装方法发送消息
+		err = sendMsgWs(jsonData)
+		if err != nil {
+			// 错误已经在 sendMsgWs 中处理和记录了
+			continue
+		}
+	}
+}
+
+func cleanupExpiredPeersLoop() {
+	ticker := time.NewTicker(broadcastInterval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		onlinePeersMu.Lock()
+		currentTime := time.Now().UTC().Unix()
+		for ip, peerData := range onlinePeers {
+			// remove peer if not receiving update for more than 10 seconds
+			if currentTime-peerData.Timestamp > 10 {
+				delete(onlinePeers, ip)
+			}
+		}
+		onlinePeersMu.Unlock()
 	}
 }

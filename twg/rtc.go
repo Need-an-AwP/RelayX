@@ -127,7 +127,7 @@ func (rm *RTCManager) assignEstimatorToPeer(peerIP string) {
 func initWebRTC(conn net.PacketConn, httpClient *http.Client) {
 	// setup BandwidthEstimator
 	var initBitrate int = 100_000 // 100kbps
-	var maxBitrate int = 500_000  // 500kbps
+	var maxBitrate int = 5_000_000  // 5mbps
 	var minBitrate int = 30_000   // 30kbps
 	interceptorRegistry := &interceptor.Registry{}
 	mediaEngine := &webrtc.MediaEngine{}
