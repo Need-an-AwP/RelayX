@@ -5,6 +5,9 @@ RelayX aims to create a user-controlled voice communication platform without the
 ## About this project
 [https://relayx.pages.dev](https://relayx.pages.dev/)
 
+## important aliases
+- `twg`: tailscale-webrtc-gateway
+- `cpa`: capture-process-audio
 
 ## setup development environment
 
@@ -57,7 +60,6 @@ This project uses the apache License - see the [LICENSE](LICENSE) file for detai
 ## Acknowledgments
 
 - [Tailscale](https://tailscale.com/) - Provides secure network connections
-- [WebRTC](https://webrtc.org/) - Real-time communication technology
 - [Electron](https://electronjs.org/) - Desktop application framework
 - [Pion WebRTC](https://github.com/pion/webrtc) - Go WebRTC implementation
 - [RNNoise](https://jmvalin.ca/demo/rnnoise/) - Noise suppression

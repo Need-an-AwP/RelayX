@@ -13,7 +13,8 @@
     "build:go": "go build -C twg -o ../app",
     "build:fe": "tsc -b && vite build",
     "build:win": "electron-builder --win",
-    "build": "npm run build:fe && npm run build:win",
+    "check:prerequisites": "node scripts/check-prerequisites.mjs",
+    "build": "yarn check:prerequisites && yarn build:go && yarn build:fe && yarn build:win",
     "lint": "eslint .",
     "preview": "vite preview",
     "add:shadcn": "npx shadcn@latest add button alert-dialog avatar button card context-menu dialog dropdown-menu input label popover progress resizable scroll-area select separator slider sonner switch tooltip sheet badge tabs"
