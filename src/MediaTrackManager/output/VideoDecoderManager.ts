@@ -65,7 +65,7 @@ class VideoDecoderManager {
 
             // 配置解码器 (VP09)
             const config: VideoDecoderConfig = {
-                codec: 'vp09.00.10.08',
+                codec: 'vp09.00.41.08', // same as encoder
             };
             decoder.configure(config);
 

@@ -5,7 +5,6 @@ import {
 import InputAudioProcessor from "./audioEncoder"
 import InputVideoProcessor from "./videoEncoder"
 import { TrackID } from "@/types"
-import { LocalRTC } from '@/MediaTrackManager/localRTC';
 
 
 export class InputTrackManager {
@@ -177,17 +176,6 @@ export class InputTrackManager {
             console.error('[MediaTrackManager] Failed to start screen video transmission:', error);
             this.screenProcessor = null;
         }
-
-        // Get the RTC peer connection
-        // const transceiver = LocalRTC.getInstance().transceiver;
-        // if (transceiver){
-        //     try {
-        //         transceiver.sender.replaceTrack(screenVideoTrack);
-        //         console.log('[MediaTrackManager] Replaced track in existing transceiver');
-        //     } catch (error) {
-        //         console.error('[MediaTrackManager] Failed to replace track in existing transceiver:', error);
-        //     }
-        // }
     }
 
     private async stopTransMicAudio(): Promise<void> {
@@ -212,15 +200,6 @@ export class InputTrackManager {
             this.screenProcessor = null;
             console.log('[MediaTrackManager] Stopped transmitting screen video');
         }
-        
-        // const transceiver = LocalRTC.getInstance().transceiver;
-        // if (transceiver){
-        //     try {
-        //         transceiver.sender.replaceTrack(null);
-        //     } catch (error) {
-        //         console.error('[MediaTrackManager] Failed to replace track in existing transceiver with null:', error);
-        //     }
-        // }
     }
 
     public static init(): void {

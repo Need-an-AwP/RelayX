@@ -35,6 +35,7 @@ type RTCConnection struct {
 	pendingCandidates []*webrtc.ICECandidate
 	tracks            map[uint8]*webrtc.TrackLocalStaticSample // key is track.ID
 	targetBitrate     int
+	targetBitrates    map[uint8]uint32 // key is track.ID
 	isInChat          bool
 	senders           map[uint8]*webrtc.RTPSender // key is track.ID
 	videoRTCtrack     *webrtc.TrackLocalStaticRTP
@@ -126,9 +127,9 @@ func (rm *RTCManager) assignEstimatorToPeer(peerIP string) {
 
 func initWebRTC(conn net.PacketConn, httpClient *http.Client) {
 	// setup BandwidthEstimator
-	var initBitrate int = 100_000 // 100kbps
-	var maxBitrate int = 5_000_000  // 5mbps
-	var minBitrate int = 30_000   // 30kbps
+	var initBitrate int = 100_000  // 100kbps
+	var maxBitrate int = 5_000_000 // 5mbps
+	var minBitrate int = 30_000    // 30kbps
 	interceptorRegistry := &interceptor.Registry{}
 	mediaEngine := &webrtc.MediaEngine{}
 	if err := mediaEngine.RegisterDefaultCodecs(); err != nil {
@@ -275,9 +276,14 @@ func (rm *RTCManager) createConnection(role RTCRole, peerIP string, sdpWithIce *
 		pdc:               pdc,
 		pendingCandidates: make([]*webrtc.ICECandidate, 0),
 		tracks:            make(map[uint8]*webrtc.TrackLocalStaticSample),
-		isInChat:          false,
-		senders:           make(map[uint8]*webrtc.RTPSender),
-		CreatedAt:         time.Now(),
+		targetBitrates: map[uint8]uint32{
+			MICROPHONE_AUDIO:   audioBitrateList[0],
+			CPA_AUDIO:          audioBitrateList[0],
+			SCREEN_SHARE_VIDEO: videoBitrateList[0],
+		},
+		isInChat:  false,
+		senders:   make(map[uint8]*webrtc.RTPSender),
+		CreatedAt: time.Now(),
 	}
 
 	// 设置事件处理器

@@ -5,9 +5,11 @@ go 1.24.4
 toolchain go1.24.6
 
 require (
+	github.com/go-gst/go-glib v1.4.0
+	github.com/go-gst/go-gst v1.4.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/joho/godotenv v1.5.1
-	github.com/pion/rtcp v1.2.15
+	github.com/pion/interceptor v0.1.40
 	github.com/pion/rtp v1.8.21
 	github.com/pion/webrtc/v4 v4.1.4
 	tailscale.com v1.86.5
@@ -50,6 +52,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jsimonetti/rtnetlink v1.4.0 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
+	github.com/mattn/go-pointer v0.0.1 // indirect
 	github.com/mdlayher/genetlink v1.3.2 // indirect
 	github.com/mdlayher/netlink v1.7.3-0.20250113171957-fbb4dce95f42 // indirect
 	github.com/mdlayher/sdnotify v1.0.0 // indirect
@@ -59,10 +62,10 @@ require (
 	github.com/pion/datachannel v1.5.10 // indirect
 	github.com/pion/dtls/v3 v3.0.7 // indirect
 	github.com/pion/ice/v4 v4.0.10 // indirect
-	github.com/pion/interceptor v0.1.40 // indirect
 	github.com/pion/logging v0.2.4 // indirect
 	github.com/pion/mdns/v2 v2.0.7 // indirect
 	github.com/pion/randutil v0.1.0 // indirect
+	github.com/pion/rtcp v1.2.15 // indirect
 	github.com/pion/sctp v1.8.39 // indirect
 	github.com/pion/sdp/v3 v3.0.15 // indirect
 	github.com/pion/srtp/v3 v3.0.7 // indirect

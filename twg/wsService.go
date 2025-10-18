@@ -16,11 +16,10 @@ import (
 )
 
 var (
-	wsConn           *websocket.Conn
-	wsConnMu         sync.Mutex
-	msgWsConn        *websocket.Conn
-	msgWsConnMu      sync.Mutex
-	audioBitrateList = []uint32{32000, 64000, 128000}
+	wsConn      *websocket.Conn
+	wsConnMu    sync.Mutex
+	msgWsConn   *websocket.Conn
+	msgWsConnMu sync.Mutex
 )
 
 type wsManager struct {
@@ -151,7 +150,7 @@ func selectBestAudioFrame(targetBitrate uint32) uint32 {
 var currentBitrate = audioBitrateList[0]
 
 func handleMediaChunk(data []byte) {
-	if len(data) < 9 {
+	if len(data) < 10 {
 		log.Printf("Invalid packet size: %d", len(data))
 		return
 	}
@@ -261,24 +260,8 @@ func handleMessage(data []byte) {
 			}
 
 			handleDM(jsonData, data)
-
-		case "local_offer":
-			// 解析 offer 和 ice 字段
-			offerData, hasOffer := jsonData.(map[string]interface{})["offer"]
-			iceData, hasIce := jsonData.(map[string]interface{})["ice"]
-
-			if !hasOffer {
-				log.Printf("[TestRTC] offer message does not contain offer field")
-				break
-			}
-			if !hasIce {
-				log.Printf("[TestRTC] offer message does not contain ice field")
-				break
-			}
-
-			rtcManager.createLocalRTC(offerData, iceData)
 		default:
-			log.Printf("[localRTC] Unknown message type: %v", msgType)
+			log.Printf("[msgWS] Unknown message type: %v", msgType)
 		}
 	}
 }

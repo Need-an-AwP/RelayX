@@ -6,7 +6,6 @@ import { useLatencyStore } from './latencyStore';
 import { PeerStateSchema, TrackID, type TrackIDType } from '@/types';
 import { AudioDecoderManager, VideoDecoderManager } from '@/MediaTrackManager';
 import { InputTrackManager } from '@/MediaTrackManager/input/InputTrackManager';
-import { LocalRTC } from '@/MediaTrackManager/localRTC';
 import { useTailscaleStore } from './twgStore';
 
 
@@ -181,13 +180,6 @@ const handleWsMessage = (event: MessageEvent) => {
                     });
                 }
                 useLatencyStore.getState().updateLatencies(latencyRecord);
-                break;
-            case "local_answer":
-                LocalRTC.getInstance().pc?.setRemoteDescription(new RTCSessionDescription(msg.answer));
-                for (const candidate of msg.ice) {
-                    console.log('[ws] Adding ICE candidate:', candidate);
-                    LocalRTC.getInstance().pc?.addIceCandidate(candidate);
-                }
                 break;
             default:
                 console.warn('[ws] Unknown message type:', msg);

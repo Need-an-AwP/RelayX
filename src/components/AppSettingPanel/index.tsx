@@ -7,7 +7,7 @@ import TailscaleSettings from "./TailscaleSettings";
 
 export default function AppSettingPanel({ className }: { className?: string }) {
     return (
-        <div className={`relative pb-6 ${className}`}>
+        <div className={`relative pb-4 ${className}`}>
             <ScrollArea className='h-full px-4'>
                 <div className='space-y-4'>
                     {/* tailscale settings */}

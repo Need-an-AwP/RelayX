@@ -51,7 +51,8 @@ export default class InputVideoProcessor {
                 width: trackSettings.width || 1920,
                 height: trackSettings.height || 1080,
                 framerate: trackSettings.frameRate || 30,
-                bitrate: 500_000, // 0.5 Mbps
+                bitrate: 1_000_000, // 1 Mbps
+                latencyMode: 'realtime',
                 // hardwareAcceleration: 'prefer-hardware',
                 // scalabilityMode: 'L1T3', // only L1 SVC mode is supported
             };

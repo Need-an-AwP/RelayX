@@ -136,7 +136,7 @@ const initializeTwgListeners = async () => {
     })
 
     window.ipcBridge.receive('tsStatus', (message: { type: string, status: Status }) => {
-        console.log('tsStatus', message);
+        // console.log('tsStatus', message);
         updateTailscaleStatus(message.status);
     })
 
